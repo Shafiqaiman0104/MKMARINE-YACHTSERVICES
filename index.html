@@ -6,6 +6,7 @@
     <title>MK Marine Login</title>
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         * {
             margin: 0;
@@ -163,6 +164,39 @@
 
         .error { background: rgba(255, 0, 0, 0.2); border: 1px solid rgba(255, 0, 0, 0.3); }
 
+        /* Stepper Input Styling */
+        .stepper-input {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .stepper-input button {
+            width: 45px;
+            height: 44px;
+            margin: 0;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 0;
+            flex-shrink: 0;
+        }
+        .stepper-input button:hover { background: #00d2ff; transform: none; }
+        .stepper-input input {
+            border: none !important;
+            text-align: center;
+            background: transparent !important;
+            padding: 0;
+            margin: 0;
+            height: 44px;
+        }
+        .stepper-input input::-webkit-outer-spin-button,
+        .stepper-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
         /* Mobile Specific Adjustments */
         @media (max-width: 600px) {
             .container { padding: 20px; }
@@ -208,6 +242,7 @@
             <button class="tab-btn active" onclick="switchTab('staff')">Staff Management</button>
             <button class="tab-btn" onclick="switchTab('items')">Items Inventory</button>
             <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
+            <button class="tab-btn" onclick="switchTab('order')">Order</button>
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
         </div>
 
@@ -237,11 +272,19 @@
                 <div class="form-grid">
                     <div class="input-group">
                         <label>Quantity</label>
-                        <input type="number" id="book-qty" value="1" min="1" oninput="calculateTotal()">
+                        <div class="stepper-input">
+                            <button type="button" onclick="changeQty(1)">+</button>
+                            <input type="number" id="book-qty" value="1" min="1" oninput="calculateTotal()">
+                            <button type="button" onclick="changeQty(-1)">-</button>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label>Duration (mins)</label>
-                        <input type="number" id="book-duration" step="1" oninput="calculateTotal()">
+                        <div class="stepper-input">
+                            <button type="button" onclick="changeDuration(1)">+</button>
+                            <input type="number" id="book-duration" step="1" oninput="calculateTotal()">
+                            <button type="button" onclick="changeDuration(-1)">-</button>
+                        </div>
                     </div>
                 </div>
                 <div style="margin-top: 15px; font-size: 1.2rem;">Total Price: <span id="total-price-display" style="color:#00d2ff; font-weight:bold;">0.00</span></div>
@@ -321,10 +364,35 @@
                 <table id="sales-table">
                     <thead>
                         <tr>
-                            <th>Order ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th>
+                            <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Items</th>
+                            <th style="white-space:nowrap;">Grand Total</th><th style="white-space:nowrap;">Total Paid</th><th style="white-space:nowrap;">Remark</th>
+                            <th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
+                            <th style="white-space:nowrap;">Served By</th>
+                            <th style="white-space:nowrap;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="sales-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Order Section -->
+        <div id="order-section" class="section">
+            <div class="header-actions">
+                <h3>Orders Management</h3>
+                <button class="btn-small" onclick="openScanModal()" style="background:#00d2ff; width:auto; padding: 10px 20px;">Scan Order ID</button>
+            </div>
+            <div class="table-container">
+                <table id="order-table">
+                    <thead>
+                        <tr>
+                            <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Items</th>
+                            <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
+                            <th style="white-space:nowrap;">Served By</th>
+                            <th style="white-space:nowrap;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-body"></tbody>
                 </table>
             </div>
         </div>
@@ -385,6 +453,34 @@
     </div>
 </div>
 
+<!-- Scan Order Modal -->
+<div class="form-overlay" id="scan-overlay">
+    <div class="form-content" style="max-width: 500px;">
+        <h3 id="scan-title" style="margin-bottom:20px; color:#00d2ff;">Process Order</h3>
+        
+        <div id="scan-initial-actions">
+            <button onclick="startScanner()" style="background:#25d366;">Scan QR Code</button>
+            <div style="margin: 15px 0; color: rgba(255,255,255,0.5); text-align: center;">— OR —</div>
+            <div class="input-group">
+                <label>Enter Order ID</label>
+                <input type="text" id="manual-order-id" placeholder="e.g. MK-12345678">
+            </div>
+            <button onclick="handleOrderLookup(document.getElementById('manual-order-id').value)">Look up Order</button>
+        </div>
+
+        <div id="scanner-container" style="display:none; width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px;"></div>
+        
+        <div id="order-lookup-result" style="display:none; text-align: left;">
+            <!-- Content filled by JS -->
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="confirm-serve-btn" onclick="confirmOrderServed()" style="display:none; background:#25d366;">Confirm & Serve</button>
+            <button type="button" class="btn-danger" onclick="closeScanModal()">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const pb = new PocketBase('https://pocketbase.venturerushtech.com');
     // Disable auto-cancellation globally to prevent the "autocancelled" error
@@ -395,6 +491,7 @@
     let currentSales = [];
     let selectedItem = null;
     let currentBooking = null;
+    let html5QrCode = null;
     let cart = [];
 
     function switchTab(tab) {
@@ -407,6 +504,7 @@
         if (tab === 'staff') loadStaff();
         else if (tab === 'items') loadItems();
         else if (tab === 'sales') loadSales();
+        else if (tab === 'order') loadOrders();
         else if (tab === 'booking') {
             loadBookingItems();
             document.getElementById('book-date').value = new Date().toISOString().slice(0, 16);
@@ -429,6 +527,7 @@
                 // Store credentials for persistent login
                 localStorage.setItem('mk_username', userVal);
                 localStorage.setItem('mk_password', passVal);
+                localStorage.setItem('mk_staffname', record.name);
 
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('main-container').classList.add('dashboard-mode');
@@ -444,6 +543,7 @@
     function handleLogout() {
         localStorage.removeItem('mk_username');
         localStorage.removeItem('mk_password');
+        localStorage.removeItem('mk_staffname');
         location.reload();
     }
 
@@ -479,17 +579,62 @@
     async function loadSales() {
         currentSales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-created' });
         const body = document.getElementById('sales-body');
-        body.innerHTML = currentSales.map(s => `
+        body.innerHTML = currentSales.map(s => {
+            const names = (s.orderItemName || '').split(', ');
+            const qtys = (s.orderItemQuantity || '').split(', ');
+            const durs = (s.orderItemRentalDuration || '').split(', ');
+            const prices = (s.orderItemPrice || '').split(', ');
+            const itemsHtml = names.map((n, i) => `<div style="white-space:nowrap; font-size:0.75rem;">${n} (x${qtys[i]}, ${durs[i]}m, RM${prices[i]})</div>`).join('');
+
+            return `
             <tr>
-                <td>${s.orderId}</td><td>${new Date(s.orderDate).toLocaleDateString()}</td><td>${s.customerName}</td>
-                <td><small>${s.orderItemName}</small></td><td>RM${s.totalPrice}</td><td>${s.orderStatus}</td>
-                <td>
+                <td style="white-space:nowrap;">${s.orderId}</td>
+                <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
+                <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
+                <td>${itemsHtml}</td>
+                <td style="font-weight:bold; color:#00d2ff;">RM${s.totalPrice}</td>
+                <td style="font-weight:bold; color:#25d366;">RM${s.totalPaidAmount}</td>
+                <td><small>${s.orderRemark || '-'}</small></td>
+                <td>${s.orderStatus}</td>
+                <td>${s.orderBy || '-'}</td>
+                <td>${s.customerStatus || '-'}</td>
+                <td>${s.servedBy || '-'}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn-small" onclick="sendSalesWhatsApp('${s.id}')" style="background:#25d366;">WhatsApp</button>
                     <button class="btn-small" onclick="openModal('salesView', '${s.id}')">View</button>
                     <button class="btn-small" onclick="openModal('sales', '${s.id}')">Edit</button>
                     <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_SALES_DATA', '${s.id}', loadSales)">Del</button>
                 </td>
             </tr>
-        `).join('');
+        `;}).join('');
+    }
+
+    async function loadOrders() {
+        currentSales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-created' });
+        const body = document.getElementById('order-body');
+        body.innerHTML = currentSales.map(s => {
+            const names = (s.orderItemName || '').split(', ');
+            const qtys = (s.orderItemQuantity || '').split(', ');
+            const durs = (s.orderItemRentalDuration || '').split(', ');
+            const prices = (s.orderItemPrice || '').split(', ');
+            const itemsHtml = names.map((n, i) => `<div style="white-space:nowrap; font-size:0.75rem;">${n} (x${qtys[i]}, ${durs[i]}m, RM${prices[i]})</div>`).join('');
+
+            return `
+            <tr>
+                <td style="white-space:nowrap;">${s.orderId}</td>
+                <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
+                <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
+                <td>${itemsHtml}</td>
+                <td><small>${s.orderRemark || '-'}</small></td>
+                <td>${s.orderStatus}</td>
+                <td>${s.orderBy || '-'}</td>
+                <td>${s.customerStatus || '-'}</td>
+                <td>${s.servedBy || '-'}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn-small" onclick="openModal('orderStatusUpdate', '${s.id}')">Edit</button>
+                </td>
+            </tr>
+        `;}).join('');
     }
 
     async function loadBookingItems() {
@@ -529,6 +674,26 @@
         const total = (basePrice * qty) * (duration / baseDuration);
         document.getElementById('total-price-display').innerText = total.toFixed(2);
         return total.toFixed(2);
+    }
+
+    function changeQty(dir) {
+        const input = document.getElementById('book-qty');
+        let val = parseInt(input.value) || 0;
+        val += dir;
+        if (val < 1) val = 1;
+        input.value = val;
+        calculateTotal();
+    }
+
+    function changeDuration(dir) {
+        if (!selectedItem) return;
+        const input = document.getElementById('book-duration');
+        const step = parseInt(selectedItem.itemRentalDuration) || 30;
+        let val = parseInt(input.value) || 0;
+        val += (dir * step);
+        if (val < step) val = step;
+        input.value = val;
+        calculateTotal();
     }
 
     function toggleMixPayment() {
@@ -630,7 +795,7 @@
         let paymentMethodFinal = document.getElementById('payment-method').value;
         let paidAmountFinal = document.getElementById('paid-amount').value || "0.00";
         let totalPaidAmount = paidAmountFinal;
-        let remark = "Booking created via web system";
+        let remark = "";
 
         if (paymentMethodFinal === 'Mix') {
             const mCash = parseFloat(document.getElementById('mix-cash').value) || 0;
@@ -647,7 +812,6 @@
             paymentMethodFinal = methods.join(", ");
             paidAmountFinal = amounts.join(", ");
             totalPaidAmount = (mCash + mOnline + mCard).toFixed(2);
-            remark += ` (Mix Breakdown: ${paymentMethodFinal} - ${paidAmountFinal})`;
         }
 
         try {
@@ -662,13 +826,16 @@
                 "orderItemRentalDuration": combinedDurations,
                 "orderItemPrice": combinedPrices,
                 "orderQrUrl": qrUrl,
-                "orderStatus": "pending",
+                "orderStatus": "Pending",
                 "orderRemark": remark,
                 "totalItems": totalQuantity.toString(),
                 "totalPrice": grandTotal,
                 "paymentMethod": paymentMethodFinal,
                 "paidAmount": paidAmountFinal,
-                "totalPaidAmount": totalPaidAmount
+                "totalPaidAmount": totalPaidAmount,
+                "orderBy": localStorage.getItem('mk_staffname') || 'Unknown',
+                "servedBy": "",
+                "customerStatus": "Pending"
             });
             
             // Save current cart data locally for the WhatsApp message generator
@@ -722,6 +889,97 @@
         window.open(`https://wa.me/${currentBooking.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
 
+    function openScanModal() {
+        document.getElementById('scan-overlay').style.display = 'flex';
+        document.getElementById('scan-initial-actions').style.display = 'block';
+        document.getElementById('order-lookup-result').style.display = 'none';
+        document.getElementById('scanner-container').style.display = 'none';
+        document.getElementById('confirm-serve-btn').style.display = 'none';
+        document.getElementById('manual-order-id').value = '';
+    }
+
+    async function closeScanModal() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            await html5QrCode.stop();
+        }
+        document.getElementById('scan-overlay').style.display = 'none';
+    }
+
+    function startScanner() {
+        document.getElementById('scan-initial-actions').style.display = 'none';
+        document.getElementById('scanner-container').style.display = 'block';
+        
+        html5QrCode = new Html5Qrcode("scanner-container");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            handleOrderLookup(decodedText);
+        }).catch(err => {
+            alert("Camera error: " + err);
+            openScanModal();
+        });
+    }
+
+    async function handleOrderLookup(orderId) {
+        if (!orderId) return alert("Please enter or scan an Order ID");
+        try {
+            const record = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFirstListItem(`orderId="${orderId}"`);
+            
+            if (html5QrCode && html5QrCode.isScanning) {
+                await html5QrCode.stop();
+                document.getElementById('scanner-container').style.display = 'none';
+            }
+
+            document.getElementById('scan-initial-actions').style.display = 'none';
+            const resultDiv = document.getElementById('order-lookup-result');
+            resultDiv.style.display = 'block';
+            
+            const names = (record.orderItemName || '').split(', ');
+            const qtys = (record.orderItemQuantity || '').split(', ');
+            const durs = (record.orderItemRentalDuration || '').split(', ');
+            const itemsHtml = names.map((n, i) => `<div style="font-size:0.85rem;">• ${n} (x${qtys[i]}, ${durs[i]}m)</div>`).join('');
+
+            resultDiv.innerHTML = `
+                <input type="hidden" id="serve-record-id" value="${record.id}">
+                <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
+                <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.customerName}</div></div>
+                <div class="input-group"><label>Order Items</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${itemsHtml}</div></div>
+                <div class="input-group"><label>Order Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderStatus}</div></div>
+                <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderRemark || '-'}</div></div>
+                <div class="input-group">
+                    <label>Customer Status</label>
+                    <select id="serve-customer-status">
+                        <option value="Pending" ${record.customerStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Arrive" ${record.customerStatus === 'Arrive' ? 'selected' : ''}>Arrive</option>
+                        <option value="No Show" ${record.customerStatus === 'No Show' ? 'selected' : ''}>No Show</option>
+                    </select>
+                </div>
+            `;
+            document.getElementById('confirm-serve-btn').style.display = 'block';
+        } catch (err) {
+            alert("Order not found or database error.");
+            if (!html5QrCode || !html5QrCode.isScanning) openScanModal();
+        }
+    }
+
+    async function confirmOrderServed() {
+        const id = document.getElementById('serve-record-id').value;
+        const customerStatus = document.getElementById('serve-customer-status').value;
+        const staffName = localStorage.getItem('mk_staffname') || 'Unknown';
+
+        try {
+            await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
+                customerStatus: customerStatus,
+                servedBy: staffName
+            });
+            alert("Order updated successfully!");
+            closeScanModal();
+            loadOrders();
+        } catch (err) {
+            alert("Error updating order: " + err.message);
+        }
+    }
+
     function resetBookingForm() {
         // Clear Customer Details
         document.getElementById('book-name').value = '';
@@ -749,7 +1007,40 @@
         document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function openModal(type, id = null) {
+    function sendSalesWhatsApp(id) {
+        const s = currentSales.find(item => item.id === id);
+        if (!s) return;
+
+        const names = (s.orderItemName || '').split(', ');
+        const qtys = (s.orderItemQuantity || '').split(', ');
+        const durs = (s.orderItemRentalDuration || '').split(', ');
+        const prices = (s.orderItemPrice || '').split(', ');
+
+        let itemsList = names.map((name, i) =>
+            `- ${name} (x${qtys[i] || '0'}) ${durs[i] || '0'}m: RM${prices[i] || '0.00'}`
+        ).join('\n');
+
+        const paymentDisplay = (parseFloat(s.totalPaidAmount) || 0) > 0 ? s.paymentMethod : "n/a";
+
+        const message = `*MK MARINE WATERSPORT*\n` +
+                        `---------------------------\n` +
+                        `*Order ID:* ${s.orderId}\n` +
+                        `*Name:* ${s.customerName}\n` +
+                        `---------------------------\n` +
+                        `*Items:*\n${itemsList}\n` +
+                        `---------------------------\n` +
+                        `*Grand Total:* RM${s.totalPrice}\n` +
+                        `*Payment:* ${paymentDisplay}\n` +
+                        `*Paid:* RM${s.totalPaidAmount} (${s.paidAmount})\n` +
+                        `---------------------------\n` +
+                        `*View QR Code:* ${s.orderQrUrl}\n` +
+                        `---------------------------\n` +
+                        `Thank you for your booking!`;
+
+        window.open(`https://wa.me/${s.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    async function openModal(type, id = null) {
         const overlay = document.getElementById('form-overlay');
         const fields = document.getElementById('form-fields');
         const title = document.getElementById('modal-title');
@@ -789,25 +1080,181 @@
         } else if (type === 'sales') {
             const data = id ? currentSales.find(s => s.id === id) : {};
             title.innerText = 'Edit Order';
+            
+            if (currentItems.length === 0) currentItems = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
+
             fields.innerHTML = `
+                <div class="input-group full-width">
+                    <label>Order ID (Read-only)</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.orderId ?? ''}</div>
+                </div>
                 <div class="input-group full-width">
                     <label>Order Status</label>
                     <select name="orderStatus">
-                        <option value="pending" ${data.orderStatus === 'pending' ? 'selected' : ''}>pending</option>
+                        <option value="Pending" ${data.orderStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${data.orderStatus === 'Completed' ? 'selected' : ''}>Completed</option>
                         <option value="Cancelled" ${data.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
                 </div>
                 <input type="text" name="customerName" placeholder="Customer Name" value="${data.customerName ?? ''}" required>
                 <input type="text" name="customerPhone" placeholder="Customer Phone" value="${data.customerPhone ?? ''}" required>
+                
+                <div class="full-width">
+                    <label>Items Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                                    <th style="padding: 5px; text-align: left;">Item</th>
+                                    <th style="padding: 5px; text-align: center;">Qty</th>
+                                    <th style="padding: 5px; text-align: center;">Dur</th>
+                                    <th style="padding: 5px; text-align: right;">Price</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-edit-body"></tbody>
+                        </table>
+                        <button type="button" class="btn-small" onclick="addEditItemRow()" style="margin-top:5px;">+ Add Item</button>
+                    </div>
+                </div>
+
+                <div class="full-width">
+                    <label>Payment Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                                    <th style="padding: 5px; text-align: left;">Type</th>
+                                    <th style="padding: 5px; text-align: right;">Amount</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-edit-body"></tbody>
+                        </table>
+                        <button type="button" class="btn-small" onclick="addEditPaymentRow()" style="margin-top:5px;">+ Add Payment</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Grand Total (Live)</label>
+                    <div id="edit-grand-total" style="padding: 10px; color: #00d2ff; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
+                </div>
+                <div class="input-group">
+                    <label>Total Paid (Live)</label>
+                    <div id="edit-total-paid" style="padding: 10px; color: #25d366; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>Order Taken By (Read-only)</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.orderBy ?? '-'}</div>
+                </div>
+                <div class="input-group">
+                    <label>Served By (Read-only)</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.servedBy ?? '-'}</div>
+                </div>
+                <div class="input-group">
+                    <label>Customer Status</label>
+                    <select name="customerStatus">
+                        <option value="Pending" ${data.customerStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Arrive" ${data.customerStatus === 'Arrive' ? 'selected' : ''}>Arrive</option>
+                        <option value="No Show" ${data.customerStatus === 'No Show' ? 'selected' : ''}>No Show</option>
+                    </select>
+                </div>
                 <textarea name="orderRemark" placeholder="Remark" class="full-width">${data.orderRemark ?? ''}</textarea>
-                <input type="text" name="paymentMethod" placeholder="Payment Method" value="${data.paymentMethod ?? ''}" class="full-width">
-                <input type="number" name="totalPaidAmount" placeholder="Paid Amount" value="${data.totalPaidAmount ?? ''}" step="0.01" class="full-width">
+            `;
+
+            // Populate existing rows
+            const itemNames = (data.orderItemName || '').split(', ');
+            const itemQtys = (data.orderItemQuantity || '').split(', ');
+            const itemDurs = (data.orderItemRentalDuration || '').split(', ');
+            const itemPrices = (data.orderItemPrice || '').split(', ');
+            itemNames.forEach((name, i) => {
+                if (name) addEditItemRow({ name, qty: itemQtys[i], dur: itemDurs[i], price: itemPrices[i] });
+            });
+
+            const payMethods = (data.paymentMethod || '').split(', ');
+            const payAmounts = (data.paidAmount || '').split(', ');
+            payMethods.forEach((method, i) => {
+                if (method && method !== 'Mix') addEditPaymentRow({ method, amount: payAmounts[i] });
+            });
+        } else if (type === 'orderStatusUpdate') {
+            const data = id ? currentSales.find(s => s.id === id) : {};
+            title.innerText = 'Update Customer Status';
+            fields.innerHTML = `
+                <div class="input-group full-width">
+                    <label>Customer Status</label>
+                    <select name="customerStatus">
+                        <option value="Pending" ${data.customerStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Arrive" ${data.customerStatus === 'Arrive' ? 'selected' : ''}>Arrive</option>
+                        <option value="No Show" ${data.customerStatus === 'No Show' ? 'selected' : ''}>No Show</option>
+                    </select>
+                </div>
             `;
         } else if (type === 'salesView') {
             const data = id ? currentSales.find(s => s.id === id) : {};
             title.innerText = 'Order Details - ' + (data.orderId ?? '');
             if (submitBtn) submitBtn.style.display = 'none';
+
+            // Parse Items Breakdown
+            const itemNames = (data.orderItemName || '').split(', ');
+            const itemQtys = (data.orderItemQuantity || '').split(', ');
+            const itemDurs = (data.orderItemRentalDuration || '').split(', ');
+            const itemPrices = (data.orderItemPrice || '').split(', ');
+
+            let itemsTableHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                            <th style="padding: 5px; text-align: left;">Item</th>
+                            <th style="padding: 5px; text-align: center;">Qty</th>
+                            <th style="padding: 5px; text-align: center;">Dur</th>
+                            <th style="padding: 5px; text-align: right;">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            itemNames.forEach((name, i) => {
+                if (name) {
+                    itemsTableHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 5px;">${name}</td>
+                            <td style="padding: 5px; text-align: center;">${itemQtys[i] || ''}</td>
+                            <td style="padding: 5px; text-align: center;">${itemDurs[i] || ''}m</td>
+                            <td style="padding: 5px; text-align: right;">RM${itemPrices[i] || '0.00'}</td>
+                        </tr>
+                    `;
+                }
+            });
+            itemsTableHtml += `</tbody></table>`;
+
+            // Parse Payment Breakdown
+            const payMethods = (data.paymentMethod || '').split(', ');
+            const payAmounts = (data.paidAmount || '').split(', ');
+            let paymentsHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                            <th style="padding: 5px; text-align: left;">Payment Type</th>
+                            <th style="padding: 5px; text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            let hasPayment = false;
+            payMethods.forEach((method, i) => {
+                if (method && method !== 'Mix') {
+                    hasPayment = true;
+                    paymentsHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 5px;">${method}</td>
+                            <td style="padding: 5px; text-align: right; color: #25d366;">RM${payAmounts[i] || '0.00'}</td>
+                        </tr>
+                    `;
+                }
+            });
+            paymentsHtml += `</tbody></table>`;
+            if (!hasPayment || (parseFloat(data.totalPaidAmount) || 0) === 0) paymentsHtml = "n/a";
+
             fields.innerHTML = `
                 <div class="full-width" style="text-align: center; margin-bottom: 15px;">
                     <img src="${data.orderQrUrl}" alt="QR Code" style="width: 150px; height: 150px; background: white; padding: 10px; border-radius: 8px; display: block; margin: 0 auto;">
@@ -830,8 +1277,12 @@
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerPhone ?? ''}</div>
                 </div>
                 <div class="full-width">
-                    <label>Items</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderItemName ?? ''}</div>
+                    <label>Items Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${itemsTableHtml}</div>
+                </div>
+                <div class="input-group">
+                    <label>Total Items</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.totalItems ?? '0'}</div>
                 </div>
                 <div class="input-group">
                     <label>Status</label>
@@ -842,12 +1293,26 @@
                     <div style="padding: 10px; color: #00d2ff; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
                 </div>
                 <div class="input-group">
-                    <label>Payment Method</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.paymentMethod ?? ''}</div>
-                </div>
-                <div class="input-group">
                     <label>Total Paid</label>
                     <div style="padding: 10px; color: #25d366; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
+                </div>
+                <div class="input-group">
+                    <label>Payment Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${paymentsHtml}</div>
+                </div>
+                <div class="input-group">
+                    <label>Order Taken By</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderBy ?? '-'}</div>
+                </div>
+                <div class="form-grid full-width">
+                    <div class="input-group">
+                        <label>Served By</label>
+                        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.servedBy ?? '-'}</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Customer Status</label>
+                        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerStatus ?? '-'}</div>
+                    </div>
                 </div>
                 <div class="full-width">
                     <label>Remark</label>
@@ -894,11 +1359,37 @@
         let collection;
         if (type === 'staff') collection = 'MKMARINE_WATERSPORT_LOGIN';
         else if (type === 'items') collection = 'MKMARINE_WATERSPORT_ITEMS_DATA';
-        else if (type === 'sales') collection = 'MKMARINE_WATERSPORT_SALES_DATA';
+        else if (type === 'sales' || type === 'orderStatusUpdate') collection = 'MKMARINE_WATERSPORT_SALES_DATA';
         
-        const callback = type === 'staff' ? loadStaff : (type === 'items' ? loadItems : loadSales);
+        const callback = type === 'staff' ? loadStaff : (type === 'items' ? loadItems : (type === 'orderStatusUpdate' ? loadOrders : loadSales));
 
         try {
+            if (type === 'sales') {
+                // Re-aggregate table inputs into comma-separated strings
+                const names = formData.getAll('item_name').join(', ');
+                const qtys = formData.getAll('item_qty').join(', ');
+                const durs = formData.getAll('item_dur').join(', ');
+                const prices = formData.getAll('item_price').join(', ');
+                const methods = formData.getAll('pay_method').join(', ');
+                const amounts = formData.getAll('pay_amount').join(', ');
+
+                formData.set('orderItemName', names);
+                formData.set('orderItemQuantity', qtys);
+                formData.set('orderItemRentalDuration', durs);
+                formData.set('orderItemPrice', prices);
+                formData.set('paymentMethod', methods);
+                formData.set('paidAmount', amounts);
+
+                // Recalculate Totals
+                const totalItems = formData.getAll('item_qty').reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+                const totalPrice = formData.getAll('item_price').reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                const totalPaid = formData.getAll('pay_amount').reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+
+                formData.set('totalItems', totalItems.toString());
+                formData.set('totalPrice', totalPrice.toFixed(2));
+                formData.set('totalPaidAmount', totalPaid.toFixed(2));
+            }
+
             if (type === 'items') {
                 const fileInput = form.querySelector('input[name="itemImage"]');
                 if (fileInput && fileInput.files[0]) {
@@ -923,6 +1414,95 @@
             await pb.collection(collection).delete(id);
             callback();
         }
+    }
+
+    function addEditItemRow(data = null) {
+        const tbody = document.getElementById('items-edit-body');
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        
+        const options = currentItems.map(i => 
+            `<option value="${i.itemName}" data-price="${i.itemPrice}" data-duration="${i.itemRentalDuration}" ${data && data.name === i.itemName ? 'selected' : ''}>${i.itemName}</option>`
+        ).join('');
+
+        tr.innerHTML = `
+            <td style="padding: 2px;">
+                <select name="item_name" onchange="updateEditItemRow(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                    <option value="">-- Select --</option>
+                    ${options}
+                </select>
+            </td>
+            <td style="padding: 2px;"><input type="number" name="item_qty" value="${data ? data.qty : 1}" oninput="onEditRowInput(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="number" name="item_dur" value="${data ? data.dur : 0}" oninput="onEditRowInput(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="number" name="item_price" value="${data ? data.price : 0}" step="0.01" oninput="onEditRowInput(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px; text-align:center;"><button type="button" onclick="removeEditRow(this)" class="btn-small btn-danger" style="margin:0;">×</button></td>
+        `;
+        tbody.appendChild(tr);
+        if (!data) recalculateSalesEditTotals();
+    }
+
+    function addEditPaymentRow(data = null) {
+        const tbody = document.getElementById('payments-edit-body');
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        
+        tr.innerHTML = `
+            <td style="padding: 2px;">
+                <select name="pay_method" onchange="recalculateSalesEditTotals()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                    <option value="Cash" ${data && data.method === 'Cash' ? 'selected' : ''}>Cash</option>
+                    <option value="Online Transfer" ${data && data.method === 'Online Transfer' ? 'selected' : ''}>Online Transfer</option>
+                    <option value="Card" ${data && data.method === 'Card' ? 'selected' : ''}>Card</option>
+                </select>
+            </td>
+            <td style="padding: 2px;"><input type="number" name="pay_amount" value="${data ? data.amount : 0}" step="0.01" oninput="recalculateSalesEditTotals()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px; text-align:center;"><button type="button" onclick="removeEditRow(this)" class="btn-small btn-danger" style="margin:0;">×</button></td>
+        `;
+        tbody.appendChild(tr);
+        if (!data) recalculateSalesEditTotals();
+    }
+
+    function removeEditRow(btn) {
+        btn.closest('tr').remove();
+        recalculateSalesEditTotals();
+    }
+
+    function updateEditItemRow(select) {
+        const row = select.closest('tr');
+        const option = select.options[select.selectedIndex];
+        if (!option.value) return;
+        row.querySelector('input[name="item_dur"]').value = option.dataset.duration;
+        row.querySelector('input[name="item_qty"]').value = 1;
+        onEditRowInput(row.querySelector('input[name="item_qty"]'));
+    }
+
+    function onEditRowInput(input) {
+        const row = input.closest('tr');
+        if (input.name === 'item_qty' || input.name === 'item_dur' || input.name === 'item_name') {
+            const select = row.querySelector('select[name="item_name"]');
+            const option = select.options[select.selectedIndex];
+            if (option && option.value) {
+                const qty = parseFloat(row.querySelector('input[name="item_qty"]').value) || 0;
+                const duration = parseFloat(row.querySelector('input[name="item_dur"]').value) || 0;
+                const basePrice = parseFloat(option.dataset.price) || 0;
+                const baseDuration = parseFloat(option.dataset.duration) || 1;
+                const lineTotal = (basePrice * qty) * (duration / baseDuration);
+                row.querySelector('input[name="item_price"]').value = lineTotal.toFixed(2);
+            }
+        }
+        recalculateSalesEditTotals();
+    }
+
+    function recalculateSalesEditTotals() {
+        let grandTotal = 0;
+        document.querySelectorAll('#items-edit-body input[name="item_price"]').forEach(input => {
+            grandTotal += parseFloat(input.value) || 0;
+        });
+        let totalPaid = 0;
+        document.querySelectorAll('#payments-edit-body input[name="pay_amount"]').forEach(input => {
+            totalPaid += parseFloat(input.value) || 0;
+        });
+        document.getElementById('edit-grand-total').innerText = 'RM' + grandTotal.toFixed(2);
+        document.getElementById('edit-total-paid').innerText = 'RM' + totalPaid.toFixed(2);
     }
 
     function closeModal() { document.getElementById('form-overlay').style.display = 'none'; }
