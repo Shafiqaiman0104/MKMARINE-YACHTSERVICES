@@ -44,6 +44,21 @@
       100% { transform: translateX(3%) scale(1.03); }
     }
 
+    /* 3D Canvas Container */
+    #three-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    #three-container canvas {
+      display: block;
+    }
+
     /* Header */
     .header {
       position: fixed;
@@ -69,6 +84,9 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .hamburger {
@@ -167,8 +185,13 @@
     /* Main Content */
     .main-content {
       position: relative;
-      z-index: 1;
+      z-index: 10;
       padding-top: 4.5rem;
+      pointer-events: none;
+    }
+
+    .main-content > * {
+      pointer-events: auto;
     }
 
     /* Section Styles */
@@ -182,6 +205,13 @@
       position: relative;
     }
 
+    #home {
+      min-height: 130vh;
+      padding-top: 6rem;
+      justify-content: flex-start;
+      padding-top: 15rem;
+    }
+
     .section-title {
       font-size: clamp(2rem, 5vw, 2.8rem);
       font-weight: 800;
@@ -192,6 +222,8 @@
       background-clip: text;
       text-align: center;
       margin-bottom: 0.8rem;
+      position: relative;
+      z-index: 15;
     }
 
     .section-subtitle {
@@ -200,6 +232,8 @@
       letter-spacing: 0.08em;
       text-align: center;
       margin-bottom: 2.5rem;
+      position: relative;
+      z-index: 15;
     }
 
     .section-divider {
@@ -208,6 +242,8 @@
       background: linear-gradient(to right, #00b4ff, #80d0ff);
       border-radius: 2px;
       margin: 0 auto 2rem;
+      position: relative;
+      z-index: 15;
     }
 
     /* Home Section */
@@ -215,6 +251,8 @@
       max-width: 800px;
       width: 100%;
       text-align: center;
+      position: relative;
+      z-index: 15;
     }
 
     .location-badge {
@@ -228,6 +266,8 @@
       font-size: 0.9rem;
       color: #80d0ff;
       margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 15;
     }
 
     .location-badge i {
@@ -242,6 +282,8 @@
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
+      position: relative;
+      z-index: 15;
     }
 
     .services-grid {
@@ -251,6 +293,8 @@
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
+      position: relative;
+      z-index: 15;
     }
 
     .service-card {
@@ -262,6 +306,7 @@
       padding: 2rem 1.2rem;
       text-align: center;
       transition: all 0.3s;
+      position: relative;
     }
 
     .service-card:hover {
@@ -294,6 +339,11 @@
     }
 
     /* Watersport Section */
+    #watersport {
+      justify-content: flex-start;
+      padding-top: 8rem;
+    }
+
     .watersport-wrapper {
       max-width: 1000px;
       width: 100%;
@@ -301,6 +351,8 @@
       flex-direction: column;
       align-items: center;
       gap: 2rem;
+      position: relative;
+      z-index: 15;
     }
 
     .carousel-container {
@@ -363,25 +415,12 @@
       pointer-events: none;
     }
 
-    .slot-image-wrapper {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-radius: 2.2rem;
-      padding: 1.3rem;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-      transition: all 0.55s cubic-bezier(0.23, 0.82, 0.34, 1.1);
-      width: 220px;
-      height: 220px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: visible;
-    }
-
     .unit-slot.center .slot-image-wrapper {
       background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 2.8rem;
+      padding: 1.8rem;
       border: 1px solid rgba(255, 255, 255, 0.25);
       box-shadow: 
         0 30px 55px rgba(0, 0, 0, 0.6),
@@ -389,14 +428,36 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
       width: 320px;
       height: 320px;
-      border-radius: 2.8rem;
-      padding: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: visible;
       cursor: grab;
+      transition: all 0.55s cubic-bezier(0.23, 0.82, 0.34, 1.1);
     }
 
     .unit-slot.center .slot-image-wrapper:active {
       cursor: grabbing;
+    }
+
+    .unit-slot.left .slot-image-wrapper,
+    .unit-slot.right .slot-image-wrapper,
+    .unit-slot.far-left .slot-image-wrapper,
+    .unit-slot.far-right .slot-image-wrapper {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-radius: 0;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+      transition: all 0.55s cubic-bezier(0.23, 0.82, 0.34, 1.1);
     }
 
     .slot-image {
@@ -413,6 +474,11 @@
       filter: drop-shadow(0 20px 30px rgba(0, 200, 255, 0.5));
       animation: breathe 4s infinite ease-in-out;
       pointer-events: none;
+    }
+
+    .unit-slot.left .slot-image,
+    .unit-slot.right .slot-image {
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
     }
 
     @keyframes breathe {
@@ -638,9 +704,20 @@
       font-size: 0.8rem;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
       letter-spacing: 0.05em;
+      position: relative;
+      z-index: 15;
     }
 
     @media (max-width: 750px) {
+      #home {
+        padding-top: 10rem;
+        min-height: 140vh;
+      }
+      
+      #watersport {
+        padding-top: 4rem;
+      }
+      
       .services-grid {
         grid-template-columns: 1fr;
         max-width: 350px;
@@ -651,28 +728,27 @@
         height: 360px;
       }
       .unit-slot.left {
-        transform: translateX(-150px) scale(0.55);
+        transform: translateX(-140px) scale(0.5);
       }
       .unit-slot.right {
-        transform: translateX(150px) scale(0.55);
+        transform: translateX(140px) scale(0.5);
       }
       .unit-slot.far-left {
-        transform: translateX(-280px) scale(0.35);
+        transform: translateX(-260px) scale(0.3);
       }
       .unit-slot.far-right {
-        transform: translateX(280px) scale(0.35);
-      }
-      .slot-image-wrapper {
-        width: 160px;
-        height: 160px;
-        padding: 0.9rem;
-        border-radius: 1.8rem;
+        transform: translateX(260px) scale(0.3);
       }
       .unit-slot.center .slot-image-wrapper {
         width: 240px;
         height: 240px;
         padding: 1.2rem;
         border-radius: 2.2rem;
+      }
+      .unit-slot.left .slot-image-wrapper,
+      .unit-slot.right .slot-image-wrapper {
+        width: 130px;
+        height: 130px;
       }
       .unit-info-card {
         padding: 1.2rem 1.5rem;
@@ -690,9 +766,12 @@
 </head>
 <body>
 
+  <!-- 3D Canvas Container -->
+  <div id="three-container"></div>
+
   <!-- Header -->
   <header class="header">
-    <span class="company-name"><i class="fa-solid fa-anchor" style="color: #80d0ff; margin-right: 0.4rem;"></i>MK MARINE & YACHT SERVICE</span>
+    <span class="company-name"><i class="fa-solid fa-anchor" style="color: #80d0ff;"></i>MK MARINE & YACHT SERVICE</span>
     <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
       <i class="fa-solid fa-bars"></i>
     </button>
@@ -834,6 +913,195 @@
     </div>
 
   </div>
+
+  <!-- Three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // --- Three.js Setup ---
+    const container = document.getElementById('three-container');
+    const scene = new THREE.Scene();
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 8);
+    
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    container.appendChild(renderer.domElement);
+
+    // --- Lighting ---
+    const ambientLight = new THREE.AmbientLight(0x404066, 2.5);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+    
+    const directionalLight2 = new THREE.DirectionalLight(0x88ccff, 1.5);
+    directionalLight2.position.set(-5, 2, -3);
+    scene.add(directionalLight2);
+    
+    const bottomLight = new THREE.DirectionalLight(0x4488aa, 1);
+    bottomLight.position.set(0, -3, 0);
+    scene.add(bottomLight);
+
+    // --- Load 3D Model ---
+    const loader = new GLTFLoader();
+    let paddleBoat = null;
+    const modelUrl = './paddleBoat.glb';
+
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        paddleBoat = gltf.scene;
+        
+        const box = new THREE.Box3().setFromObject(paddleBoat);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 3.5 / maxDim;
+        paddleBoat.scale.set(scale, scale, scale);
+        
+        paddleBoat.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+        
+        paddleBoat.traverse((node) => {
+          if (node.isMesh) {
+            node.material = node.material.clone();
+            node.material.transparent = true;
+            node.material.opacity = 0.95;
+          }
+        });
+        
+        scene.add(paddleBoat);
+        console.log('✅ Paddle boat loaded!');
+      },
+      undefined,
+      (error) => {
+        console.error('Failed to load paddle boat:', error);
+      }
+    );
+
+    // --- Scroll-based animation ---
+    let targetScreenX = 0;
+    let targetScreenY = 0.45;
+    let targetScale = 1.4;
+    let targetRotationY = 0;
+    
+    let currentScreenX = 0;
+    let currentScreenY = 0.45;
+    let currentScale = 1.4;
+    let currentRotationY = 0;
+
+    function updatePaddleBoatPosition() {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const homeSection = document.getElementById('home');
+      const watersportSection = document.getElementById('watersport');
+      
+      const homeTop = homeSection.offsetTop;
+      const homeBottom = homeSection.offsetTop + homeSection.offsetHeight;
+      const watersportTop = watersportSection.offsetTop;
+      
+      // Phase 1: At the very top - boat is large, centered horizontally, above the title
+      if (scrollY < 200) {
+        targetScreenX = 0; // center horizontally (0 = center in NDC)
+        targetScreenY = 0.35; // above the title
+        targetScale = 1.5;
+        targetRotationY = 0;
+      }
+      // Phase 2: Scrolling through home section - boat shrinks and rotates slightly
+      else if (scrollY < homeBottom - 300) {
+        const progress = (scrollY - 200) / (homeBottom - 500);
+        const clampedProgress = Math.min(Math.max(progress, 0), 1);
+        
+        targetScreenX = 0;
+        targetScreenY = 0.35 - (clampedProgress * 0.15); // move down slightly
+        targetScale = 1.5 - (clampedProgress * 0.6); // shrink from 1.5 to 0.9
+        targetRotationY = clampedProgress * 0.5; // rotate to show it's 3D
+      }
+      // Phase 3: Approaching watersport section - boat returns to normal size and centers above watersport title
+      else if (scrollY < watersportTop) {
+        const progress = (scrollY - (homeBottom - 300)) / (watersportTop - (homeBottom - 300));
+        const clampedProgress = Math.min(Math.max(progress, 0), 1);
+        
+        targetScreenX = 0;
+        targetScreenY = 0.2 + (clampedProgress * 0.05); // position above watersport title
+        targetScale = 0.9 + (clampedProgress * 0.4); // grow back to 1.3
+        targetRotationY = 0.5 - (clampedProgress * 0.3); // rotate back a bit
+      }
+      // Phase 4: In watersport section - boat stays above "Our Watersport Fleet" title
+      else {
+        targetScreenX = 0;
+        targetScreenY = 0.25;
+        targetScale = 1.3;
+        targetRotationY = 0.2;
+      }
+
+      // Smooth interpolation
+      const lerpFactor = 0.06;
+      currentScreenX += (targetScreenX - currentScreenX) * lerpFactor;
+      currentScreenY += (targetScreenY - currentScreenY) * lerpFactor;
+      currentScale += (targetScale - currentScale) * lerpFactor;
+      currentRotationY += (targetRotationY - currentRotationY) * lerpFactor;
+
+      if (paddleBoat) {
+        // Convert screen position to 3D world position
+        // Screen Y: 0.45 (top) to 0.2 (lower)
+        // World X: -3 (left) to 3 (right)
+        const worldX = currentScreenX * 6;
+        const worldY = (0.5 - currentScreenY) * 8;
+        
+        paddleBoat.position.x = worldX;
+        paddleBoat.position.y = worldY;
+        paddleBoat.scale.setScalar(currentScale);
+        paddleBoat.rotation.y = currentRotationY;
+        paddleBoat.rotation.x = 0.1; // slight tilt to show top
+      }
+
+      requestAnimationFrame(updatePaddleBoatPosition);
+    }
+
+    // --- Animation Loop ---
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      if (paddleBoat) {
+        // Very subtle floating
+        paddleBoat.position.y += Math.sin(Date.now() * 0.0008) * 0.03;
+      }
+      
+      renderer.render(scene, camera);
+    }
+
+    // --- Start ---
+    updatePaddleBoatPosition();
+    animate();
+
+    // --- Resize Handler ---
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    console.log('🚤 3D Paddle Boat scroll animation ready!');
+  </script>
 
   <script>
     (function() {
