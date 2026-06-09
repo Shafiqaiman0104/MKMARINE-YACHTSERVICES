@@ -243,6 +243,7 @@
             <button class="tab-btn" onclick="switchTab('items')">Items Inventory</button>
             <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
             <button class="tab-btn" onclick="switchTab('order')">Order</button>
+            <button class="tab-btn" onclick="switchTab('availability')">Check Availability</button>
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
         </div>
 
@@ -397,6 +398,79 @@
             </div>
         </div>
 
+        <!-- Availability Section -->
+        <div id="availability-section" class="section">
+            <h3 style="margin-bottom:15px;">Check Availability</h3>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Select Date & Time</label>
+                    <input type="datetime-local" id="avail-datetime" onchange="document.getElementById('avail-results').style.display='none'; document.getElementById('avail-whatsapp-btn').style.display='none';">
+                </div>
+                <div class="input-group">
+                    <label>Select Mode</label>
+                    <select id="avail-item-select" onchange="onAvailModeChange()">
+                        <option value="all">All Items</option>
+                        <option value="mix">Mix</option>
+                    </select>
+                </div>
+                <div id="avail-global-duration-wrapper" class="input-group">
+                    <label>Duration (mins)</label>
+                    <div class="stepper-input">
+                        <button type="button" onclick="changeAvailDuration(10)">+</button>
+                        <input type="number" id="avail-duration" value="60">
+                        <button type="button" onclick="changeAvailDuration(-10)">-</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mix Mode Container -->
+            <div id="avail-mix-container" style="display:none; margin-top:20px;">
+                <h4 style="color:#00d2ff; margin-bottom:10px;">Select Items to Check</h4>
+                <div id="avail-item-grid" class="item-grid"></div>
+
+                <div id="avail-item-config" class="booking-details" style="display: none; border-style: dashed;">
+                    <h4 id="avail-selected-item-title" style="color:#00d2ff; margin-bottom:15px;"></h4>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Quantity</label>
+                            <div class="stepper-input">
+                                <button type="button" onclick="changeAvailItemQty(1)">+</button>
+                                <input type="number" id="avail-item-qty" value="1" min="1">
+                                <button type="button" onclick="changeAvailItemQty(-1)">-</button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Duration (mins)</label>
+                            <div class="stepper-input">
+                                <button type="button" onclick="changeAvailItemDurationStepper(1)">+</button>
+                                <input type="number" id="avail-item-duration" step="1">
+                                <button type="button" onclick="changeAvailItemDurationStepper(-1)">-</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="addAvailToCart()" style="margin-top:20px; background:#00d2ff;">+ Add to Check List</button>
+                </div>
+
+                <div id="avail-cart-display" style="margin-top:20px; display:none;">
+                    <h4 style="margin-bottom:10px; color:#00d2ff;">Check List Items:</h4>
+                    <div class="table-container">
+                        <table class="cart-table">
+                            <thead><tr><th>Item</th><th>Qty</th><th>Dur</th><th></th></tr></thead>
+                            <tbody id="avail-cart-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="checkAvailability()" style="background:#00d2ff; width:auto; padding: 12px 30px; margin-top:0;">Check Availability</button>
+                <button id="avail-whatsapp-btn" onclick="openAvailWhatsApp()" style="display:none; background:#25d366; width:auto; padding: 12px 30px; margin-top:0;">WhatsApp</button>
+            </div>
+
+            <div id="avail-results" style="display:none; margin-top:30px; padding:20px; background:rgba(255,255,255,0.05); border-radius:12px; border:1px solid rgba(0, 210, 255, 0.3); line-height:1.8; font-family: monospace;">
+            </div>
+        </div>
+
         <!-- Staff Section -->
         <div id="staff-section" class="section">
             <div class="header-actions">
@@ -453,6 +527,21 @@
     </div>
 </div>
 
+<!-- Availability WhatsApp Modal -->
+<div class="form-overlay" id="avail-wa-overlay">
+    <div class="form-content" style="max-width: 400px;">
+        <h3 style="margin-bottom:20px; color:#25d366;">Send Availability Message</h3>
+        <div class="input-group">
+            <label>WhatsApp Number (format: 60123456789)</label>
+            <input type="text" id="avail-wa-phone" placeholder="e.g. 60123456789">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button onclick="sendAvailWhatsApp()" style="background:#25d366;">Send Message</button>
+            <button type="button" class="btn-danger" onclick="document.getElementById('avail-wa-overlay').style.display='none'">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <!-- Scan Order Modal -->
 <div class="form-overlay" id="scan-overlay">
     <div class="form-content" style="max-width: 500px;">
@@ -505,6 +594,15 @@
         else if (tab === 'items') loadItems();
         else if (tab === 'sales') loadSales();
         else if (tab === 'order') loadOrders();
+        else if (tab === 'availability') {
+            document.getElementById('avail-datetime').value = new Date().toISOString().slice(0, 16);
+            document.getElementById('avail-item-select').value = 'all';
+            document.getElementById('avail-whatsapp-btn').style.display = 'none';
+            availCart = [];
+            renderAvailCart();
+            onAvailModeChange();
+            document.getElementById('avail-duration').value = 60;
+        }
         else if (tab === 'booking') {
             loadBookingItems();
             document.getElementById('book-date').value = new Date().toISOString().slice(0, 16);
@@ -694,6 +792,335 @@
         if (val < step) val = step;
         input.value = val;
         calculateTotal();
+    }
+
+    // Availability Logic
+    let availCart = [];
+    let selectedAvailItem = null;
+    let lastAvailCheck = null;
+
+    function onAvailModeChange() {
+        const mode = document.getElementById('avail-item-select').value;
+        const mixContainer = document.getElementById('avail-mix-container');
+        const globalDur = document.getElementById('avail-global-duration-wrapper');
+        
+        if (mode === 'mix') {
+            mixContainer.style.display = 'block';
+            globalDur.style.display = 'none';
+            loadAvailItemGrid();
+        } else {
+            mixContainer.style.display = 'none';
+            globalDur.style.display = 'block';
+        }
+        document.getElementById('avail-results').style.display = 'none';
+        document.getElementById('avail-whatsapp-btn').style.display = 'none';
+    }
+
+    async function loadAvailItemGrid() {
+        try {
+            if (currentItems.length === 0) currentItems = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
+            const grid = document.getElementById('avail-item-grid');
+            grid.innerHTML = currentItems.map(i => `
+                <div class="item-card" id="avail-card-${i.id}" onclick="selectAvailItem('${i.id}')">
+                    ${i.itemImage ? `<img src="${pb.files.getUrl(i, i.itemImage)}">` : '<div style="height:100px; background:#333; border-radius:6px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">No Img</div>'}
+                    <div style="font-weight:bold; font-size:0.9rem;">${i.itemName}</div>
+                    <div style="color:#00d2ff; font-size:0.8rem;">Stock: ${i.itemQuantity}</div>
+                </div>
+            `).join('');
+        } catch (err) {
+            console.error("Error loading items for availability", err);
+        }
+    }
+
+    function selectAvailItem(id) {
+        selectedAvailItem = currentItems.find(i => i.id === id);
+        document.querySelectorAll('#avail-item-grid .item-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById(`avail-card-${id}`).classList.add('selected');
+        
+        document.getElementById('avail-item-config').style.display = 'block';
+        document.getElementById('avail-selected-item-title').innerText = `Checking: ${selectedAvailItem.itemName}`;
+        document.getElementById('avail-item-qty').value = 1;
+        document.getElementById('avail-item-duration').value = selectedAvailItem.itemRentalDuration;
+    }
+
+    function changeAvailItemQty(dir) {
+        const input = document.getElementById('avail-item-qty');
+        let val = parseInt(input.value) || 0;
+        val += dir;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    function changeAvailItemDurationStepper(dir) {
+        if (!selectedAvailItem) return;
+        const input = document.getElementById('avail-item-duration');
+        const step = parseInt(selectedAvailItem.itemRentalDuration) || 30;
+        let val = parseInt(input.value) || 0;
+        val += (dir * step);
+        if (val < step) val = step;
+        input.value = val;
+    }
+
+    function addAvailToCart() {
+        if (!selectedAvailItem) return;
+        const qty = parseInt(document.getElementById('avail-item-qty').value) || 1;
+        const duration = parseInt(document.getElementById('avail-item-duration').value) || 0;
+
+        availCart.push({
+            itemName: selectedAvailItem.itemName,
+            quantity: qty,
+            duration: duration
+        });
+
+        renderAvailCart();
+        selectedAvailItem = null;
+        document.querySelectorAll('#avail-item-grid .item-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('avail-item-config').style.display = 'none';
+    }
+
+    function renderAvailCart() {
+        const section = document.getElementById('avail-cart-display');
+        const body = document.getElementById('avail-cart-body');
+        
+        if (availCart.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        body.innerHTML = availCart.map((item, index) => `
+            <tr>
+                <td>${item.itemName}</td>
+                <td>${item.quantity}</td>
+                <td>${item.duration}m</td>
+                <td><button class="btn-small btn-danger" onclick="removeAvailFromCart(${index})">×</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function removeAvailFromCart(index) {
+        availCart.splice(index, 1);
+        renderAvailCart();
+    }
+
+    function changeAvailDuration(dir) {
+        const input = document.getElementById('avail-duration');
+        let val = parseInt(input.value) || 0;
+        val += dir;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    async function checkAvailability() {
+        const checkTimeStr = document.getElementById('avail-datetime').value;
+        const mode = document.getElementById('avail-item-select').value;
+        
+        if (!checkTimeStr) return alert("Please select date and time");
+        if (mode === 'mix' && availCart.length === 0) return alert("Please add at least one item to the check list");
+
+        const reqStart = new Date(checkTimeStr);
+        lastAvailCheck = {
+            date: reqStart.toLocaleDateString('en-GB'),
+            time: reqStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', ''),
+            mode: mode,
+            duration: 0,
+            items: []
+        };
+
+        const resultDiv = document.getElementById('avail-results');
+        resultDiv.innerHTML = "Checking database...";
+        resultDiv.style.display = "block";
+
+        try {
+            const items = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
+            const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({
+                filter: 'orderStatus != "Cancelled"'
+            });
+
+            let summaryHtml = `<div style="margin-bottom:5px; font-weight:bold; color:#00d2ff;">DATE : ${reqStart.toLocaleDateString('en-GB')}</div>`;
+            summaryHtml += `<div style="margin-bottom:5px; font-weight:bold; color:#00d2ff;">TIME : ${reqStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', '')}</div>`;
+
+            if (mode === 'all') {
+                const globalDur = parseInt(document.getElementById('avail-duration').value) || 0;
+                summaryHtml += `<div style="margin-bottom:15px; font-weight:bold; color:#00d2ff;">DURATION : ${globalDur} mins</div>`;
+                lastAvailCheck.duration = globalDur;
+            } else {
+                summaryHtml += `<div style="margin-bottom:15px;"></div>`;
+            }
+
+            let itemsToCheck = [];
+            if (mode === 'all') {
+                const globalDur = parseInt(document.getElementById('avail-duration').value) || 0;
+                itemsToCheck = items.map(it => ({ 
+                    itemName: it.itemName, 
+                    duration: globalDur, 
+                    requestedQty: 1, // Check basic availability
+                    totalQty: parseInt(it.itemQuantity) || 0 
+                }));
+            } else {
+                const aggregated = {};
+                availCart.forEach(c => {
+                    if (!aggregated[c.itemName]) {
+                        const it = items.find(i => i.itemName === c.itemName);
+                        aggregated[c.itemName] = { 
+                            itemName: c.itemName, 
+                            duration: c.duration, 
+                            requestedQty: 0,
+                            totalQty: it ? (parseInt(it.itemQuantity) || 0) : 0,
+                            reqBreakdown: []
+                        };
+                    }
+                    aggregated[c.itemName].requestedQty += c.quantity;
+                    if (c.duration > aggregated[c.itemName].duration) aggregated[c.itemName].duration = c.duration;
+                    aggregated[c.itemName].reqBreakdown.push(`${c.quantity}(${c.duration}m)`);
+                });
+                itemsToCheck = Object.values(aggregated);
+            }
+
+            itemsToCheck.forEach(checkItem => {
+                const globalReqStart = reqStart.getTime();
+                const globalReqEnd = reqStart.getTime() + checkItem.duration * 60000;
+
+                // Existing Bookings overlapping with window
+                let existingSegments = [];
+                sales.forEach(sale => {
+                    const names = (sale.orderItemName || '').split(', ');
+                    const qtys = (sale.orderItemQuantity || '').split(', ');
+                    const durs = (sale.orderItemRentalDuration || '').split(', ');
+                    const orderStart = new Date(sale.orderDate).getTime();
+
+                    names.forEach((name, i) => {
+                        if (name.trim() === checkItem.itemName) {
+                            const duration = parseInt(durs[i]) || 0;
+                            const qty = parseInt(qtys[i]) || 0;
+                            const orderEnd = orderStart + duration * 60000;
+
+                            // Only consider bookings that overlap with our requested window
+                            if (globalReqStart < orderEnd && orderStart < globalReqEnd) {
+                                existingSegments.push({ start: orderStart, end: orderEnd, qty: qty });
+                            }
+                        }
+                    });
+                });
+
+                // New Request segments
+                let requestedSegments = [];
+                if (mode === 'all') {
+                    requestedSegments.push({ start: globalReqStart, end: globalReqEnd, qty: checkItem.requestedQty });
+                } else {
+                    availCart.forEach(c => {
+                        if (c.itemName === checkItem.itemName) {
+                            requestedSegments.push({ start: globalReqStart, end: globalReqStart + c.duration * 60000, qty: c.quantity });
+                        }
+                    });
+                }
+
+                // Identify all critical time points (starts and ends) within the window
+                let timePoints = new Set();
+                timePoints.add(globalReqStart);
+                timePoints.add(globalReqEnd);
+                [...existingSegments, ...requestedSegments].forEach(s => {
+                    if (s.start > globalReqStart && s.start < globalReqEnd) timePoints.add(s.start);
+                    if (s.end > globalReqStart && s.end < globalReqEnd) timePoints.add(s.end);
+                });
+
+                let sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
+                let maxTotalRequired = 0;
+                let maxExistingBooked = 0;
+
+                // For each sub-interval, calculate concurrent usage
+                for (let i = 0; i < sortedPoints.length - 1; i++) {
+                    let tMid = (sortedPoints[i] + sortedPoints[i+1]) / 2;
+                    let curExisting = 0;
+                    existingSegments.forEach(s => { if (tMid >= s.start && tMid <= s.end) curExisting += s.qty; });
+                    
+                    let curRequested = 0;
+                    requestedSegments.forEach(s => { if (tMid >= s.start && tMid <= s.end) curRequested += s.qty; });
+
+                    if (curExisting + curRequested > maxTotalRequired) maxTotalRequired = curExisting + curRequested;
+                    if (curExisting > maxExistingBooked) maxExistingBooked = curExisting;
+                }
+                
+                // Fallback for immediate check if window duration is 0
+                if (sortedPoints.length === 1) {
+                    existingSegments.forEach(s => { if (globalReqStart >= s.start && globalReqStart <= s.end) maxExistingBooked += s.qty; });
+                    let curReq = 0;
+                    requestedSegments.forEach(s => { if (globalReqStart >= s.start && globalReqStart <= s.end) curReq += s.qty; });
+                    maxTotalRequired = maxExistingBooked + curReq;
+                }
+
+                const total = checkItem.totalQty;
+                const isAvailable = maxTotalRequired <= total;
+                const availableCount = total - maxExistingBooked;
+
+                lastAvailCheck.items.push({
+                    name: checkItem.itemName,
+                    booked: maxExistingBooked,
+                    total: total,
+                    req: checkItem.requestedQty,
+                    isAvail: isAvailable,
+                    breakdown: checkItem.reqBreakdown || []
+                });
+
+                let lineDisplay = "";
+                
+                if (mode === 'all') {
+                    lineDisplay = maxExistingBooked >= total ? 
+                        `${checkItem.itemName} <span style="color:#ff4b2b;">full booked</span>` : 
+                        `${checkItem.itemName} ${maxExistingBooked}/${total}`;
+                } else {
+                    lineDisplay = isAvailable ? 
+                        `${checkItem.itemName}: <span style="color:#25d366;">Available</span> (${maxExistingBooked}/${total} booked, your request ${checkItem.requestedQty})` : 
+                        `<span style="color:#ff4b2b;">${checkItem.itemName} only available ${availableCount} units, your request ${checkItem.requestedQty} units</span>`;
+                }
+                
+                summaryHtml += `<div style="margin-bottom:8px;">${lineDisplay}</div>`;
+            });
+
+            resultDiv.innerHTML = summaryHtml;
+            document.getElementById('avail-whatsapp-btn').style.display = 'inline-block';
+        } catch (err) { resultDiv.innerHTML = "Error: " + err.message; }
+    }
+
+    function openAvailWhatsApp() {
+        document.getElementById('avail-wa-overlay').style.display = 'flex';
+        document.getElementById('avail-wa-phone').value = document.getElementById('book-phone').value || '';
+    }
+
+    function sendAvailWhatsApp() {
+        const phone = document.getElementById('avail-wa-phone').value;
+        if (!phone) return alert("Please enter a WhatsApp number");
+        if (!lastAvailCheck) return alert("No availability data found");
+        
+        let summaryText = `DATE : ${lastAvailCheck.date}\n`;
+        summaryText += `TIME : ${lastAvailCheck.time}\n`;
+        if (lastAvailCheck.mode === 'all') {
+            summaryText += `DURATION : ${lastAvailCheck.duration} mins\n`;
+        }
+        summaryText += `\n`;
+
+        lastAvailCheck.items.forEach(item => {
+            if (lastAvailCheck.mode === 'all') {
+                summaryText += item.booked >= item.total ? 
+                    `${item.name} full booked\n` : 
+                    `${item.name} ${item.booked}/${item.total}\n`;
+            } else {
+                if (item.isAvail) {
+                    summaryText += `${item.name} : Available (${item.booked}/${item.total} booked, your request ${item.breakdown.join(', ')})\n`;
+                } else {
+                    summaryText += `${item.name} only available ${item.total - item.booked} units, your request ${item.req} units\n`;
+                }
+            }
+        });
+
+        const message = `*MK MARINE WATERSPORT - AVAILABILITY*\n` +
+                        `---------------------------\n` +
+                        `${summaryText}` +
+                        `---------------------------\n` +
+                        `Thank you!`;
+        
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        document.getElementById('avail-wa-overlay').style.display = 'none';
     }
 
     function toggleMixPayment() {
@@ -1083,10 +1510,17 @@
             
             if (currentItems.length === 0) currentItems = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
 
+            const d = data.orderDate ? new Date(data.orderDate) : null;
+            const dateVal = d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+
             fields.innerHTML = `
                 <div class="input-group full-width">
                     <label>Order ID (Read-only)</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.orderId ?? ''}</div>
+                </div>
+                <div class="input-group full-width">
+                    <label>Order Date & Time</label>
+                    <input type="datetime-local" name="orderDate" value="${dateVal}" required>
                 </div>
                 <div class="input-group full-width">
                     <label>Order Status</label>
@@ -1379,6 +1813,11 @@
                 formData.set('orderItemPrice', prices);
                 formData.set('paymentMethod', methods);
                 formData.set('paidAmount', amounts);
+
+                const orderDateVal = formData.get('orderDate');
+                if (orderDateVal) {
+                    formData.set('orderDate', new Date(orderDateVal).toISOString());
+                }
 
                 // Recalculate Totals
                 const totalItems = formData.getAll('item_qty').reduce((sum, val) => sum + (parseInt(val) || 0), 0);
