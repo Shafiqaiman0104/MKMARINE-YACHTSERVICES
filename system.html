@@ -270,25 +270,25 @@
                 <div class="input-group">
                     <label>Adult (13y above)</label>
                     <div class="stepper-input">
-                        <button type="button" onclick="changePax('adult', -1)">-</button>
-                        <input type="number" id="pax-adult" value="0" min="0">
                         <button type="button" onclick="changePax('adult', 1)">+</button>
+                        <input type="number" id="pax-adult" value="0" min="0">
+                        <button type="button" onclick="changePax('adult', -1)">-</button>
                     </div>
                 </div>
                 <div class="input-group">
                     <label>Kids (4 - 12y)</label>
                     <div class="stepper-input">
-                        <button type="button" onclick="changePax('kids', -1)">-</button>
-                        <input type="number" id="pax-kids" value="0" min="0">
                         <button type="button" onclick="changePax('kids', 1)">+</button>
+                        <input type="number" id="pax-kids" value="0" min="0">
+                        <button type="button" onclick="changePax('kids', -1)">-</button>
                     </div>
                 </div>
                 <div class="input-group">
                     <label>Toddler (0 - 3y)</label>
                     <div class="stepper-input">
-                        <button type="button" onclick="changePax('toddler', -1)">-</button>
-                        <input type="number" id="pax-toddler" value="0" min="0">
                         <button type="button" onclick="changePax('toddler', 1)">+</button>
+                        <input type="number" id="pax-toddler" value="0" min="0">
+                        <button type="button" onclick="changePax('toddler', -1)">-</button>
                     </div>
                 </div>
             </div>
@@ -1353,7 +1353,7 @@
             });
             
             // Save current cart data locally for the WhatsApp message generator
-            currentBooking = { orderId, customerName, customerPhone, orderQrUrl: qrUrl, items: [...cart], paymentMethod: paymentMethodFinal, paidAmount: paidAmountFinal, totalPaidAmount };
+            currentBooking = { orderId, customerName, customerPhone, totalPax: totalPaxStr, orderQrUrl: qrUrl, items: [...cart], paymentMethod: paymentMethodFinal, paidAmount: paidAmountFinal, totalPaidAmount };
             
             // Reset Cart
             cart = [];
@@ -1481,6 +1481,7 @@
                         `---------------------------\n` +
                         `*Order ID:* ${currentBooking.orderId}\n` +
                         `*Name:* ${currentBooking.customerName}\n` +
+                        `*Total pax:* ${currentBooking.totalPax}\n` +
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
@@ -1653,6 +1654,7 @@
                         `---------------------------\n` +
                         `*Order ID:* ${s.orderId}\n` +
                         `*Name:* ${s.customerName}\n` +
+                        `*Total pax:* ${s.totalPax}\n` +
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
