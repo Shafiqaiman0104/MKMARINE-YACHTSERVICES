@@ -393,8 +393,8 @@
                 <table id="sales-table">
                     <thead>
                         <tr>
-                            <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Items</th>
-                            <th style="white-space:nowrap;">Pax</th>
+                            <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
+                            <th style="white-space:nowrap;">Items</th>
                             <th style="white-space:nowrap;">Grand Total</th><th style="white-space:nowrap;">Total Paid</th><th style="white-space:nowrap;">Remark</th>
                             <th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
@@ -416,8 +416,8 @@
                 <table id="order-table">
                     <thead>
                         <tr>
-                            <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Items</th>
-                            <th style="white-space:nowrap;">Pax</th>
+                            <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
+                            <th style="white-space:nowrap;">Items</th>
                             <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
                             <th style="white-space:nowrap;">Action</th>
@@ -719,8 +719,8 @@
                 <td style="white-space:nowrap;">${s.orderId}</td>
                 <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
-                <td>${itemsHtml}</td>
                 <td style="font-size:0.8rem;">${s.totalPax || '-'}</td>
+                <td>${itemsHtml}</td>
                 <td style="font-weight:bold; color:#00d2ff;">RM${s.totalPrice}</td>
                 <td style="font-weight:bold; color:#25d366;">RM${s.totalPaidAmount}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
@@ -753,8 +753,8 @@
                 <td style="white-space:nowrap;">${s.orderId}</td>
                 <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
-                <td>${itemsHtml}</td>
                 <td style="font-size:0.8rem;">${s.totalPax || '-'}</td>
+                <td>${itemsHtml}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
                 <td>${s.orderStatus}</td>
                 <td>${s.orderBy || '-'}</td>
@@ -790,6 +790,25 @@
         document.getElementById('book-duration').value = selectedItem.itemRentalDuration;
         document.getElementById('qr-result-container').style.display = 'none';
         calculateTotal();
+    }
+
+    function formatPaxTable(paxStr) {
+        if (!paxStr) return '-';
+        const parts = paxStr.split(', ');
+        let a = '0', k = '0', t = '0';
+        parts.forEach(p => {
+            const val = p.substring(1).trim();
+            if (p.startsWith('A')) a = val;
+            else if (p.startsWith('K')) k = val;
+            else if (p.startsWith('T')) t = val;
+        });
+        return `
+            <table style="width: auto; border-collapse: collapse; font-size: 0.85rem; color: white;">
+                <tr><td style="padding: 2px 8px 2px 0;">Adult</td><td style="padding: 2px 0 2px 8px; border-left: 1px solid rgba(255,255,255,0.3);">${a}</td></tr>
+                <tr><td style="padding: 2px 8px 2px 0;">Kids</td><td style="padding: 2px 0 2px 8px; border-left: 1px solid rgba(255,255,255,0.3);">${k}</td></tr>
+                <tr><td style="padding: 2px 8px 2px 0;">Toddler</td><td style="padding: 2px 0 2px 8px; border-left: 1px solid rgba(255,255,255,0.3);">${t}</td></tr>
+            </table>
+        `;
     }
 
     function calculateTotal() {
@@ -1516,13 +1535,29 @@
             const names = (record.orderItemName || '').split(', ');
             const qtys = (record.orderItemQuantity || '').split(', ');
             const durs = (record.orderItemRentalDuration || '').split(', ');
-            const itemsHtml = names.map((n, i) => `<div style="font-size:0.85rem;">• ${n} (x${qtys[i]}, ${durs[i]}m)</div>`).join('');
+
+            let itemsTable = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white; margin-top:5px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                            <th style="text-align:left; padding: 4px;">Item</th>
+                            <th style="text-align:center; padding: 4px;">Qty</th>
+                            <th style="text-align:center; padding: 4px;">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            names.forEach((n, i) => {
+                itemsTable += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">${n}</td><td style="text-align:center; padding: 4px;">${qtys[i]}</td><td style="text-align:center; padding: 4px;">${durs[i]}m</td></tr>`;
+            });
+            itemsTable += `</tbody></table>`;
 
             resultDiv.innerHTML = `
                 <input type="hidden" id="serve-record-id" value="${record.id}">
                 <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
                 <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.customerName}</div></div>
-                <div class="input-group"><label>Order Items</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${itemsHtml}</div></div>
+                <div class="input-group"><label>Total Pax</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
+                <div class="input-group"><label>Order Items</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${itemsTable}</div></div>
                 <div class="input-group"><label>Order Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderStatus}</div></div>
                 <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderRemark || '-'}</div></div>
                 <div class="input-group">
@@ -1689,7 +1724,11 @@
                 </div>
                 <input type="text" name="customerName" placeholder="Customer Name" value="${data.customerName ?? ''}" required>
                 <input type="text" name="customerPhone" placeholder="Customer Phone" value="${data.customerPhone ?? ''}" required>
-                <input type="text" name="totalPax" placeholder="Total Pax (e.g. A3, K2, T1)" value="${data.totalPax ?? ''}" class="full-width">
+                <div class="input-group full-width">
+                    <label>Total Pax</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom:10px;">${formatPaxTable(data.totalPax)}</div>
+                    <input type="text" name="totalPax" placeholder="Update Pax (e.g. A3, K2, T1)" value="${data.totalPax ?? ''}">
+                </div>
                 
                 <div class="full-width">
                     <label>Items Breakdown</label>
@@ -1870,7 +1909,7 @@
                 </div>
                 <div class="input-group">
                     <label>Total Pax</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.totalPax ?? ''}</div>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${formatPaxTable(data.totalPax)}</div>
                 </div>
                 <div class="full-width">
                     <label>Items Breakdown</label>
