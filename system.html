@@ -413,11 +413,11 @@
                 <h3>Discount List</h3>
                 <button class="btn-small" onclick="openModal('discount')">+ Add Discount</button>
             </div>
-            <div class="table-container">
-                <table id="discount-table">
+            <div class="table-container" style="overflow-x: auto;">
+                <table id="discount-table" style="width: 100%; border-collapse: collapse; white-space: nowrap;">
                     <thead>
-                        <tr>
-                            <th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Start</th><th>End</th><th>Actions</th>
+                        <tr style="text-align: left; border-bottom: 2px solid rgba(0, 210, 255, 0.3);">
+                            <th style="padding: 10px;">Name</th><th style="padding: 10px;">Applies To</th><th style="padding: 10px;">Type</th><th style="padding: 10px;">Value</th><th style="padding: 10px;">Start</th><th style="padding: 10px;">End</th><th style="padding: 10px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="discount-body"></tbody>
@@ -731,21 +731,21 @@
         body.innerHTML = currentDiscounts.map(d => {
             let applies = d.discountAutoApplyTo || 'None';
             if (applies === 'ALL') applies = 'All Items';
-            else if (applies.includes(',')) applies = 'Multiple Items';
+            else if (applies.includes(',')) applies = 'Multi Items';
 
             const isMulti = d.discountType && d.discountType.includes(',');
 
             return `
-            <tr>
-                <td>${d.discountName}</td>
-                <td><small>${applies}</small></td>
-                <td>${isMulti ? 'Multiple' : d.discountType}</td>
-                <td>${isMulti ? 'Multiple' : d.discountValue}</td>
-                <td><small>${d.discountStart ? new Date(d.discountStart).toLocaleString() : '-'}</small></td>
-                <td><small>${d.discountEnd ? new Date(d.discountEnd).toLocaleString() : '-'}</small></td>
-                <td>
-                    <button class="btn-small" onclick="openModal('discount', '${d.id}')">Edit</button>
-                    <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_DISCOUNT_DATA', '${d.id}', loadDiscounts)">Del</button>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 10px;">${d.discountName}</td>
+                <td style="padding: 10px;"><small>${applies}</small></td>
+                <td style="padding: 10px;">${isMulti ? 'Multi' : d.discountType}</td>
+                <td style="padding: 10px;">${isMulti ? 'Multi' : d.discountValue}</td>
+                <td style="padding: 10px;"><small>${d.discountStart ? new Date(d.discountStart).toLocaleDateString() : '-'}</small></td>
+                <td style="padding: 10px;"><small>${d.discountEnd ? new Date(d.discountEnd).toLocaleDateString() : '-'}</small></td>
+                <td style="padding: 10px; display: flex; gap: 5px;">
+                    <button class="btn-small" style="margin:0;" onclick="openModal('discount', '${d.id}')">Edit</button>
+                    <button class="btn-small btn-danger" style="margin:0;" onclick="deleteEntry('MKMARINE_WATERSPORT_DISCOUNT_DATA', '${d.id}', loadDiscounts)">Del</button>
                 </td>
             </tr>
         `;}).join('');
