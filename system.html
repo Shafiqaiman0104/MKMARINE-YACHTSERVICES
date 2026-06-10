@@ -265,6 +265,34 @@
                 </div>
             </div>
 
+            <h3 style="margin-top:20px;">Total Pax</h3>
+            <div class="form-grid" style="margin-top:15px;">
+                <div class="input-group">
+                    <label>Adult (13y above)</label>
+                    <div class="stepper-input">
+                        <button type="button" onclick="changePax('adult', -1)">-</button>
+                        <input type="number" id="pax-adult" value="0" min="0">
+                        <button type="button" onclick="changePax('adult', 1)">+</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Kids (4 - 12y)</label>
+                    <div class="stepper-input">
+                        <button type="button" onclick="changePax('kids', -1)">-</button>
+                        <input type="number" id="pax-kids" value="0" min="0">
+                        <button type="button" onclick="changePax('kids', 1)">+</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Toddler (0 - 3y)</label>
+                    <div class="stepper-input">
+                        <button type="button" onclick="changePax('toddler', -1)">-</button>
+                        <input type="number" id="pax-toddler" value="0" min="0">
+                        <button type="button" onclick="changePax('toddler', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
             <h3 style="margin-top:20px;">Select Item</h3>
             <div id="booking-item-grid" class="item-grid"></div>
 
@@ -366,6 +394,7 @@
                     <thead>
                         <tr>
                             <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Items</th>
+                            <th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Grand Total</th><th style="white-space:nowrap;">Total Paid</th><th style="white-space:nowrap;">Remark</th>
                             <th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
@@ -388,6 +417,7 @@
                     <thead>
                         <tr>
                             <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Items</th>
+                            <th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
                             <th style="white-space:nowrap;">Action</th>
@@ -690,6 +720,7 @@
                 <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
                 <td>${itemsHtml}</td>
+                <td style="font-size:0.8rem;">${s.totalPax || '-'}</td>
                 <td style="font-weight:bold; color:#00d2ff;">RM${s.totalPrice}</td>
                 <td style="font-weight:bold; color:#25d366;">RM${s.totalPaidAmount}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
@@ -723,6 +754,7 @@
                 <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
                 <td>${itemsHtml}</td>
+                <td style="font-size:0.8rem;">${s.totalPax || '-'}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
                 <td>${s.orderStatus}</td>
                 <td>${s.orderBy || '-'}</td>
@@ -781,6 +813,14 @@
         if (val < 1) val = 1;
         input.value = val;
         calculateTotal();
+    }
+
+    function changePax(type, dir) {
+        const input = document.getElementById(`pax-${type}`);
+        let val = parseInt(input.value) || 0;
+        val += dir;
+        if (val < 0) val = 0;
+        input.value = val;
     }
 
     function changeDuration(dir) {
@@ -1211,6 +1251,11 @@
         const customerName = document.getElementById('book-name').value;
         const customerPhone = document.getElementById('book-phone').value;
         const bookingDateStr = document.getElementById('book-date').value;
+
+        const pAdult = parseInt(document.getElementById('pax-adult').value) || 0;
+        const pKids = parseInt(document.getElementById('pax-kids').value) || 0;
+        const pToddler = parseInt(document.getElementById('pax-toddler').value) || 0;
+        const totalPaxStr = `A${pAdult}, K${pKids}, T${pToddler}`;
         
         if (!customerName || !customerPhone) return alert("Please fill customer details");
         const bookingDate = new Date(bookingDateStr);
@@ -1262,6 +1307,7 @@
                 "orderDate": bookingDate.toISOString(),
                 "customerName": customerName,
                 "customerPhone": customerPhone,
+                "totalPax": totalPaxStr,
                 "orderItemName": combinedNames,
                 "orderItemQuantity": combinedQtys,
                 "orderItemRentalDuration": combinedDurations,
@@ -1519,6 +1565,11 @@
         document.getElementById('book-phone').value = '';
         document.getElementById('book-date').value = new Date().toISOString().slice(0, 16);
 
+        // Clear Pax
+        document.getElementById('pax-adult').value = 0;
+        document.getElementById('pax-kids').value = 0;
+        document.getElementById('pax-toddler').value = 0;
+
         // Clear Payment Info
         document.getElementById('payment-method').value = 'Cash';
         document.getElementById('paid-amount').value = '';
@@ -1638,6 +1689,7 @@
                 </div>
                 <input type="text" name="customerName" placeholder="Customer Name" value="${data.customerName ?? ''}" required>
                 <input type="text" name="customerPhone" placeholder="Customer Phone" value="${data.customerPhone ?? ''}" required>
+                <input type="text" name="totalPax" placeholder="Total Pax (e.g. A3, K2, T1)" value="${data.totalPax ?? ''}" class="full-width">
                 
                 <div class="full-width">
                     <label>Items Breakdown</label>
@@ -1815,6 +1867,10 @@
                 <div class="input-group">
                     <label>Customer Phone</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerPhone ?? ''}</div>
+                </div>
+                <div class="input-group">
+                    <label>Total Pax</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.totalPax ?? ''}</div>
                 </div>
                 <div class="full-width">
                     <label>Items Breakdown</label>
