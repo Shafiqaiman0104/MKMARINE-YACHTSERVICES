@@ -1150,7 +1150,7 @@
         const itemsToValidate = cart.map(i => ({ itemName: i.itemName, quantity: i.quantity, duration: i.duration }));
         itemsToValidate.push({ itemName: selectedItem.itemName, quantity: qty, duration: duration });
 
-        const errorSummary = await validateBookingAvailability(itemsToValidate, bookingDate);
+        const errorSummary = await validateBookingAvailability(itemsToValidate, bookingDate, null);
         if (errorSummary) {
             alert(`ITEM NOT AVAILABLE:\n\nDATE: ${bookingDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
             return;
@@ -1216,7 +1216,7 @@
         const bookingDate = new Date(bookingDateStr);
 
         // Final double check against database before creating record
-        const errorSummary = await validateBookingAvailability(cart, bookingDate);
+        const errorSummary = await validateBookingAvailability(cart, bookingDate, null);
         if (errorSummary) {
             alert(`SUBMISSION FAILED - Availability changed:\n\nDATE: ${bookingDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
             return;
@@ -1291,11 +1291,14 @@
         }
     }
 
-    async function validateBookingAvailability(requestedItems, checkDate) {
+    async function validateBookingAvailability(requestedItems, checkDate, excludeRecordId = null) {
         try {
             const items = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
+            let filter = 'orderStatus != "Cancelled"';
+            if (excludeRecordId) filter += ` && id != "${excludeRecordId}"`;
+            
             const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({
-                filter: 'orderStatus != "Cancelled"'
+                filter: filter
             });
 
             const reqStartMs = checkDate.getTime();
@@ -1359,6 +1362,25 @@
             }
             return errorSummary;
         } catch (err) { return "Error checking availability"; }
+    }
+
+    async function triggerSalesEditValidation() {
+        const type = document.getElementById('entry-type').value;
+        if (type !== 'sales') return;
+
+        const id = document.getElementById('entry-id').value;
+        const dateStr = document.querySelector('input[name="orderDate"]').value;
+        if (!dateStr) return;
+        const checkDate = new Date(dateStr);
+
+        const names = Array.from(document.querySelectorAll('select[name="item_name"]')).map(s => s.value);
+        const qtys = Array.from(document.querySelectorAll('input[name="item_qty"]')).map(i => parseInt(i.value) || 0);
+        const durs = Array.from(document.querySelectorAll('input[name="item_dur"]')).map(i => parseInt(i.value) || 0);
+
+        const reqItems = names.map((name, i) => ({ itemName: name, quantity: qtys[i], duration: durs[i] })).filter(r => r.itemName);
+        
+        const errorSummary = await validateBookingAvailability(reqItems, checkDate, id);
+        if (errorSummary) alert(`AVAILABILITY ALERT:\n\nDATE: ${checkDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
     }
 
     function showBookingResult(orderId, qrUrl) {
@@ -1604,11 +1626,11 @@
                 </div>
                 <div class="input-group full-width">
                     <label>Order Date & Time</label>
-                    <input type="datetime-local" name="orderDate" value="${dateVal}" required>
+                    <input type="datetime-local" name="orderDate" value="${dateVal}" onchange="triggerSalesEditValidation()" required>
                 </div>
                 <div class="input-group full-width">
                     <label>Order Status</label>
-                    <select name="orderStatus">
+                    <select name="orderStatus" onchange="triggerSalesEditValidation()">
                         <option value="Pending" ${data.orderStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${data.orderStatus === 'Completed' ? 'selected' : ''}>Completed</option>
                         <option value="Cancelled" ${data.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -1912,6 +1934,15 @@
                 formData.set('totalPrice', totalPrice.toFixed(2));
                 formData.set('totalPaidAmount', totalPaid.toFixed(2));
             }
+            
+            if (type === 'sales') {
+                const checkDate = new Date(formData.get('orderDate'));
+                const reqItems = formData.get('orderItemName').split(', ').map((n, i) => ({
+                    itemName: n, quantity: parseInt(formData.get('orderItemQuantity').split(', ')[i]), duration: parseInt(formData.get('orderItemRentalDuration').split(', ')[i])
+                }));
+                const errorSummary = await validateBookingAvailability(reqItems, checkDate, id);
+                if (errorSummary) return alert(`CANNOT SAVE - Items not available:\n\n${errorSummary}`);
+            }
 
             if (type === 'items') {
                 const fileInput = form.querySelector('input[name="itemImage"]');
@@ -2013,6 +2044,7 @@
             }
         }
         recalculateSalesEditTotals();
+        triggerSalesEditValidation();
     }
 
     function recalculateSalesEditTotals() {
