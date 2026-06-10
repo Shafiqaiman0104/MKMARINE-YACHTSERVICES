@@ -242,6 +242,7 @@
             <button class="tab-btn active" onclick="switchTab('staff')">Staff Management</button>
             <button class="tab-btn" onclick="switchTab('items')">Items Inventory</button>
             <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
+            <button class="tab-btn" onclick="switchTab('discount')">Discount</button>
             <button class="tab-btn" onclick="switchTab('order')">Order</button>
             <button class="tab-btn" onclick="switchTab('availability')">Check Availability</button>
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
@@ -402,6 +403,24 @@
                         </tr>
                     </thead>
                     <tbody id="sales-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Discount Section -->
+        <div id="discount-section" class="section">
+            <div class="header-actions">
+                <h3>Discount List</h3>
+                <button class="btn-small" onclick="openModal('discount')">+ Add Discount</button>
+            </div>
+            <div class="table-container">
+                <table id="discount-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Start</th><th>End</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discount-body"></tbody>
                 </table>
             </div>
         </div>
@@ -608,6 +627,7 @@
     let currentStaff = [];
     let currentItems = [];
     let currentSales = [];
+    let currentDiscounts = [];
     let selectedItem = null;
     let currentBooking = null;
     let html5QrCode = null;
@@ -623,6 +643,7 @@
         if (tab === 'staff') loadStaff();
         else if (tab === 'items') loadItems();
         else if (tab === 'sales') loadSales();
+        else if (tab === 'discount') loadDiscounts();
         else if (tab === 'order') loadOrders();
         else if (tab === 'availability') {
             document.getElementById('avail-datetime').value = new Date().toISOString().slice(0, 16);
@@ -699,6 +720,22 @@
                 <td>
                     <button class="btn-small" onclick="openModal('items', '${i.id}')">Edit</button>
                     <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_ITEMS_DATA', '${i.id}', loadItems)">Del</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadDiscounts() {
+        currentDiscounts = await pb.collection('MKMARINE_WATERSPORT_DISCOUNT_DATA').getFullList({ sort: '-created' });
+        const body = document.getElementById('discount-body');
+        body.innerHTML = currentDiscounts.map(d => `
+            <tr>
+                <td>${d.discountName}</td><td>${d.discountAutoApplyTo}</td><td>${d.discountType}</td><td>${d.discountValue}</td>
+                <td><small>${d.discountStart ? new Date(d.discountStart).toLocaleString() : '-'}</small></td>
+                <td><small>${d.discountEnd ? new Date(d.discountEnd).toLocaleString() : '-'}</small></td>
+                <td>
+                    <button class="btn-small" onclick="openModal('discount', '${d.id}')">Edit</button>
+                    <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_DISCOUNT_DATA', '${d.id}', loadDiscounts)">Del</button>
                 </td>
             </tr>
         `).join('');
@@ -1744,6 +1781,24 @@
                     <input type="file" name="itemImage" accept="image/*">
                 </div>
             `;
+        } else if (type === 'discount') {
+            const data = id ? currentDiscounts.find(d => d.id === id) : {};
+            title.innerText = id ? 'Edit Discount' : 'Add New Discount';
+            
+            const startVal = data.discountStart ? new Date(new Date(data.discountStart).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+            const endVal = data.discountEnd ? new Date(new Date(data.discountEnd).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+
+            fields.innerHTML = `
+                <input type="text" name="discountName" placeholder="Discount Name" value="${data.discountName ?? ''}" class="full-width" required>
+                <input type="text" name="discountAutoApplyTo" placeholder="Auto Apply To (Item ID/Category)" value="${data.discountAutoApplyTo ?? ''}" class="full-width">
+                <select name="discountType" required>
+                    <option value="Percentage" ${data.discountType === 'Percentage' ? 'selected' : ''}>Percentage (%)</option>
+                    <option value="Fixed" ${data.discountType === 'Fixed' ? 'selected' : ''}>Fixed Amount (RM)</option>
+                </select>
+                <input type="text" name="discountValue" placeholder="Value (e.g. 10 or 5.00)" value="${data.discountValue ?? ''}" required>
+                <div class="input-group"><label>Start Date</label><input type="datetime-local" name="discountStart" value="${startVal}"></div>
+                <div class="input-group"><label>End Date</label><input type="datetime-local" name="discountEnd" value="${endVal}"></div>
+            `;
         } else if (type === 'sales') {
             const data = id ? currentSales.find(s => s.id === id) : {};
             title.innerText = 'Edit Order';
@@ -2123,9 +2178,10 @@
         let collection;
         if (type === 'staff') collection = 'MKMARINE_WATERSPORT_LOGIN';
         else if (type === 'items') collection = 'MKMARINE_WATERSPORT_ITEMS_DATA';
+        else if (type === 'discount') collection = 'MKMARINE_WATERSPORT_DISCOUNT_DATA';
         else if (type === 'sales' || type === 'orderStatusUpdate') collection = 'MKMARINE_WATERSPORT_SALES_DATA';
         
-        const callback = type === 'staff' ? loadStaff : (type === 'items' ? loadItems : (type === 'orderStatusUpdate' ? loadOrders : loadSales));
+        const callback = type === 'staff' ? loadStaff : (type === 'items' ? loadItems : (type === 'discount' ? loadDiscounts : (type === 'orderStatusUpdate' ? loadOrders : loadSales)));
 
         try {
             if (type === 'sales') {
@@ -2173,6 +2229,11 @@
                     formData.set('refundMethod', '');
                     formData.set('refundRemark', '');
                 }
+            } else if (type === 'discount') {
+                const start = formData.get('discountStart');
+                const end = formData.get('discountEnd');
+                if (start) formData.set('discountStart', new Date(start).toISOString());
+                if (end) formData.set('discountEnd', new Date(end).toISOString());
             }
             
             if (type === 'sales') {
