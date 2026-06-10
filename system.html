@@ -1367,7 +1367,8 @@
     async function validateBookingAvailability(requestedItems, checkDate, excludeRecordId = null) {
         try {
             const items = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
-            let filter = 'orderStatus != "Cancelled"';
+            // Both Cancelled and Refunded orders release their inventory slots
+            let filter = 'orderStatus != "Cancelled" && orderStatus != "Refund"';
             if (excludeRecordId) filter += ` && id != "${excludeRecordId}"`;
             
             const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({
@@ -1442,6 +1443,11 @@
         if (type !== 'sales') return;
 
         const id = document.getElementById('entry-id').value;
+        
+        // Skip real-time validation if status is Refund or Cancelled
+        const statusSelect = document.querySelector('select[name="orderStatus"]');
+        if (statusSelect && (statusSelect.value === 'Refund' || statusSelect.value === 'Cancelled')) return;
+
         const dateStr = document.querySelector('input[name="orderDate"]').value;
         if (!dateStr) return;
         const checkDate = new Date(dateStr);
@@ -1454,6 +1460,16 @@
         
         const errorSummary = await validateBookingAvailability(reqItems, checkDate, id);
         if (errorSummary) alert(`AVAILABILITY ALERT:\n\nDATE: ${checkDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
+    }
+
+    function toggleRefundFields() {
+        const statusSelect = document.querySelector('select[name="orderStatus"]');
+        if (!statusSelect) return;
+        const status = statusSelect.value;
+        const refundSection = document.getElementById('refund-details-section');
+        if (refundSection) {
+            refundSection.style.display = status === 'Refund' ? 'block' : 'none';
+        }
     }
 
     function showBookingResult(orderId, qrUrl) {
@@ -1730,15 +1746,43 @@
                 </div>
                 <div class="input-group full-width">
                     <label>Order Status</label>
-                    <select name="orderStatus" onchange="triggerSalesEditValidation()">
+                    <select name="orderStatus" onchange="triggerSalesEditValidation(); toggleRefundFields();">
                         <option value="Pending" ${data.orderStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${data.orderStatus === 'Completed' ? 'selected' : ''}>Completed</option>
                         <option value="Cancelled" ${data.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                        <option value="Refund" ${data.orderStatus === 'Refund' ? 'selected' : ''}>Refund</option>
                     </select>
                 </div>
                 <input type="text" name="customerName" placeholder="Customer Name" value="${data.customerName ?? ''}" required>
                 <input type="text" name="customerPhone" placeholder="Customer Phone" value="${data.customerPhone ?? ''}" required>
                 
+                <div id="refund-details-section" class="full-width" style="display: ${data.orderStatus === 'Refund' ? 'block' : 'none'}; border: 1px solid #ff4b2b; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <h4 style="color:#ff4b2b; margin-bottom:10px;">Refund Details</h4>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Refund Amount (RM)</label>
+                            <input type="number" name="refundAmount" value="${data.refundAmount ?? ''}" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>Refund Method</label>
+                            <select name="refundMethod">
+                                <option value="Cash" ${data.refundMethod === 'Cash' ? 'selected' : ''}>Cash</option>
+                                <option value="Online Transfer" ${data.refundMethod === 'Online Transfer' ? 'selected' : ''}>Online Transfer</option>
+                                <option value="Card" ${data.refundMethod === 'Card' ? 'selected' : ''}>Card</option>
+                            </select>
+                        </div>
+                        <div class="input-group full-width">
+                            <label>Refund Remark</label>
+                            <textarea name="refundRemark" placeholder="Reason for refund">${data.refundRemark ?? ''}</textarea>
+                        </div>
+                        <div class="input-group full-width">
+                            <label>Refund By (Read-only)</label>
+                            <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.refundBy || '-'}</div>
+                            <input type="hidden" name="refundBy" value="${data.refundBy || ''}">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="full-width">
                     <label>Total Pax Breakdown</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
@@ -1991,6 +2035,32 @@
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; min-height: 40px;">${data.orderRemark ?? '-'}</div>
                 </div>
             `;
+
+            if (data.orderStatus === 'Refund') {
+                fields.innerHTML += `
+                    <div class="full-width" style="border: 1px solid #ff4b2b; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                        <h4 style="color:#ff4b2b; margin-bottom:10px;">Refund Details</h4>
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label>Refund Amount</label>
+                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.refundAmount ?? '0.00'}</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Refund Method</label>
+                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.refundMethod ?? '-'}</div>
+                            </div>
+                            <div class="input-group full-width">
+                                <label>Refund Remark</label>
+                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; min-height: 40px;">${data.refundRemark ?? '-'}</div>
+                            </div>
+                            <div class="input-group full-width">
+                                <label>Refund By</label>
+                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.refundBy ?? '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -2070,15 +2140,23 @@
                 const pK = formData.get('pax_k') || '0';
                 const pT = formData.get('pax_t') || '0';
                 formData.set('totalPax', `A${pA}, K${pK}, T${pT}`);
+
+                if (formData.get('orderStatus') === 'Refund' && !formData.get('refundBy')) {
+                    formData.set('refundBy', localStorage.getItem('mk_staffname') || 'Unknown');
+                }
             }
             
             if (type === 'sales') {
-                const checkDate = new Date(formData.get('orderDate'));
-                const reqItems = formData.get('orderItemName').split(', ').map((n, i) => ({
-                    itemName: n, quantity: parseInt(formData.get('orderItemQuantity').split(', ')[i]), duration: parseInt(formData.get('orderItemRentalDuration').split(', ')[i])
-                }));
-                const errorSummary = await validateBookingAvailability(reqItems, checkDate, id);
-                if (errorSummary) return alert(`CANNOT SAVE - Items not available:\n\n${errorSummary}`);
+                const status = formData.get('orderStatus');
+                // Only validate availability for active orders (not Refunded or Cancelled)
+                if (status !== 'Refund' && status !== 'Cancelled') {
+                    const checkDate = new Date(formData.get('orderDate'));
+                    const reqItems = formData.get('orderItemName').split(', ').map((n, i) => ({
+                        itemName: n, quantity: parseInt(formData.get('orderItemQuantity').split(', ')[i]), duration: parseInt(formData.get('orderItemRentalDuration').split(', ')[i])
+                    }));
+                    const errorSummary = await validateBookingAvailability(reqItems, checkDate, id);
+                    if (errorSummary) return alert(`CANNOT SAVE - Items not available:\n\n${errorSummary}`);
+                }
             }
 
             if (type === 'items') {
