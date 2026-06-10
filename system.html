@@ -797,16 +797,24 @@
         const parts = paxStr.split(', ');
         let a = '0', k = '0', t = '0';
         parts.forEach(p => {
-            const val = p.substring(1).trim();
+            const val = p.substring(1).trim() || '0';
             if (p.startsWith('A')) a = val;
             else if (p.startsWith('K')) k = val;
             else if (p.startsWith('T')) t = val;
         });
         return `
-            <table style="width: auto; border-collapse: collapse; font-size: 0.85rem; color: white;">
-                <tr><td style="padding: 2px 8px 2px 0;">Adult</td><td style="padding: 2px 0 2px 8px; border-left: 1px solid rgba(255,255,255,0.3);">${a}</td></tr>
-                <tr><td style="padding: 2px 8px 2px 0;">Kids</td><td style="padding: 2px 0 2px 8px; border-left: 1px solid rgba(255,255,255,0.3);">${k}</td></tr>
-                <tr><td style="padding: 2px 8px 2px 0;">Toddler</td><td style="padding: 2px 0 2px 8px; border-left: 1px solid rgba(255,255,255,0.3);">${t}</td></tr>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white; margin-top:5px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <th style="text-align:left; padding: 4px;">Categories</th>
+                        <th style="text-align:center; padding: 4px;">Pax</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">Adults</td><td style="text-align:center; padding: 4px;">${a}</td></tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">Kids</td><td style="text-align:center; padding: 4px;">${k}</td></tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">Toddler</td><td style="text-align:center; padding: 4px;">${t}</td></tr>
+                </tbody>
             </table>
         `;
     }
@@ -1556,7 +1564,7 @@
                 <input type="hidden" id="serve-record-id" value="${record.id}">
                 <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
                 <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.customerName}</div></div>
-                <div class="input-group"><label>Total Pax</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
+                <div class="input-group"><label>Total Pax Breakdown</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
                 <div class="input-group"><label>Order Items</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${itemsTable}</div></div>
                 <div class="input-group"><label>Order Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderStatus}</div></div>
                 <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderRemark || '-'}</div></div>
@@ -1705,6 +1713,10 @@
             const d = data.orderDate ? new Date(data.orderDate) : null;
             const dateVal = d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
 
+            const pA = (data.totalPax||'').split(', ').find(x=>x.startsWith('A'))?.substring(1) || '0';
+            const pK = (data.totalPax||'').split(', ').find(x=>x.startsWith('K'))?.substring(1) || '0';
+            const pT = (data.totalPax||'').split(', ').find(x=>x.startsWith('T'))?.substring(1) || '0';
+
             fields.innerHTML = `
                 <div class="input-group full-width">
                     <label>Order ID (Read-only)</label>
@@ -1724,10 +1736,33 @@
                 </div>
                 <input type="text" name="customerName" placeholder="Customer Name" value="${data.customerName ?? ''}" required>
                 <input type="text" name="customerPhone" placeholder="Customer Phone" value="${data.customerPhone ?? ''}" required>
-                <div class="input-group full-width">
-                    <label>Total Pax</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom:10px;">${formatPaxTable(data.totalPax)}</div>
-                    <input type="text" name="totalPax" placeholder="Update Pax (e.g. A3, K2, T1)" value="${data.totalPax ?? ''}">
+                
+                <div class="full-width">
+                    <label>Total Pax Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                    <th style="text-align:left; padding: 4px;">Categories</th>
+                                    <th style="text-align:center; padding: 4px;">Pax</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 4px;">Adults</td>
+                                    <td style="padding: 2px;"><input type="number" name="pax_a" value="${pA}" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 4px;">Kids</td>
+                                    <td style="padding: 2px;"><input type="number" name="pax_k" value="${pK}" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 4px;">Toddler</td>
+                                    <td style="padding: 2px;"><input type="number" name="pax_t" value="${pT}" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 
                 <div class="full-width">
@@ -1908,7 +1943,7 @@
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerPhone ?? ''}</div>
                 </div>
                 <div class="input-group">
-                    <label>Total Pax</label>
+                    <label>Total Pax Breakdown</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${formatPaxTable(data.totalPax)}</div>
                 </div>
                 <div class="full-width">
@@ -2028,6 +2063,11 @@
                 formData.set('totalItems', totalItems.toString());
                 formData.set('totalPrice', totalPrice.toFixed(2));
                 formData.set('totalPaidAmount', totalPaid.toFixed(2));
+
+                const pA = formData.get('pax_a') || '0';
+                const pK = formData.get('pax_k') || '0';
+                const pT = formData.get('pax_t') || '0';
+                formData.set('totalPax', `A${pA}, K${pK}, T${pT}`);
             }
             
             if (type === 'sales') {
