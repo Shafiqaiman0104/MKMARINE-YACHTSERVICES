@@ -1462,10 +1462,32 @@
         if (errorSummary) alert(`AVAILABILITY ALERT:\n\nDATE: ${checkDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
     }
 
-    function toggleRefundFields() {
-        const statusSelect = document.querySelector('select[name="orderStatus"]');
-        if (!statusSelect) return;
-        const status = statusSelect.value;
+    function toggleRefundFields(select) {
+        if (!select) select = document.querySelector('select[name="orderStatus"]');
+        if (!select) return;
+        
+        const status = select.value;
+        const prevStatus = select.getAttribute('data-prev-status') || '';
+
+        // Alert if changing FROM Refund to something else
+        if (prevStatus === 'Refund' && status !== 'Refund') {
+            const confirmClear = confirm(`This result will clear all the refund details, are you sure want to change from refund to ${status} ?`);
+            if (!confirmClear) {
+                select.value = 'Refund';
+                return;
+            } else {
+                // Clear UI fields
+                const refundAmountInput = document.querySelector('input[name="refundAmount"]');
+                const refundMethodSelect = document.querySelector('select[name="refundMethod"]');
+                const refundRemarkTextarea = document.querySelector('textarea[name="refundRemark"]');
+                
+                if (refundAmountInput) refundAmountInput.value = '';
+                if (refundMethodSelect) refundMethodSelect.selectedIndex = 0;
+                if (refundRemarkTextarea) refundRemarkTextarea.value = '';
+            }
+        }
+        
+        select.setAttribute('data-prev-status', status);
         const refundSection = document.getElementById('refund-details-section');
         if (refundSection) {
             refundSection.style.display = status === 'Refund' ? 'block' : 'none';
@@ -1746,7 +1768,7 @@
                 </div>
                 <div class="input-group full-width">
                     <label>Order Status</label>
-                    <select name="orderStatus" onchange="triggerSalesEditValidation(); toggleRefundFields();">
+                    <select name="orderStatus" data-prev-status="${data.orderStatus || ''}" onchange="triggerSalesEditValidation(); toggleRefundFields(this);">
                         <option value="Pending" ${data.orderStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${data.orderStatus === 'Completed' ? 'selected' : ''}>Completed</option>
                         <option value="Cancelled" ${data.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -2141,8 +2163,15 @@
                 const pT = formData.get('pax_t') || '0';
                 formData.set('totalPax', `A${pA}, K${pK}, T${pT}`);
 
-                if (formData.get('orderStatus') === 'Refund' && !formData.get('refundBy')) {
-                    formData.set('refundBy', localStorage.getItem('mk_staffname') || 'Unknown');
+                if (formData.get('orderStatus') === 'Refund') {
+                    if (!formData.get('refundBy')) {
+                        formData.set('refundBy', localStorage.getItem('mk_staffname') || 'Unknown');
+                    }
+                } else {
+                    formData.set('refundBy', '');
+                    formData.set('refundAmount', '');
+                    formData.set('refundMethod', '');
+                    formData.set('refundRemark', '');
                 }
             }
             
