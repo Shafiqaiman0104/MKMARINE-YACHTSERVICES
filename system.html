@@ -1137,12 +1137,26 @@
         document.getElementById('paid-amount').value = (cash + online + card).toFixed(2);
     }
 
-    function addToCart() {
+    async function addToCart() {
         if (!selectedItem) return;
         const qty = parseInt(document.getElementById('book-qty').value);
         const duration = parseInt(document.getElementById('book-duration').value);
-        const price = calculateTotal();
+        const bookingDateStr = document.getElementById('book-date').value;
+        
+        if (!bookingDateStr) return alert("Please select a booking date and time first.");
+        const bookingDate = new Date(bookingDateStr);
 
+        // Validate availability including current cart items
+        const itemsToValidate = cart.map(i => ({ itemName: i.itemName, quantity: i.quantity, duration: i.duration }));
+        itemsToValidate.push({ itemName: selectedItem.itemName, quantity: qty, duration: duration });
+
+        const errorSummary = await validateBookingAvailability(itemsToValidate, bookingDate);
+        if (errorSummary) {
+            alert(`ITEM NOT AVAILABLE:\n\nDATE: ${bookingDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
+            return;
+        }
+
+        const price = calculateTotal();
         cart.push({
             itemId: selectedItem.id,
             itemName: selectedItem.itemName,
@@ -1196,9 +1210,17 @@
         
         const customerName = document.getElementById('book-name').value;
         const customerPhone = document.getElementById('book-phone').value;
-        const bookingDate = new Date(document.getElementById('book-date').value).toISOString();
-
+        const bookingDateStr = document.getElementById('book-date').value;
+        
         if (!customerName || !customerPhone) return alert("Please fill customer details");
+        const bookingDate = new Date(bookingDateStr);
+
+        // Final double check against database before creating record
+        const errorSummary = await validateBookingAvailability(cart, bookingDate);
+        if (errorSummary) {
+            alert(`SUBMISSION FAILED - Availability changed:\n\nDATE: ${bookingDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
+            return;
+        }
 
         const orderId = 'MK-' + Date.now().toString().slice(-8);
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${orderId}`;
@@ -1237,7 +1259,7 @@
             // Create only ONE record in the database
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').create({
                 "orderId": orderId,
-                "orderDate": bookingDate,
+                "orderDate": bookingDate.toISOString(),
                 "customerName": customerName,
                 "customerPhone": customerPhone,
                 "orderItemName": combinedNames,
@@ -1267,6 +1289,76 @@
         } catch (err) {
             alert("Error creating booking: " + err.message);
         }
+    }
+
+    async function validateBookingAvailability(requestedItems, checkDate) {
+        try {
+            const items = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
+            const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({
+                filter: 'orderStatus != "Cancelled"'
+            });
+
+            const reqStartMs = checkDate.getTime();
+            let maxEndMs = reqStartMs;
+            requestedItems.forEach(ri => {
+                const end = reqStartMs + ri.duration * 60000;
+                if (end > maxEndMs) maxEndMs = end;
+            });
+
+            let timePoints = new Set([reqStartMs, maxEndMs]);
+            sales.forEach(sale => {
+                const orderStart = new Date(sale.orderDate).getTime();
+                const names = (sale.orderItemName || '').split(', ');
+                const durs = (sale.orderItemRentalDuration || '').split(', ');
+                names.forEach((n, idx) => {
+                    const orderEnd = orderStart + (parseInt(durs[idx]) || 0) * 60000;
+                    if (reqStartMs < orderEnd && orderStart < maxEndMs) {
+                        if (orderStart > reqStartMs && orderStart < maxEndMs) timePoints.add(orderStart);
+                        if (orderEnd > reqStartMs && orderEnd < maxEndMs) timePoints.add(orderEnd);
+                    }
+                });
+            });
+            requestedItems.forEach(ri => {
+                const end = reqStartMs + ri.duration * 60000;
+                if (end > reqStartMs && end < maxEndMs) timePoints.add(end);
+            });
+
+            let sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
+            let errorSummary = "";
+
+            for (let i = 0; i < sortedPoints.length - 1; i++) {
+                const tMid = (sortedPoints[i] + sortedPoints[i+1]) / 2;
+                const timeStr = new Date(sortedPoints[i]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', '');
+                let segmentErrors = "";
+                const uniqueItems = [...new Set(requestedItems.map(ri => ri.itemName))];
+
+                uniqueItems.forEach(name => {
+                    const itemData = items.find(it => it.itemName === name);
+                    const totalStock = itemData ? parseInt(itemData.itemQuantity) : 0;
+                    let currentReq = 0;
+                    requestedItems.forEach(ri => {
+                        const riEnd = reqStartMs + (ri.duration * 60000);
+                        if (ri.itemName === name && tMid >= reqStartMs && tMid <= riEnd) currentReq += ri.quantity;
+                    });
+                    if (currentReq === 0) return;
+
+                    let bookedCount = 0;
+                    sales.forEach(sale => {
+                        const orderStart = new Date(sale.orderDate).getTime();
+                        const sNames = (sale.orderItemName || '').split(', ');
+                        const sQtys = (sale.orderItemQuantity || '').split(', ');
+                        const sDurs = (sale.orderItemRentalDuration || '').split(', ');
+                        sNames.forEach((sn, idx) => {
+                            const orderEnd = orderStart + (parseInt(sDurs[idx]) || 0) * 60000;
+                            if (sn.trim() === name && tMid >= orderStart && tMid <= orderEnd) bookedCount += parseInt(sQtys[idx]) || 0;
+                        });
+                    });
+                    if (bookedCount + currentReq > totalStock) segmentErrors += `- ${name}: Available ${totalStock - bookedCount}/${totalStock}, requested ${currentReq}\n`;
+                });
+                if (segmentErrors) errorSummary += `TIME : ${timeStr}\n${segmentErrors}\n`;
+            }
+            return errorSummary;
+        } catch (err) { return "Error checking availability"; }
     }
 
     function showBookingResult(orderId, qrUrl) {
