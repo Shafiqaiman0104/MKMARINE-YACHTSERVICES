@@ -921,10 +921,11 @@
         const reqStart = new Date(checkTimeStr);
         lastAvailCheck = {
             date: reqStart.toLocaleDateString('en-GB'),
-            time: reqStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', ''),
+            time: reqStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase().replace(' ', ''),
             mode: mode,
             duration: 0,
-            items: []
+            segments: [],
+            checkList: mode === 'mix' ? [...availCart] : []
         };
 
         const resultDiv = document.getElementById('avail-results');
@@ -937,15 +938,15 @@
                 filter: 'orderStatus != "Cancelled"'
             });
 
-            let summaryHtml = `<div style="margin-bottom:5px; font-weight:bold; color:#00d2ff;">DATE : ${reqStart.toLocaleDateString('en-GB')}</div>`;
-            summaryHtml += `<div style="margin-bottom:5px; font-weight:bold; color:#00d2ff;">TIME : ${reqStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', '')}</div>`;
-
+            let summaryHtml = `<div style="margin-bottom:15px; font-weight:bold; color:#00d2ff;">DATE : ${reqStart.toLocaleDateString('en-GB')}</div>`;
+            
+            const reqStartMs = reqStart.getTime();
+            let globalMaxEndMs = reqStartMs;
             if (mode === 'all') {
                 const globalDur = parseInt(document.getElementById('avail-duration').value) || 0;
                 summaryHtml += `<div style="margin-bottom:15px; font-weight:bold; color:#00d2ff;">DURATION : ${globalDur} mins</div>`;
                 lastAvailCheck.duration = globalDur;
-            } else {
-                summaryHtml += `<div style="margin-bottom:15px;"></div>`;
+                globalMaxEndMs = reqStartMs + globalDur * 60000;
             }
 
             let itemsToCheck = [];
@@ -954,7 +955,7 @@
                 itemsToCheck = items.map(it => ({ 
                     itemName: it.itemName, 
                     duration: globalDur, 
-                    requestedQty: 1, // Check basic availability
+                    requestedQty: 1,
                     totalQty: parseInt(it.itemQuantity) || 0 
                 }));
             } else {
@@ -973,109 +974,95 @@
                     aggregated[c.itemName].requestedQty += c.quantity;
                     if (c.duration > aggregated[c.itemName].duration) aggregated[c.itemName].duration = c.duration;
                     aggregated[c.itemName].reqBreakdown.push(`${c.quantity}(${c.duration}m)`);
+                    const endMs = reqStartMs + c.duration * 60000;
+                    if (endMs > globalMaxEndMs) globalMaxEndMs = endMs;
                 });
                 itemsToCheck = Object.values(aggregated);
             }
 
-            itemsToCheck.forEach(checkItem => {
-                const globalReqStart = reqStart.getTime();
-                const globalReqEnd = reqStart.getTime() + checkItem.duration * 60000;
+            // Collect all relevant time boundaries across all items
+            let timePoints = new Set();
+            timePoints.add(reqStartMs);
+            timePoints.add(globalMaxEndMs);
 
-                // Existing Bookings overlapping with window
-                let existingSegments = [];
-                sales.forEach(sale => {
-                    const names = (sale.orderItemName || '').split(', ');
-                    const qtys = (sale.orderItemQuantity || '').split(', ');
-                    const durs = (sale.orderItemRentalDuration || '').split(', ');
-                    const orderStart = new Date(sale.orderDate).getTime();
-
-                    names.forEach((name, i) => {
-                        if (name.trim() === checkItem.itemName) {
-                            const duration = parseInt(durs[i]) || 0;
-                            const qty = parseInt(qtys[i]) || 0;
-                            const orderEnd = orderStart + duration * 60000;
-
-                            // Only consider bookings that overlap with our requested window
-                            if (globalReqStart < orderEnd && orderStart < globalReqEnd) {
-                                existingSegments.push({ start: orderStart, end: orderEnd, qty: qty });
-                            }
+            sales.forEach(sale => {
+                const orderStart = new Date(sale.orderDate).getTime();
+                const names = (sale.orderItemName || '').split(', ');
+                const durs = (sale.orderItemRentalDuration || '').split(', ');
+                names.forEach((n, idx) => {
+                    if (itemsToCheck.some(it => it.itemName === n.trim())) {
+                        const orderEnd = orderStart + (parseInt(durs[idx]) || 0) * 60000;
+                        if (reqStartMs < orderEnd && orderStart < globalMaxEndMs) {
+                            if (orderStart > reqStartMs && orderStart < globalMaxEndMs) timePoints.add(orderStart);
+                            if (orderEnd > reqStartMs && orderEnd < globalMaxEndMs) timePoints.add(orderEnd);
                         }
-                    });
+                    }
                 });
-
-                // New Request segments
-                let requestedSegments = [];
-                if (mode === 'all') {
-                    requestedSegments.push({ start: globalReqStart, end: globalReqEnd, qty: checkItem.requestedQty });
-                } else {
-                    availCart.forEach(c => {
-                        if (c.itemName === checkItem.itemName) {
-                            requestedSegments.push({ start: globalReqStart, end: globalReqStart + c.duration * 60000, qty: c.quantity });
-                        }
-                    });
-                }
-
-                // Identify all critical time points (starts and ends) within the window
-                let timePoints = new Set();
-                timePoints.add(globalReqStart);
-                timePoints.add(globalReqEnd);
-                [...existingSegments, ...requestedSegments].forEach(s => {
-                    if (s.start > globalReqStart && s.start < globalReqEnd) timePoints.add(s.start);
-                    if (s.end > globalReqStart && s.end < globalReqEnd) timePoints.add(s.end);
-                });
-
-                let sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
-                let maxTotalRequired = 0;
-                let maxExistingBooked = 0;
-
-                // For each sub-interval, calculate concurrent usage
-                for (let i = 0; i < sortedPoints.length - 1; i++) {
-                    let tMid = (sortedPoints[i] + sortedPoints[i+1]) / 2;
-                    let curExisting = 0;
-                    existingSegments.forEach(s => { if (tMid >= s.start && tMid <= s.end) curExisting += s.qty; });
-                    
-                    let curRequested = 0;
-                    requestedSegments.forEach(s => { if (tMid >= s.start && tMid <= s.end) curRequested += s.qty; });
-
-                    if (curExisting + curRequested > maxTotalRequired) maxTotalRequired = curExisting + curRequested;
-                    if (curExisting > maxExistingBooked) maxExistingBooked = curExisting;
-                }
-                
-                // Fallback for immediate check if window duration is 0
-                if (sortedPoints.length === 1) {
-                    existingSegments.forEach(s => { if (globalReqStart >= s.start && globalReqStart <= s.end) maxExistingBooked += s.qty; });
-                    let curReq = 0;
-                    requestedSegments.forEach(s => { if (globalReqStart >= s.start && globalReqStart <= s.end) curReq += s.qty; });
-                    maxTotalRequired = maxExistingBooked + curReq;
-                }
-
-                const total = checkItem.totalQty;
-                const isAvailable = maxTotalRequired <= total;
-                const availableCount = total - maxExistingBooked;
-
-                lastAvailCheck.items.push({
-                    name: checkItem.itemName,
-                    booked: maxExistingBooked,
-                    total: total,
-                    req: checkItem.requestedQty,
-                    isAvail: isAvailable,
-                    breakdown: checkItem.reqBreakdown || []
-                });
-
-                let lineDisplay = "";
-                
-                if (mode === 'all') {
-                    lineDisplay = maxExistingBooked >= total ? 
-                        `${checkItem.itemName} <span style="color:#ff4b2b;">full booked</span>` : 
-                        `${checkItem.itemName} ${maxExistingBooked}/${total}`;
-                } else {
-                    lineDisplay = isAvailable ? 
-                        `${checkItem.itemName}: <span style="color:#25d366;">Available</span> (${maxExistingBooked}/${total} booked, your request ${checkItem.requestedQty})` : 
-                        `<span style="color:#ff4b2b;">${checkItem.itemName} only available ${availableCount} units, your request ${checkItem.requestedQty} units</span>`;
-                }
-                
-                summaryHtml += `<div style="margin-bottom:8px;">${lineDisplay}</div>`;
             });
+
+            let sortedPoints = Array.from(timePoints).sort((a, b) => a - b);
+
+            for (let i = 0; i < sortedPoints.length - 1; i++) {
+                const tStart = sortedPoints[i];
+                const tEnd = sortedPoints[i+1];
+                const tMid = (tStart + tEnd) / 2;
+                const timeStr = new Date(tStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', '');
+
+                let segData = { time: timeStr, items: [] };
+                let segSummary = "";
+                let hasItems = false;
+
+                itemsToCheck.forEach(checkItem => {
+                    // Calculate how many of THIS item are requested specifically in THIS segment
+                    let currentReq = 0;
+                    if (mode === 'all') {
+                        currentReq = 1;
+                    } else {
+                        availCart.forEach(c => {
+                            if (c.itemName === checkItem.itemName) {
+                                const cEnd = reqStartMs + (c.duration * 60000);
+                                if (tMid >= reqStartMs && tMid <= cEnd) currentReq += c.quantity;
+                            }
+                        });
+                    }
+
+                    if (currentReq === 0) return; // Item not in the request for this time slot
+                    hasItems = true;
+
+                    let bookedCount = 0;
+                    sales.forEach(sale => {
+                        const orderStart = new Date(sale.orderDate).getTime();
+                        const names = (sale.orderItemName || '').split(', ');
+                        const qtys = (sale.orderItemQuantity || '').split(', ');
+                        const durs = (sale.orderItemRentalDuration || '').split(', ');
+                        names.forEach((n, idx) => {
+                            if (n.trim() === checkItem.itemName) {
+                                const orderEnd = orderStart + (parseInt(durs[idx]) || 0) * 60000;
+                                if (tMid >= orderStart && tMid <= orderEnd) bookedCount += parseInt(qtys[idx]) || 0;
+                            }
+                        });
+                    });
+
+                    const total = checkItem.totalQty;
+                    const isAvail = (bookedCount + currentReq) <= total;
+                    const availCount = total - bookedCount;
+
+                    let line = "";
+                    if (mode === 'all') {
+                        line = bookedCount >= total ? `${checkItem.itemName} <span style="color:#ff4b2b;">full booked</span>` : `${checkItem.itemName} ${bookedCount}/${total}`;
+                    } else {
+                        line = isAvail ? `${checkItem.itemName}: <span style="color:#25d366;">Available</span> (${bookedCount}/${total} booked, your request ${currentReq})` : 
+                                         `<span style="color:#ff4b2b;">${checkItem.itemName} only available ${availCount} units, your request ${currentReq} units</span>`;
+                    }
+                    segSummary += `<div style="margin-bottom:4px;">${line}</div>`;
+                    segData.items.push({ name: checkItem.itemName, booked: bookedCount, total, req: currentReq, isAvail, availCount });
+                });
+
+                if (hasItems) {
+                    summaryHtml += `<div style="margin-top:10px; font-weight:bold; color:#00d2ff;">TIME : ${timeStr}</div>` + segSummary;
+                    lastAvailCheck.segments.push(segData);
+                }
+            }
 
             resultDiv.innerHTML = summaryHtml;
             document.getElementById('avail-whatsapp-btn').style.display = 'inline-block';
@@ -1093,24 +1080,29 @@
         if (!lastAvailCheck) return alert("No availability data found");
         
         let summaryText = `DATE : ${lastAvailCheck.date}\n`;
-        summaryText += `TIME : ${lastAvailCheck.time}\n`;
-        if (lastAvailCheck.mode === 'all') {
-            summaryText += `DURATION : ${lastAvailCheck.duration} mins\n`;
-        }
-        summaryText += `\n`;
+        summaryText += `TIME : ${lastAvailCheck.time}\n\n`;
 
-        lastAvailCheck.items.forEach(item => {
-            if (lastAvailCheck.mode === 'all') {
-                summaryText += item.booked >= item.total ? 
-                    `${item.name} full booked\n` : 
-                    `${item.name} ${item.booked}/${item.total}\n`;
-            } else {
-                if (item.isAvail) {
-                    summaryText += `${item.name} : Available (${item.booked}/${item.total} booked, your request ${item.breakdown.join(', ')})\n`;
+        if (lastAvailCheck.mode === 'all') {
+            summaryText += `DURATION : ${lastAvailCheck.duration} mins\n\n`;
+        } else if (lastAvailCheck.checkList && lastAvailCheck.checkList.length > 0) {
+            summaryText += `CHECK LIST ITEM:\n\n`;
+            summaryText += `Item | Qty | Duration\n`;
+            lastAvailCheck.checkList.forEach(item => {
+                summaryText += `${item.itemName} ${item.quantity} ${item.duration}m\n`;
+            });
+            summaryText += `\n`;
+        }
+
+        lastAvailCheck.segments.forEach(seg => {
+            summaryText += `TIME : ${seg.time}\n`;
+            seg.items.forEach(item => {
+                if (lastAvailCheck.mode === 'all') {
+                    summaryText += item.booked >= item.total ? `${item.name} full booked\n` : `${item.name} ${item.booked}/${item.total}\n`;
                 } else {
-                    summaryText += `${item.name} only available ${item.total - item.booked} units, your request ${item.req} units\n`;
+                    summaryText += item.isAvail ? `${item.name} : Available (${item.booked}/${item.total} booked, your request ${item.req})\n` : `${item.name} only available ${item.availCount} units, your request ${item.req} units\n`;
                 }
-            }
+            });
+            summaryText += `\n`;
         });
 
         const message = `*MK MARINE WATERSPORT - AVAILABILITY*\n` +
