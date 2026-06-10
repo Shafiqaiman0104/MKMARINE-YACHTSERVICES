@@ -728,9 +728,19 @@
     async function loadDiscounts() {
         currentDiscounts = await pb.collection('MKMARINE_WATERSPORT_DISCOUNT_DATA').getFullList({ sort: '-created' });
         const body = document.getElementById('discount-body');
-        body.innerHTML = currentDiscounts.map(d => `
+        body.innerHTML = currentDiscounts.map(d => {
+            let applies = d.discountAutoApplyTo || 'None';
+            if (applies === 'ALL') applies = 'All Items';
+            else if (applies.includes(',')) applies = 'Multiple Items';
+
+            const isMulti = d.discountType && d.discountType.includes(',');
+
+            return `
             <tr>
-                <td>${d.discountName}</td><td>${d.discountAutoApplyTo}</td><td>${d.discountType}</td><td>${d.discountValue}</td>
+                <td>${d.discountName}</td>
+                <td><small>${applies}</small></td>
+                <td>${isMulti ? 'Multiple' : d.discountType}</td>
+                <td>${isMulti ? 'Multiple' : d.discountValue}</td>
                 <td><small>${d.discountStart ? new Date(d.discountStart).toLocaleString() : '-'}</small></td>
                 <td><small>${d.discountEnd ? new Date(d.discountEnd).toLocaleString() : '-'}</small></td>
                 <td>
@@ -738,7 +748,67 @@
                     <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_DISCOUNT_DATA', '${d.id}', loadDiscounts)">Del</button>
                 </td>
             </tr>
-        `).join('');
+        `;}).join('');
+    }
+
+    function toggleDiscountAutoApply() {
+        const val = document.getElementById('discount-auto-apply-select').value;
+        const tableContainer = document.getElementById('discount-items-container');
+        const globalFields = document.getElementById('discount-global-fields');
+        const tbody = document.getElementById('discount-items-body');
+        const addBtn = document.getElementById('add-discount-item-btn');
+
+        tbody.innerHTML = '';
+        
+        if (val === 'No') {
+            tableContainer.style.display = 'none';
+            globalFields.style.display = 'grid';
+        } else {
+            tableContainer.style.display = 'block';
+            globalFields.style.display = 'none';
+            
+            if (val === 'All Item') {
+                addBtn.style.display = 'none';
+                currentItems.forEach(item => addDiscountItemRow({id: item.id, name: item.itemName}, true));
+            } else {
+                addBtn.style.display = 'block';
+            }
+        }
+    }
+
+    function addDiscountItemRow(data = null, isFixed = false) {
+        const tbody = document.getElementById('discount-items-body');
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        
+        const itemOptions = currentItems.map(i => 
+            `<option value="${i.id}" ${data && data.id === i.id ? 'selected' : ''}>${i.itemName}</option>`
+        ).join('');
+
+        const typeOptions = `
+            <option value="Percentage" ${data && data.type === 'Percentage' ? 'selected' : ''}>%</option>
+            <option value="Fixed" ${data && data.type === 'Fixed' ? 'selected' : ''}>RM</option>
+        `;
+
+        tr.innerHTML = `
+            <td style="padding: 2px;">
+                ${isFixed ? `<span>${data.name}</span><input type="hidden" name="d_item_id" value="${data.id}">` : `
+                <select name="d_item_id" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                    <option value="">-- Select --</option>
+                    ${itemOptions}
+                </select>`}
+            </td>
+            <td style="padding: 2px;">
+                <select name="d_type" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                    ${typeOptions}
+                </select>
+            </td>
+            <td style="padding: 2px;"><input type="text" name="d_value" value="${(data && data.value) || ''}" placeholder="Value" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px; text-align:center;">
+                ${isFixed ? '' : '<button type="button" onclick="this.closest(\'tr\').remove()" class="btn-small btn-danger" style="margin:0;">×</button>'}
+            </td>
+        `;
+        tbody.appendChild(tr);
     }
 
     async function loadSales() {
@@ -1784,21 +1854,69 @@
         } else if (type === 'discount') {
             const data = id ? currentDiscounts.find(d => d.id === id) : {};
             title.innerText = id ? 'Edit Discount' : 'Add New Discount';
-            
+            if (currentItems.length === 0) await loadItems();
+
+            let mode = 'No';
+            if (data.discountAutoApplyTo === 'ALL') mode = 'All Item';
+            else if (data.discountAutoApplyTo && data.discountAutoApplyTo !== 'No') mode = 'Custom';
+
             const startVal = data.discountStart ? new Date(new Date(data.discountStart).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
             const endVal = data.discountEnd ? new Date(new Date(data.discountEnd).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
 
             fields.innerHTML = `
                 <input type="text" name="discountName" placeholder="Discount Name" value="${data.discountName ?? ''}" class="full-width" required>
-                <input type="text" name="discountAutoApplyTo" placeholder="Auto Apply To (Item ID/Category)" value="${data.discountAutoApplyTo ?? ''}" class="full-width">
-                <select name="discountType" required>
-                    <option value="Percentage" ${data.discountType === 'Percentage' ? 'selected' : ''}>Percentage (%)</option>
-                    <option value="Fixed" ${data.discountType === 'Fixed' ? 'selected' : ''}>Fixed Amount (RM)</option>
-                </select>
-                <input type="text" name="discountValue" placeholder="Value (e.g. 10 or 5.00)" value="${data.discountValue ?? ''}" required>
-                <div class="input-group"><label>Start Date</label><input type="datetime-local" name="discountStart" value="${startVal}"></div>
-                <div class="input-group"><label>End Date</label><input type="datetime-local" name="discountEnd" value="${endVal}"></div>
+                <div class="input-group full-width">
+                    <label>Auto Apply</label>
+                    <select id="discount-auto-apply-select" onchange="toggleDiscountAutoApply()">
+                        <option value="No" ${mode === 'No' ? 'selected' : ''}>No</option>
+                        <option value="All Item" ${mode === 'All Item' ? 'selected' : ''}>All Item</option>
+                        <option value="Custom" ${mode === 'Custom' ? 'selected' : ''}>Custom</option>
+                    </select>
+                </div>
+
+                <div class="full-width">
+                    <div class="input-group"><label>Start Date</label><input type="datetime-local" name="discountStart" value="${startVal}"></div>
+                    <div class="input-group"><label>End Date</label><input type="datetime-local" name="discountEnd" value="${endVal}"></div>
+                </div>
+
+                <div id="discount-global-fields" class="full-width form-grid" style="display: ${mode === 'No' ? 'grid' : 'none'};">
+                    <select name="discountType">
+                        <option value="Percentage" ${data.discountType === 'Percentage' ? 'selected' : ''}>Percentage (%)</option>
+                        <option value="Fixed" ${data.discountType === 'Fixed' ? 'selected' : ''}>Fixed Amount (RM)</option>
+                    </select>
+                    <input type="text" name="discountValue" placeholder="Value" value="${data.discountValue ?? ''}">
+                </div>
+
+                <div id="discount-items-container" class="full-width" style="display: ${mode !== 'No' ? 'block' : 'none'};">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                                <th style="text-align:left;">Item Name</th><th>Type</th><th>Value</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="discount-items-body"></tbody>
+                    </table>
+                    <button type="button" id="add-discount-item-btn" class="btn-small" onclick="addDiscountItemRow()" style="margin-top:10px; display: ${mode === 'Custom' ? 'block' : 'none'};">+ Add Item</button>
+                </div>
             `;
+
+            if (mode !== 'No') {
+                const ids = (data.discountAutoApplyTo === 'ALL' ? currentItems.map(i=>i.id).join(', ') : (data.discountAutoApplyTo || '')).split(', ');
+                const types = (data.discountType || '').split(', ');
+                const values = (data.discountValue || '').split(', ');
+
+                ids.forEach((idVal, i) => {
+                    if (idVal) {
+                        const item = currentItems.find(it => it.id === idVal.trim());
+                        if (item) addDiscountItemRow({
+                            id: item.id,
+                            name: item.itemName,
+                            type: types[i] || 'Percentage',
+                            value: values[i] || ''
+                        }, mode === 'All Item');
+                    }
+                });
+            }
         } else if (type === 'sales') {
             const data = id ? currentSales.find(s => s.id === id) : {};
             title.innerText = 'Edit Order';
@@ -2230,10 +2348,24 @@
                     formData.set('refundRemark', '');
                 }
             } else if (type === 'discount') {
+                const mode = document.getElementById('discount-auto-apply-select').value;
                 const start = formData.get('discountStart');
                 const end = formData.get('discountEnd');
+                
                 if (start) formData.set('discountStart', new Date(start).toISOString());
                 if (end) formData.set('discountEnd', new Date(end).toISOString());
+
+                if (mode === 'No') {
+                    formData.set('discountAutoApplyTo', '');
+                } else {
+                    const ids = formData.getAll('d_item_id');
+                    const types = formData.getAll('d_type');
+                    const values = formData.getAll('d_value');
+
+                    formData.set('discountAutoApplyTo', mode === 'All Item' ? 'ALL' : ids.join(', '));
+                    formData.set('discountType', types.join(', '));
+                    formData.set('discountValue', values.join(', '));
+                }
             }
             
             if (type === 'sales') {
