@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -197,6 +198,50 @@
         .stepper-input input::-webkit-outer-spin-button,
         .stepper-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+        /* Checkout Modal */
+        .checkout-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 200;
+        }
+        .checkout-container {
+            background: #141e30; width: 95%; max-width: 1100px; height: 90vh; 
+            border-radius: 16px; border: 1px solid #00d2ff; display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+        .checkout-header { padding: 20px; border-bottom: 1px solid rgba(0, 210, 255, 0.3); display: flex; justify-content: space-between; align-items: center; }
+        .checkout-body { flex: 1; display: flex; overflow: visible; }
+        .checkout-left { width: 40%; padding: 20px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+        .checkout-right { width: 60%; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        .payment-summary-vertical { display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; }
+        .pay-box { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .pay-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        
+        /* Payment Toggle Buttons */
+        .payment-toggle-group { display: flex; width: 100%; background: rgba(255, 255, 255, 0.05); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .payment-toggle-btn {
+            flex: 1; background: transparent; border: none;
+            color: rgba(255, 255, 255, 0.7); padding: 10px 2px; cursor: pointer;
+            font-size: 0.8rem; display: flex; flex-direction: row; align-items: center;
+            justify-content: center; transition: all 0.2s ease;
+        }
+        .payment-toggle-btn.active { background: #00d2ff; color: #141e30; font-weight: bold; }
+        .payment-toggle-btn i { font-size: 0.9rem; margin-right: 8px; }
+
+        .pay-label { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+        .pay-value { font-size: 1.1rem; font-weight: bold; color: #00d2ff; }
+        .change-value { color: #25d366; }
+
+        .keypad-container { display: flex; gap: 15px; flex: 1; align-items: flex-start; }
+        .denom-grid { display: grid; grid-template-columns: 1fr; gap: 15px; flex: 1; }
+        .numpad-section { display: flex; flex-direction: column; gap: 5px; flex: 3; }
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        
+        .keypad-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; min-height: 45px; margin-top: 0; }
+        .denom-grid .keypad-btn { min-height: 32px; font-size: 0.85rem; }
+        .keypad-btn:hover { background: #00d2ff; }
+        .keypad-btn.action { background: rgba(0, 210, 255, 0.2); }
+
         /* Mobile Specific Adjustments */
         @media (max-width: 600px) {
             .container { padding: 20px; }
@@ -214,7 +259,14 @@
                 -webkit-overflow-scrolling: touch;
             }
 
-            .item-grid { grid-template-columns: 1fr 1fr; }
+            .item-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .item-card { padding: 5px; }
+        }
+
+        @media (max-width: 900px) {
+            .checkout-body { flex-direction: column; overflow: hidden; }
+            .checkout-left { width: 100%; height: 30%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+            .checkout-right { width: 100%; height: 70%; border-right: none; overflow-y: auto; }
         }
     </style>
 </head>
@@ -335,46 +387,13 @@
                     </table>
                 </div>
                 
-                <div class="payment-info">
-                    <h4 style="margin-bottom:10px; color:#00d2ff;">Payment Information</h4>
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Payment By</label>
-                            <select id="payment-method" onchange="toggleMixPayment()">
-                                <option value="Cash">Cash</option>
-                                <option value="Online Transfer">Online Transfer</option>
-                                <option value="Card">Card</option>
-                                <option value="Mix">Mix</option>
-                            </select>
-                        </div>
-                        <div class="input-group" id="paid-amount-wrapper">
-                            <label>Paid Amount (RM)</label>
-                            <input type="number" id="paid-amount" placeholder="0.00" step="0.01">
-                        </div>
-                    </div>
-                    
-                    <div id="mix-payment-fields" class="mix-fields">
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Cash (RM)</label>
-                                <input type="number" id="mix-cash" placeholder="0.00" step="0.01" oninput="sumMixPayment()">
-                            </div>
-                            <div class="input-group">
-                                <label>Online (RM)</label>
-                                <input type="number" id="mix-online" placeholder="0.00" step="0.01" oninput="sumMixPayment()">
-                            </div>
-                            <div class="input-group full-width">
-                                <label>Card (RM)</label>
-                                <input type="number" id="mix-card" placeholder="0.00" step="0.01" oninput="sumMixPayment()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div style="margin-top:15px; text-align:right; font-size:1.1rem;">
                     Grand Total: <span id="grand-total" style="color:#00d2ff; font-weight:bold;">RM0.00</span>
                 </div>
-                <button onclick="handleBookingSubmit()" style="margin-top:20px; background:#25d366;">Confirm & Submit Booking</button>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="openCheckoutModal('BookingFirst')" style="background:#666;">Booking first</button>
+                    <button onclick="openCheckoutModal('Checkout')" style="background:#25d366;">Checkout</button>
+                </div>
             </div>
 
             <div id="qr-result-container">
@@ -558,6 +577,105 @@
     </div>
 </div>
 
+<!-- Checkout Modal -->
+<div class="checkout-overlay" id="checkout-overlay">
+    <div class="checkout-container">
+        <div class="checkout-header">
+            <h2 style="margin:0; color: white;">Payment Checkout</h2>
+            <button class="btn-small btn-danger" onclick="closeCheckoutModal()" style="width:auto;">Close</button>
+        </div>
+        <div class="checkout-body">
+            <div class="checkout-left" style="color: white;">
+                <h3 style="margin-bottom:15px; color:#00d2ff;">Order Summary</h3>
+                <div id="checkout-item-list"></div>
+                <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1); font-size:1.3rem; color: white;">
+                    Grand Total: <span id="checkout-grand-total" style="color:white; font-weight:bold;">RM0.00</span>
+                </div>
+            </div>
+            <div class="checkout-right">
+                <div class="keypad-container">
+                    <div class="denom-grid">
+                        <button class="keypad-btn" onclick="addDenom(0.1)">0.10</button>
+                        <button class="keypad-btn" onclick="addDenom(0.5)">0.50</button>
+                        <button class="keypad-btn" onclick="addDenom(1.0)">1.00</button>
+                        <button class="keypad-btn" onclick="addDenom(5.0)">5.00</button>
+                        <button class="keypad-btn" onclick="addDenom(10.0)">10.00</button>
+                        <button class="keypad-btn" onclick="addDenom(20.0)">20.00</button>
+                        <button class="keypad-btn" onclick="addDenom(50.0)">50.00</button>
+                        <button class="keypad-btn" onclick="addDenom(100.0)">100.00</button>
+                    </div>
+                    <div class="numpad-section">
+                        <div class="payment-summary-vertical">
+                            <div class="pay-box">
+                                <div class="pay-row">
+                                    <div class="pay-label" style="margin:0;">TOTAL DUE</div>
+                                    <div class="pay-value" id="co-total-due">RM0.00</div>
+                                </div>
+                            </div>
+                            <div id="co-payment-group" style="margin-top: 2px;">
+                                <input type="hidden" id="co-payment-method" value="Cash">
+                                <div class="payment-toggle-group">
+                                    <button type="button" id="pay-btn-cash" class="payment-toggle-btn active" onclick="setPaymentMethod('Cash', this)">
+                                        <i class="fas fa-money-bill-wave"></i> Cash
+                                    </button>
+                                    <button type="button" id="pay-btn-online" class="payment-toggle-btn" onclick="setPaymentMethod('Online Transfer', this)">
+                                        <i class="fas fa-globe"></i> Online
+                                    </button>
+                                    <button type="button" id="pay-btn-card" class="payment-toggle-btn" onclick="setPaymentMethod('Card', this)">
+                                        <i class="fas fa-credit-card"></i> Card
+                                    </button>
+                                    <button type="button" id="pay-btn-mix" class="payment-toggle-btn" onclick="setPaymentMethod('Mix', this)">
+                                        <i class="fas fa-layer-group"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="pay-box" id="co-received-card">
+                                <div class="pay-row">
+                                    <div class="pay-label" style="margin:0;">TOTAL RECEIVED</div>
+                                    <div class="pay-value" id="co-total-received">RM0.00</div>
+                                </div>
+                                <div id="co-change-small" style="font-size: 0.7rem; opacity: 0.8; text-align: right; margin-top: 2px;">RM0.00 (CHANGE)</div>
+                            </div>
+                            <div id="co-mix-section" style="display: none; margin-top: 5px;">
+                                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                                    <select id="co-mix-type-select" style="flex: 1; font-size: 0.8rem; padding: 6px; color: white;">
+                                        <option value="Cash">Cash</option>
+                                        <option value="Online Transfer">Online Transfer</option>
+                                        <option value="Card">Card</option>
+                                    </select>
+                                    <button onclick="addMixPaymentRow()" style="width: auto; margin: 0; padding: 0 10px; font-size: 0.8rem; height: 35px;">Add</button>
+                                </div>
+                                <div id="co-mix-list" style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px;"></div>
+                                <div class="pay-box" style="padding: 6px;">
+                                    <div class="pay-row">
+                                        <div class="pay-label" style="font-size: 0.7rem; margin:0;">REMAINING / CHANGE</div>
+                                        <div class="pay-value" id="co-mix-remaining" style="font-size: 0.9rem;">RM0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="numpad-grid">
+                            <button class="keypad-btn" onclick="pressNum(1)">1</button>
+                            <button class="keypad-btn" onclick="pressNum(2)">2</button>
+                            <button class="keypad-btn" onclick="pressNum(3)">3</button>
+                            <button class="keypad-btn" onclick="pressNum(4)">4</button>
+                            <button class="keypad-btn" onclick="pressNum(5)">5</button>
+                            <button class="keypad-btn" onclick="pressNum(6)">6</button>
+                            <button class="keypad-btn" onclick="pressNum(7)">7</button>
+                            <button class="keypad-btn" onclick="pressNum(8)">8</button>
+                            <button class="keypad-btn" onclick="pressNum(9)">9</button>
+                            <button class="keypad-btn action" onclick="clearReceived()">C</button>
+                            <button class="keypad-btn" onclick="pressNum(0)">0</button>
+                            <button class="keypad-btn action" onclick="pressDot()">.</button>
+                        </div>
+                        <button id="co-submit-btn" onclick="handleBookingSubmit()" style="padding:15px; font-size:1.1rem; background:#25d366; font-weight:bold; width:100%; border:none; border-radius:8px; color:white; cursor:pointer;">Confirm & Submit Booking</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Generic CRUD Modal -->
 <div class="form-overlay" id="form-overlay">
     <div class="form-content">
@@ -619,6 +737,39 @@
     </div>
 </div>
 
+<!-- Order Placed Success Modal -->
+<div class="form-overlay" id="order-placed-overlay">
+    <div class="form-content" style="max-width: 450px; text-align: center;">
+        <i class="fas fa-check-circle" style="font-size: 4rem; color: #25d366; margin-bottom: 20px; display: block;"></i>
+        <h2 style="color: white; margin-bottom: 10px;">Order Place!!</h2>
+        
+        <div id="op-qrcode" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;"></div>
+        <div id="op-order-id" style="font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;">Order ID : MK-</div>
+
+        <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;">
+                <span>Total Amount</span>
+                <span id="op-total-amount" style="font-weight: bold;">RM0.00</span>
+            </div>
+            <div style="margin-bottom: 10px; font-weight: bold; color: #00d2ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Amount Given</div>
+            <div id="op-amount-given-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Breakdown will be filled by JS -->
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; font-size: 1.1rem;">
+                <span>Change</span>
+                <span id="op-change-amount" style="color: #25d366; font-weight: bold;">RM0.00</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px;">
+            <button onclick="closeOrderPlacedPopup()" style="background: #666; flex: 1;">Close</button>
+            <button onclick="sendWhatsApp()" style="background: #25d366; flex: 2; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fab fa-whatsapp"></i> Send to WhatsApp
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     const pb = new PocketBase('https://pocketbase.venturerushtech.com');
     // Disable auto-cancellation globally to prevent the "autocancelled" error
@@ -633,6 +784,189 @@
     let html5QrCode = null;
     let cart = [];
 
+    // Checkout Modal Logic
+    let receivedStr = "0";
+    let checkoutMode = ""; 
+    let mixPayments = [];
+    let activeMixIndex = -1;
+
+    function setPaymentMethod(method, btn) {
+        document.getElementById('co-payment-method').value = method;
+        document.querySelectorAll('.payment-toggle-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const due = cart.reduce((sum, i) => sum + parseFloat(i.price), 0);
+
+        if (method === 'Mix') {
+            document.getElementById('co-received-card').style.display = 'none';
+            document.getElementById('co-mix-section').style.display = 'block';
+        } else {
+            document.getElementById('co-received-card').style.display = 'block';
+            document.getElementById('co-mix-section').style.display = 'none';
+            activeMixIndex = -1;
+            
+            if (method === 'Online Transfer' || method === 'Card') {
+                receivedStr = due.toFixed(2);
+            } else if (method === 'Cash') {
+                receivedStr = "0";
+            }
+        }
+        updateCheckoutDisplay();
+    }
+
+    function openCheckoutModal(mode) {
+        if (cart.length === 0) return alert("Cart is empty");
+
+        const name = document.getElementById('book-name').value.trim();
+        const phone = document.getElementById('book-phone').value.trim();
+        const date = document.getElementById('book-date').value;
+        const pA = parseInt(document.getElementById('pax-adult').value) || 0;
+        const pK = parseInt(document.getElementById('pax-kids').value) || 0;
+        const pT = parseInt(document.getElementById('pax-toddler').value) || 0;
+        const totalPaxCount = pA + pK + pT;
+
+        if (mode === 'Checkout') {
+            if (!name || !phone || !date || totalPaxCount === 0) {
+                return alert("please fill up the customer details / total pax cannot empty");
+            }
+        } else if (mode === 'BookingFirst') {
+            if (!name || !phone || !date) {
+                return alert("please fill up the customer details");
+            }
+        }
+
+        checkoutMode = mode;
+        document.getElementById('checkout-overlay').style.display = 'flex';
+        receivedStr = "0";
+        mixPayments = [];
+        activeMixIndex = -1;
+        document.getElementById('co-mix-list').innerHTML = '';
+        setPaymentMethod('Cash', document.getElementById('pay-btn-cash'));
+        
+        const itemList = document.getElementById('checkout-item-list');
+        const grandTotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0);
+        
+        itemList.innerHTML = cart.map(item => `
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem; color: white;">
+                <span>${item.itemName} (x${item.quantity}) - ${item.duration}m</span>
+                <span>RM${parseFloat(item.price).toFixed(2)}</span>
+            </div>
+        `).join('');
+        
+        document.getElementById('checkout-grand-total').innerText = `RM${grandTotal.toFixed(2)}`;
+        document.getElementById('co-total-due').innerText = `RM${grandTotal.toFixed(2)}`;
+        updateCheckoutDisplay();
+    }
+
+    function closeCheckoutModal() { document.getElementById('checkout-overlay').style.display = 'none'; }
+
+    function pressNum(n) { 
+        if (receivedStr === "0") receivedStr = n.toString(); else receivedStr += n.toString(); 
+        if (activeMixIndex !== -1) mixPayments[activeMixIndex].amount = receivedStr;
+        updateCheckoutDisplay(); 
+    }
+    function pressDot() { 
+        if (!receivedStr.includes('.')) receivedStr += '.'; 
+        if (activeMixIndex !== -1) mixPayments[activeMixIndex].amount = receivedStr;
+        updateCheckoutDisplay(); 
+    }
+    function clearReceived() { 
+        receivedStr = "0"; 
+        if (activeMixIndex !== -1) mixPayments[activeMixIndex].amount = "0";
+        updateCheckoutDisplay(); 
+    }
+    function addDenom(v) { 
+        let current = parseFloat(receivedStr) || 0; 
+        receivedStr = (current + v).toFixed(2); 
+        if (activeMixIndex !== -1) mixPayments[activeMixIndex].amount = receivedStr;
+        updateCheckoutDisplay(); 
+    }
+
+    function addMixPaymentRow() {
+        const type = document.getElementById('co-mix-type-select').value;
+        mixPayments.push({ method: type, amount: "0" });
+        selectMixPaymentRow(mixPayments.length - 1);
+    }
+
+    function selectMixPaymentRow(index) {
+        activeMixIndex = index;
+        receivedStr = mixPayments[index].amount;
+        updateCheckoutDisplay();
+    }
+
+    function removeMixPaymentRow(index) {
+        mixPayments.splice(index, 1);
+        if (activeMixIndex === index) {
+            activeMixIndex = -1;
+            receivedStr = "0";
+        } else if (activeMixIndex > index) {
+            activeMixIndex--;
+        }
+        updateCheckoutDisplay();
+    }
+
+    function updateCheckoutDisplay() {
+        const due = cart.reduce((sum, i) => sum + parseFloat(i.price), 0);
+        const method = document.getElementById('co-payment-method').value;
+        
+        let received = 0;
+        const mixRemEl = document.getElementById('co-mix-remaining');
+        if (method === 'Mix') {
+            received = mixPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+            
+            const list = document.getElementById('co-mix-list');
+            list.innerHTML = mixPayments.map((p, i) => `
+                <div class="pay-row" style="background: ${activeMixIndex === i ? 'rgba(0,210,255,0.2)' : 'rgba(255,255,255,0.05)'}; padding: 8px; border-radius: 6px; cursor: pointer; border: 1px solid ${activeMixIndex === i ? '#00d2ff' : 'transparent'}; color: white;" onclick="selectMixPaymentRow(${i})">
+                    <span style="font-size: 0.8rem;">${p.method}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-weight: bold;">RM${parseFloat(p.amount).toFixed(2)}</span>
+                        <button onclick="event.stopPropagation(); removeMixPaymentRow(${i})" style="width: auto; margin: 0; padding: 2px 8px; background: #ff4b2b; font-size: 0.7rem;">×</button>
+                    </div>
+                </div>
+            `).join('');
+            const rem = received - due;
+            if (rem < 0) {
+                mixRemEl.innerText = `-RM${Math.abs(rem).toFixed(2)}`;
+                mixRemEl.style.color = "#ff4b2b";
+            } else {
+                mixRemEl.innerText = `RM${rem.toFixed(2)}`;
+                mixRemEl.style.color = "#25d366";
+            }
+        } else {
+            received = parseFloat(receivedStr) || 0;
+        }
+
+        const change = received - due;
+        const changeEl = document.getElementById('co-change-small');
+        
+        document.getElementById('co-total-received').innerText = `RM${received.toFixed(2)}`;
+        
+        if (change < 0) {
+            changeEl.innerText = `-RM${Math.abs(change).toFixed(2)} (REMAINING)`;
+            changeEl.style.color = "#ff4b2b";
+        } else {
+            changeEl.innerText = `RM${change.toFixed(2)} (CHANGE)`;
+            changeEl.style.color = "#25d366";
+        }
+        
+        const btn = document.getElementById('co-submit-btn');
+        if (checkoutMode === 'Checkout') {
+            if (received < due) {
+                btn.style.opacity = "0.5";
+                btn.innerText = "Full Payment Required";
+                btn.disabled = true;
+            } else {
+                btn.style.opacity = "1";
+                btn.innerText = "Confirm & Submit Booking";
+                btn.disabled = false;
+            }
+        } else {
+            btn.style.opacity = "1";
+            btn.innerText = "Confirm & Submit (Booking First)";
+            btn.disabled = false;
+        }
+    }
+
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -646,7 +980,7 @@
         else if (tab === 'discount') loadDiscounts();
         else if (tab === 'order') loadOrders();
         else if (tab === 'availability') {
-            document.getElementById('avail-datetime').value = new Date().toISOString().slice(0, 16);
+            document.getElementById('avail-datetime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
             document.getElementById('avail-item-select').value = 'all';
             document.getElementById('avail-whatsapp-btn').style.display = 'none';
             availCart = [];
@@ -656,7 +990,7 @@
         }
         else if (tab === 'booking') {
             loadBookingItems();
-            document.getElementById('book-date').value = new Date().toISOString().slice(0, 16);
+            document.getElementById('book-date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         }
     }
 
@@ -1313,6 +1647,8 @@
 
     async function addToCart() {
         if (!selectedItem) return;
+        const item = selectedItem; // Capture reference to avoid null crash after await
+        const price = calculateTotal(); // Calculate price before any async delays
         const qty = parseInt(document.getElementById('book-qty').value);
         const duration = parseInt(document.getElementById('book-duration').value);
         const bookingDateStr = document.getElementById('book-date').value;
@@ -1322,7 +1658,7 @@
 
         // Validate availability including current cart items
         const itemsToValidate = cart.map(i => ({ itemName: i.itemName, quantity: i.quantity, duration: i.duration }));
-        itemsToValidate.push({ itemName: selectedItem.itemName, quantity: qty, duration: duration });
+        itemsToValidate.push({ itemName: item.itemName, quantity: qty, duration: duration });
 
         const errorSummary = await validateBookingAvailability(itemsToValidate, bookingDate, null);
         if (errorSummary) {
@@ -1330,10 +1666,9 @@
             return;
         }
 
-        const price = calculateTotal();
         cart.push({
-            itemId: selectedItem.id,
-            itemName: selectedItem.itemName,
+            itemId: item.id,
+            itemName: item.itemName,
             quantity: qty,
             duration: duration,
             price: price
@@ -1412,27 +1747,52 @@
         const grandTotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0).toFixed(2);
         const totalQuantity = cart.reduce((sum, i) => sum + i.quantity, 0);
         
-        let paymentMethodFinal = document.getElementById('payment-method').value;
-        let paidAmountFinal = document.getElementById('paid-amount').value || "0.00";
-        let totalPaidAmount = paidAmountFinal;
-        let remark = "";
+        let paymentMethodFinal = document.getElementById('co-payment-method').value;
+        let totalReceivedStr = "";
+        let totalReceivedSum = 0;
+        const dueAmount = parseFloat(grandTotal) || 0;
+        let mixDataForWA = null;
+        let paidAmountBreakdown = "";
 
         if (paymentMethodFinal === 'Mix') {
-            const mCash = parseFloat(document.getElementById('mix-cash').value) || 0;
-            const mOnline = parseFloat(document.getElementById('mix-online').value) || 0;
-            const mCard = parseFloat(document.getElementById('mix-card').value) || 0;
+            totalReceivedSum = mixPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+            // Store method and amount
+            totalReceivedStr = mixPayments.map(p => `${p.method} ${parseFloat(p.amount).toFixed(2)}`).join(', ');
+            paymentMethodFinal = mixPayments.map(p => p.method).join(', ');
+            mixDataForWA = [...mixPayments];
+
+            // Calculate breakdown for applied amounts (handling change deduction from Cash)
+            let change = Math.max(0, totalReceivedSum - dueAmount);
+            let tempPayments = mixPayments.map(p => ({...p, amt: parseFloat(p.amount) || 0}));
             
-            let methods = [];
-            let amounts = [];
-            
-            if (mCash > 0) { methods.push("Cash"); amounts.push(mCash); }
-            if (mOnline > 0) { methods.push("Online Transfer"); amounts.push(mOnline); }
-            if (mCard > 0) { methods.push("Card"); amounts.push(mCard); }
-            
-            paymentMethodFinal = methods.join(", ");
-            paidAmountFinal = amounts.join(", ");
-            totalPaidAmount = (mCash + mOnline + mCard).toFixed(2);
+            // Change is always deducted from Cash first
+            for (let p of tempPayments) {
+                if (p.method === 'Cash' && change > 0) {
+                    let deduct = Math.min(p.amt, change);
+                    p.amt -= deduct;
+                    change -= deduct;
+                }
+            }
+            // If change still remains (unlikely), deduct from others
+            if (change > 0) {
+                for (let p of tempPayments) {
+                    if (change > 0) {
+                        let deduct = Math.min(p.amt, change);
+                        p.amt -= deduct;
+                        change -= deduct;
+                    }
+                }
+            }
+            paidAmountBreakdown = tempPayments.map(p => p.amt.toFixed(2)).join(', ');
+        } else {
+            totalReceivedSum = parseFloat(receivedStr) || 0;
+            totalReceivedStr = `${paymentMethodFinal} ${totalReceivedSum.toFixed(2)}`;
+            paidAmountBreakdown = Math.min(totalReceivedSum, dueAmount).toFixed(2);
         }
+
+        // The actual amount applied to the sale (capped at the total due amount)
+        const paidAmountVal = Math.min(totalReceivedSum, dueAmount).toFixed(2);
+        let remark = "";
 
         try {
             // Create only ONE record in the database
@@ -1452,19 +1812,36 @@
                 "totalItems": totalQuantity.toString(),
                 "totalPrice": grandTotal,
                 "paymentMethod": paymentMethodFinal,
-                "paidAmount": paidAmountFinal,
-                "totalPaidAmount": totalPaidAmount,
+                "paidAmount": paidAmountBreakdown,
+                "totalReceived": totalReceivedStr,
+                "totalPaidAmount": paidAmountVal,
                 "orderBy": localStorage.getItem('mk_staffname') || 'Unknown',
                 "servedBy": "",
                 "customerStatus": "Pending"
             });
             
             // Save current cart data locally for the WhatsApp message generator
-            currentBooking = { orderId, customerName, customerPhone, totalPax: totalPaxStr, orderQrUrl: qrUrl, items: [...cart], paymentMethod: paymentMethodFinal, paidAmount: paidAmountFinal, totalPaidAmount };
+            currentBooking = { 
+                orderId, 
+                customerName, 
+                customerPhone, 
+                totalPax: totalPaxStr, 
+                orderQrUrl: qrUrl, 
+                items: [...cart], 
+                paymentMethod: paymentMethodFinal, 
+                paidAmount: paidAmountBreakdown, 
+                totalReceived: totalReceivedStr, 
+                orderDate: bookingDate.toLocaleString(),
+                totalReceivedSum: totalReceivedSum,
+                totalPrice: grandTotal,
+                totalPaidAmount: paidAmountVal,
+                mixPayments: mixDataForWA
+            };
             
             // Reset Cart
             cart = [];
             renderCart();
+            closeCheckoutModal();
             showBookingResult(orderId, qrUrl);
         } catch (err) {
             alert("Error creating booking: " + err.message);
@@ -1602,12 +1979,45 @@
     }
 
     function showBookingResult(orderId, qrUrl) {
-        const qrContainer = document.getElementById('qrcode');
-        qrContainer.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 200px; height: 200px;">`;
+        document.getElementById('order-placed-overlay').style.display = 'flex';
+        document.getElementById('op-qrcode').innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 180px; height: 180px;">`;
+        document.getElementById('op-order-id').innerText = "Order ID : " + orderId;
+        
+        const total = parseFloat(currentBooking.totalPrice);
+        const received = currentBooking.totalReceivedSum;
+        const change = Math.max(0, received - total);
+        
+        document.getElementById('op-total-amount').innerText = `RM${total.toFixed(2)}`;
+        document.getElementById('op-change-amount').innerText = `RM${change.toFixed(2)}`;
+        
+        const list = document.getElementById('op-amount-given-list');
+        list.innerHTML = '';
+        
+        if (currentBooking.mixPayments) {
+            currentBooking.mixPayments.forEach(p => {
+                list.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
+                        <span style="color: white;">${p.method}</span>
+                        <span style="color: white;">RM${parseFloat(p.amount).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        } else {
+            list.innerHTML = `
+                <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
+                    <span style="color: white;">${currentBooking.paymentMethod}</span>
+                    <span style="color: white;">RM${parseFloat(currentBooking.totalReceivedSum).toFixed(2)}</span>
+                </div>
+            `;
+        }
+        
+        // Original behavior: hide the old result container if it exists
+        document.getElementById('qr-result-container').style.display = 'none';
+    }
 
-        document.getElementById('order-id-txt').innerText = "Order ID: " + orderId;
-        document.getElementById('qr-result-container').style.display = 'flex';
-        document.getElementById('qr-result-container').scrollIntoView({ behavior: 'smooth' });
+    function closeOrderPlacedPopup() {
+        document.getElementById('order-placed-overlay').style.display = 'none';
+        resetBookingForm();
     }
 
     function sendWhatsApp() {
@@ -1622,17 +2032,39 @@
         // If paid amount is 0, show payment method as n/a for "book first" scenarios
         const paymentDisplay = (parseFloat(currentBooking.totalPaidAmount) || 0) > 0 ? currentBooking.paymentMethod : "n/a";
 
+        let paymentText = `*Payment:* ${paymentDisplay}\n`;
+        if (currentBooking.mixPayments) {
+            paymentText = `*Payment:* Mix\n`;
+            currentBooking.mixPayments.forEach(p => {
+                paymentText += `${p.method} : RM${parseFloat(p.amount).toFixed(2)}\n`;
+            });
+        }
+
+        const totalReceivedSum = currentBooking.totalReceivedSum || 0;
+        const totalPriceVal = parseFloat(currentBooking.totalPrice) || 0;
+        const changeVal = Math.max(0, totalReceivedSum - totalPriceVal).toFixed(2);
+
+        let paidText = `*Paid:* RM${currentBooking.totalPaidAmount}`;
+        
+        // Only show "Received" breakdown if it's NOT a mix payment (Mix shows breakdown above)
+        // and if received is more than paid
+        if (!currentBooking.mixPayments && (currentBooking.totalReceivedSum || 0) > parseFloat(currentBooking.totalPaidAmount)) {
+            paidText += ` (Received: RM${currentBooking.totalReceivedSum.toFixed(2)})`;
+        }
+
         const message = `*MK MARINE WATERSPORT*\n` +
                         `---------------------------\n` +
                         `*Order ID:* ${currentBooking.orderId}\n` +
+                        `*Date:* ${currentBooking.orderDate}\n` +
                         `*Name:* ${currentBooking.customerName}\n` +
                         `*Total pax:* ${currentBooking.totalPax}\n` +
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
                         `*Grand Total:* RM${grandTotal}\n` +
-                        `*Payment:* ${paymentDisplay}\n` +
-                        `*Paid:* RM${currentBooking.totalPaidAmount} (${currentBooking.paidAmount})\n` +
+                        `${paymentText}` +
+                        `${paidText}\n` +
+                        `*Change:* RM${changeVal}\n` +
                         `---------------------------\n` +
                         `*View QR Code:* ${currentBooking.orderQrUrl}\n` +
                         `---------------------------\n` +
@@ -1752,21 +2184,16 @@
         // Clear Customer Details
         document.getElementById('book-name').value = '';
         document.getElementById('book-phone').value = '';
-        document.getElementById('book-date').value = new Date().toISOString().slice(0, 16);
+        document.getElementById('book-date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
         // Clear Pax
         document.getElementById('pax-adult').value = 0;
         document.getElementById('pax-kids').value = 0;
         document.getElementById('pax-toddler').value = 0;
 
-        // Clear Payment Info
-        document.getElementById('payment-method').value = 'Cash';
-        document.getElementById('paid-amount').value = '';
-        document.getElementById('paid-amount').readOnly = false;
-        document.getElementById('mix-cash').value = '';
-        document.getElementById('mix-online').value = '';
-        document.getElementById('mix-card').value = '';
-        document.getElementById('mix-payment-fields').style.display = 'none';
+        // Reset Checkout Modal state
+        receivedStr = "0";
+        checkoutMode = "";
 
         // Clear Cart and UI
         cart = [];
@@ -1798,6 +2225,7 @@
         const message = `*MK MARINE WATERSPORT*\n` +
                         `---------------------------\n` +
                         `*Order ID:* ${s.orderId}\n` +
+                        `*Date:* ${new Date(s.orderDate).toLocaleString()}\n` +
                         `*Name:* ${s.customerName}\n` +
                         `*Total pax:* ${s.totalPax}\n` +
                         `---------------------------\n` +
