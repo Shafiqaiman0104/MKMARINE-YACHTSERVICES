@@ -2528,6 +2528,47 @@
             const pK = (data.totalPax||'').split(', ').find(x=>x.startsWith('K'))?.substring(1) || '0';
             const pT = (data.totalPax||'').split(', ').find(x=>x.startsWith('T'))?.substring(1) || '0';
 
+            const itemPrices = (data.orderItemPrice || '').split(', ');
+            const subtotalSum = itemPrices.reduce((sum, p) => sum + (parseFloat(p) || 0), 0);
+
+            // Format Discount Breakdown for display
+            let discountHtml = "n/a";
+            if (data.discount) {
+                const discounts = data.discount.split(', ');
+                discountHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.8rem;">
+                    <tbody>`;
+                discounts.forEach(d => {
+                    const lastSpace = d.lastIndexOf(' ');
+                    const name = d.substring(0, lastSpace);
+                    const amount = d.substring(lastSpace + 1);
+                    discountHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 4px;">${name}</td>
+                            <td style="padding: 4px; text-align: right; color: #ff4b2b;">${amount}</td>
+                        </tr>`;
+                });
+                discountHtml += `</tbody></table>`;
+            }
+
+            // Format Total Received Breakdown for display
+            let receivedHtml = "n/a";
+            if (data.totalReceived) {
+                const entries = data.totalReceived.split(', ');
+                receivedHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.8rem;">
+                    <tbody>`;
+                entries.forEach(e => {
+                    const lastSpace = e.lastIndexOf(' ');
+                    const type = e.substring(0, lastSpace);
+                    const amount = e.substring(lastSpace + 1);
+                    receivedHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 4px;">${type}</td>
+                            <td style="padding: 4px; text-align: right; color: #25d366;">RM${amount}</td>
+                        </tr>`;
+                });
+                receivedHtml += `</tbody></table>`;
+            }
+
             fields.innerHTML = `
                 <div class="input-group full-width">
                     <label>Order ID (Read-only)</label>
@@ -2624,6 +2665,15 @@
                 </div>
 
                 <div class="full-width">
+                    <label>Discount Breakdown (Reference)</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${discountHtml}</div>
+                </div>
+                <div class="full-width">
+                    <label>Total Received Breakdown (Reference)</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${receivedHtml}</div>
+                </div>
+
+                <div class="full-width">
                     <label>Payment Breakdown</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
@@ -2640,6 +2690,10 @@
                     </div>
                 </div>
 
+                <div class="input-group">
+                    <label>Subtotal (Live)</label>
+                    <div id="edit-subtotal" style="padding: 10px; color: white; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${subtotalSum.toFixed(2)}</div>
+                </div>
                 <div class="input-group">
                     <label>Grand Total (Live)</label>
                     <div id="edit-grand-total" style="padding: 10px; color: #00d2ff; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
@@ -2672,7 +2726,6 @@
             const itemNames = (data.orderItemName || '').split(', ');
             const itemQtys = (data.orderItemQuantity || '').split(', ');
             const itemDurs = (data.orderItemRentalDuration || '').split(', ');
-            const itemPrices = (data.orderItemPrice || '').split(', ');
             itemNames.forEach((name, i) => {
                 if (name) addEditItemRow({ name, qty: itemQtys[i], dur: itemDurs[i], price: itemPrices[i] });
             });
@@ -2705,6 +2758,7 @@
             const itemQtys = (data.orderItemQuantity || '').split(', ');
             const itemDurs = (data.orderItemRentalDuration || '').split(', ');
             const itemPrices = (data.orderItemPrice || '').split(', ');
+            const subtotalSum = itemPrices.reduce((sum, p) => sum + (parseFloat(p) || 0), 0);
 
             let itemsTableHtml = `
                 <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
@@ -2858,6 +2912,10 @@
                 <div class="input-group">
                     <label>Payment Breakdown</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${paymentsHtml}</div>
+                </div>
+                <div class="input-group">
+                    <label>Subtotal</label>
+                    <div style="padding: 10px; color: white; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${subtotalSum.toFixed(2)}</div>
                 </div>
                 <div class="input-group">
                     <label>Grand Total</label>
@@ -3141,6 +3199,10 @@
     }
 
     function recalculateSalesEditTotals() {
+        let subtotal = 0;
+        document.querySelectorAll('#items-edit-body input[name="item_price"]').forEach(input => {
+            subtotal += parseFloat(input.value) || 0;
+        });
         let grandTotal = 0;
         document.querySelectorAll('#items-edit-body input[name="item_price"]').forEach(input => {
             grandTotal += parseFloat(input.value) || 0;
@@ -3149,6 +3211,7 @@
         document.querySelectorAll('#payments-edit-body input[name="pay_amount"]').forEach(input => {
             totalPaid += parseFloat(input.value) || 0;
         });
+        if (document.getElementById('edit-subtotal')) document.getElementById('edit-subtotal').innerText = 'RM' + subtotal.toFixed(2);
         document.getElementById('edit-grand-total').innerText = 'RM' + grandTotal.toFixed(2);
         document.getElementById('edit-total-paid').innerText = 'RM' + totalPaid.toFixed(2);
     }
