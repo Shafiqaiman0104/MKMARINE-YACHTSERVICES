@@ -2297,6 +2297,7 @@
 
             resultDiv.innerHTML = `
                 <input type="hidden" id="serve-record-id" value="${record.id}">
+                <input type="hidden" id="serve-order-status" value="${record.orderStatus}">
                 <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
                 <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.customerName}</div></div>
                 <div class="input-group"><label>Total Pax Breakdown</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
@@ -2321,8 +2322,14 @@
 
     async function confirmOrderServed() {
         const id = document.getElementById('serve-record-id').value;
+        const orderStatus = document.getElementById('serve-order-status').value;
         const customerStatus = document.getElementById('serve-customer-status').value;
         const staffName = localStorage.getItem('mk_staffname') || 'Unknown';
+
+        if (orderStatus !== 'Completed') {
+            alert("order status not completed please tell your p.i.c");
+            return;
+        }
 
         try {
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
@@ -3019,6 +3026,14 @@
         const callback = type === 'staff' ? loadStaff : (type === 'items' ? loadItems : (type === 'discount' ? loadDiscounts : (type === 'orderStatusUpdate' ? loadOrders : loadSales)));
 
         try {
+            if (type === 'orderStatusUpdate') {
+                const record = currentSales.find(s => s.id === id);
+                if (record && record.orderStatus !== 'Completed') {
+                    alert("order status not completed please tell your p.i.c");
+                    return;
+                }
+            }
+
             if (type === 'sales') {
                 // Re-aggregate table inputs into comma-separated strings
                 const names = formData.getAll('item_name').join(', ');
