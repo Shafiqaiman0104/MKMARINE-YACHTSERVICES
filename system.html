@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MK Marine Login</title>
+    <title>SOUTH WAVE Login</title>
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -273,7 +273,7 @@
 <body>
 
 <div class="container" id="main-container">
-    <h2>MK MARINE</h2>
+    <h2>SOUTH WAVE</h2>
     <div id="login-form">
         <div class="input-group">
             <label>Username</label>
@@ -1759,11 +1759,12 @@
             summaryText += `\n`;
         });
 
-        const message = `*MK MARINE WATERSPORT - AVAILABILITY*\n` +
+        const message = `*SOUTH WAVE - AVAILABILITY*\n` +
                         `---------------------------\n` +
                         `${summaryText}` +
                         `---------------------------\n` +
-                        `Thank you!`;
+                        `Thank you!\n` +
+                        `_*- Powered By VentureRush Tech*_`;
         
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
         document.getElementById('avail-wa-overlay').style.display = 'none';
@@ -2207,7 +2208,7 @@
             paidText += ` (Received: RM${currentBooking.totalReceivedSum.toFixed(2)})`;
         }
 
-        const message = `*MK MARINE WATERSPORT*\n` +
+        const message = `*SOUTH WAVE*\n` +
                         `---------------------------\n` +
                         `*Order ID:* ${currentBooking.orderId}\n` +
                         `*Date:* ${currentBooking.orderDate}\n` +
@@ -2223,7 +2224,8 @@
                         `---------------------------\n` +
                         `*View QR Code:* ${currentBooking.orderQrUrl}\n` +
                         `---------------------------\n` +
-                        `Thank you for your booking!`;
+                        `Thank you for your booking!\n` +
+                        `_*- Powered By VentureRush Tech*_`;
         
         window.open(`https://wa.me/${currentBooking.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
@@ -2385,7 +2387,7 @@
                          `*Grand Total:* RM${s.totalPrice}\n`;
         }
 
-        const message = `*MK MARINE WATERSPORT*\n` +
+        const message = `*SOUTH WAVE*\n` +
                         `---------------------------\n` +
                         `*Order ID:* ${s.orderId}\n` +
                         `*Date:* ${new Date(s.orderDate).toLocaleString()}\n` +
@@ -2400,7 +2402,8 @@
                         `---------------------------\n` +
                         `*View QR Code:* ${s.orderQrUrl}\n` +
                         `---------------------------\n` +
-                        `Thank you for your booking!`;
+                        `Thank you for your booking!\n` +
+                        `_*- Powered By VentureRush Tech*_`;
 
         window.open(`https://wa.me/${s.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
