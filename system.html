@@ -436,7 +436,7 @@
                 <table id="discount-table" style="width: 100%; border-collapse: collapse; white-space: nowrap;">
                     <thead>
                         <tr style="text-align: left; border-bottom: 2px solid rgba(0, 210, 255, 0.3);">
-                            <th style="padding: 10px;">Name</th><th style="padding: 10px;">Applies To</th><th style="padding: 10px;">Type</th><th style="padding: 10px;">Value</th><th style="padding: 10px;">Start</th><th style="padding: 10px;">End</th><th style="padding: 10px;">Actions</th>
+                            <th style="padding: 10px;">Name</th><th style="padding: 10px;">Applies To</th><th style="padding: 10px;">Type</th><th style="padding: 10px;">Value</th><th style="padding: 10px;">Start</th><th style="padding: 10px;">End</th><th style="padding: 10px;">Status</th><th style="padding: 10px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="discount-body"></tbody>
@@ -586,7 +586,10 @@
         </div>
         <div class="checkout-body">
             <div class="checkout-left" style="color: white;">
-                <h3 style="margin-bottom:15px; color:#00d2ff;">Order Summary</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color:#00d2ff;">Order Summary</h3>
+                    <i class="fas fa-tags" style="cursor:pointer; font-size: 1.1rem; color: #00d2ff;" onclick="openDiscountPicker()"></i>
+                </div>
                 <div id="checkout-item-list"></div>
                 <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1); font-size:1.3rem; color: white;">
                     Grand Total: <span id="checkout-grand-total" style="color:white; font-weight:bold;">RM0.00</span>
@@ -770,6 +773,17 @@
     </div>
 </div>
 
+<!-- Discount Picker Modal -->
+<div class="form-overlay" id="discount-picker-overlay" style="z-index: 300;">
+    <div class="form-content" style="max-width: 500px;">
+        <h3 style="margin-bottom:20px; color:#00d2ff;">Available Discounts</h3>
+        <div id="discount-picker-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Populated by JS -->
+        </div>
+        <button class="btn-danger" onclick="document.getElementById('discount-picker-overlay').style.display='none'" style="margin-top:20px;">Close</button>
+    </div>
+</div>
+
 <script>
     const pb = new PocketBase('https://pocketbase.venturerushtech.com');
     // Disable auto-cancellation globally to prevent the "autocancelled" error
@@ -779,6 +793,8 @@
     let currentItems = [];
     let currentSales = [];
     let currentDiscounts = [];
+    let appliedDiscounts = [];
+    let currentDiscountDataForSubmit = "";
     let selectedItem = null;
     let currentBooking = null;
     let html5QrCode = null;
@@ -795,7 +811,8 @@
         document.querySelectorAll('.payment-toggle-btn').forEach(b => b.classList.remove('active'));
         if (btn) btn.classList.add('active');
 
-        const due = cart.reduce((sum, i) => sum + parseFloat(i.price), 0);
+        // Use the discounted total from the UI
+        const due = parseFloat(document.getElementById('co-total-due').innerText.replace('RM', '')) || 0;
 
         if (method === 'Mix') {
             document.getElementById('co-received-card').style.display = 'none';
@@ -814,7 +831,7 @@
         updateCheckoutDisplay();
     }
 
-    function openCheckoutModal(mode) {
+    async function openCheckoutModal(mode) {
         if (cart.length === 0) return alert("Cart is empty");
 
         const name = document.getElementById('book-name').value.trim();
@@ -835,27 +852,107 @@
             }
         }
 
+        // Fetch and process discounts
+        try {
+            currentDiscounts = await pb.collection('MKMARINE_WATERSPORT_DISCOUNT_DATA').getFullList({
+                filter: 'discountStatus = "Active"'
+            });
+        } catch (e) { console.error("Error fetching discounts:", e); }
+
+        appliedDiscounts = [];
+        const now = new Date();
+        currentDiscounts.forEach(d => {
+            if (d.discountAutoApplyTo && d.discountAutoApplyTo !== 'No') {
+                const start = d.discountStart ? new Date(d.discountStart) : null;
+                const end = d.discountEnd ? new Date(d.discountEnd) : null;
+                if ((!start || now >= start) && (!end || now <= end)) {
+                    appliedDiscounts.push(d);
+                }
+            }
+        });
+
         checkoutMode = mode;
         document.getElementById('checkout-overlay').style.display = 'flex';
         receivedStr = "0";
         mixPayments = [];
         activeMixIndex = -1;
         document.getElementById('co-mix-list').innerHTML = '';
+        updateCheckoutTotals();
         setPaymentMethod('Cash', document.getElementById('pay-btn-cash'));
-        
-        const itemList = document.getElementById('checkout-item-list');
-        const grandTotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0);
-        
-        itemList.innerHTML = cart.map(item => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem; color: white;">
+    }
+
+    function updateCheckoutTotals() {
+        const itemListEl = document.getElementById('checkout-item-list');
+        let subtotal = 0;
+        cart.forEach(item => subtotal += parseFloat(item.price));
+
+        let totalDiscountAmount = 0;
+        let discountBreakdown = [];
+
+        appliedDiscounts.forEach(d => {
+            let dAmountRecord = 0;
+            if (!d.discountAutoApplyTo || d.discountAutoApplyTo === 'No') {
+                const val = parseFloat(d.discountValue) || 0;
+                dAmountRecord = d.discountType === 'Percentage' ? (subtotal * val / 100) : val;
+            } else {
+                const ids = (d.discountAutoApplyTo === 'ALL' ? currentItems.map(i=>i.id).join(', ') : d.discountAutoApplyTo).split(', ');
+                const types = (d.discountType || '').split(', ');
+                const values = (d.discountValue || '').split(', ');
+                cart.forEach(cItem => {
+                    const idx = ids.findIndex(id => id.trim() === cItem.itemId);
+                    if (idx !== -1) {
+                        const type = types[idx]?.trim() || 'Percentage';
+                        const val = parseFloat(values[idx]) || 0;
+                        if (type === 'Percentage') {
+                            dAmountRecord += (parseFloat(cItem.price) * val / 100);
+                        } else {
+                            // Scale fixed discount by quantity and duration relative to base duration
+                            const itemData = currentItems.find(it => it.id === cItem.itemId);
+                            const baseDur = itemData ? (parseFloat(itemData.itemRentalDuration) || 1) : 1;
+                            dAmountRecord += val * cItem.quantity * (cItem.duration / baseDur);
+                        }
+                    }
+                });
+            }
+            if (dAmountRecord > 0) {
+                totalDiscountAmount += dAmountRecord;
+                discountBreakdown.push({ name: d.discountName, amount: dAmountRecord, id: d.id });
+            }
+        });
+
+        const finalGrandTotal = Math.max(0, subtotal - totalDiscountAmount);
+        currentDiscountDataForSubmit = discountBreakdown.map(db => `${db.name} RM${db.amount.toFixed(2)}`).join(', ');
+
+        let html = `<div style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">`;
+        cart.forEach(item => {
+            html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.85rem; color: rgba(255,255,255,0.8);">
                 <span>${item.itemName} (x${item.quantity}) - ${item.duration}m</span>
                 <span>RM${parseFloat(item.price).toFixed(2)}</span>
-            </div>
-        `).join('');
-        
-        document.getElementById('checkout-grand-total').innerText = `RM${grandTotal.toFixed(2)}`;
-        document.getElementById('co-total-due').innerText = `RM${grandTotal.toFixed(2)}`;
+            </div>`;
+        });
+        html += `</div><div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:1rem;">
+            <span>Subtotal</span><span>RM${subtotal.toFixed(2)}</span>
+        </div>`;
+
+        discountBreakdown.forEach(db => {
+            html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem; color:#ff4b2b;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button onclick="removeAppliedDiscount('${db.id}')" style="width:20px; height:20px; padding:0; margin:0; background:rgba(255,0,0,0.2); font-size:0.7rem; border-radius:50%; border:none; color:white; cursor:pointer;">×</button>
+                    <span>Discount (${db.name})</span>
+                </div>
+                <span>-RM${db.amount.toFixed(2)}</span>
+            </div>`;
+        });
+
+        itemListEl.innerHTML = html;
+        document.getElementById('checkout-grand-total').innerText = `RM${finalGrandTotal.toFixed(2)}`;
+        document.getElementById('co-total-due').innerText = `RM${finalGrandTotal.toFixed(2)}`;
         updateCheckoutDisplay();
+    }
+
+    function removeAppliedDiscount(id) {
+        appliedDiscounts = appliedDiscounts.filter(d => d.id !== id);
+        updateCheckoutTotals();
     }
 
     function closeCheckoutModal() { document.getElementById('checkout-overlay').style.display = 'none'; }
@@ -882,6 +979,53 @@
         updateCheckoutDisplay(); 
     }
 
+    function openDiscountPicker() {
+        const list = document.getElementById('discount-picker-list');
+        document.getElementById('discount-picker-overlay').style.display = 'flex';
+        list.innerHTML = currentDiscounts.map(d => {
+            const isApplied = appliedDiscounts.some(ad => ad.id === d.id);
+            const start = d.discountStart ? new Date(d.discountStart).toLocaleString() : 'N/A';
+            const end = d.discountEnd ? new Date(d.discountEnd).toLocaleString() : 'N/A';
+            return `
+                <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border:1px solid ${isApplied ? '#00d2ff' : 'rgba(255,255,255,0.1)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h4 style="color:#00d2ff;">${d.discountName}</h4>
+                        <button onclick="toggleDiscountSelection('${d.id}')" style="width:auto; margin:0; background:${isApplied ? '#ff4b2b' : '#25d366'}; padding:5px 15px;">
+                            ${isApplied ? 'Remove' : 'Apply'}
+                        </button>
+                    </div>
+                    <div style="font-size:0.8rem; margin-top:8px; opacity:0.8;">
+                        Type: ${d.discountType.includes(',') ? 'Mixed' : d.discountType} | Value: ${d.discountValue.includes(',') ? 'Mixed' : d.discountValue}<br>
+                        Valid: ${start} - ${end}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function toggleDiscountSelection(id) {
+        const idx = appliedDiscounts.findIndex(d => d.id === id);
+        if (idx !== -1) {
+            appliedDiscounts.splice(idx, 1);
+        } else {
+            const d = currentDiscounts.find(x => x.id === id);
+            const now = new Date();
+            const start = d.discountStart ? new Date(d.discountStart) : null;
+            const end = d.discountEnd ? new Date(d.discountEnd) : null;
+            
+            if (start && now < start) {
+                return alert(`This discount only available at ${start.toLocaleString()}`);
+            }
+            if (end && now > end) {
+                return alert(`This discount already expired at ${end.toLocaleString()}`);
+            }
+            
+            appliedDiscounts.push(d);
+        }
+        updateCheckoutTotals();
+        openDiscountPicker();
+    }
+
     function addMixPaymentRow() {
         const type = document.getElementById('co-mix-type-select').value;
         mixPayments.push({ method: type, amount: "0" });
@@ -906,7 +1050,8 @@
     }
 
     function updateCheckoutDisplay() {
-        const due = cart.reduce((sum, i) => sum + parseFloat(i.price), 0);
+        // Calculate change based on the discounted grand total
+        const due = parseFloat(document.getElementById('co-total-due').innerText.replace('RM', '')) || 0;
         const method = document.getElementById('co-payment-method').value;
         
         let received = 0;
@@ -1077,6 +1222,7 @@
                 <td style="padding: 10px;">${isMulti ? 'Multi' : d.discountValue}</td>
                 <td style="padding: 10px;"><small>${d.discountStart ? new Date(d.discountStart).toLocaleDateString() : '-'}</small></td>
                 <td style="padding: 10px;"><small>${d.discountEnd ? new Date(d.discountEnd).toLocaleDateString() : '-'}</small></td>
+                <td style="padding: 10px;"><span style="color: ${d.discountStatus === 'Active' ? '#25d366' : '#ff4b2b'}">${d.discountStatus || 'Inactive'}</span></td>
                 <td style="padding: 10px; display: flex; gap: 5px;">
                     <button class="btn-small" style="margin:0;" onclick="openModal('discount', '${d.id}')">Edit</button>
                     <button class="btn-small btn-danger" style="margin:0;" onclick="deleteEntry('MKMARINE_WATERSPORT_DISCOUNT_DATA', '${d.id}', loadDiscounts)">Del</button>
@@ -1744,7 +1890,8 @@
         const combinedQtys = cart.map(i => i.quantity).join(', ');
         const combinedDurations = cart.map(i => i.duration).join(', ');
         const combinedPrices = cart.map(i => i.price).join(', ');
-        const grandTotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0).toFixed(2);
+        const grandTotal = document.getElementById('checkout-grand-total').innerText.replace('RM', '');
+        const subtotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0).toFixed(2);
         const totalQuantity = cart.reduce((sum, i) => sum + i.quantity, 0);
         
         let paymentMethodFinal = document.getElementById('co-payment-method').value;
@@ -1812,6 +1959,7 @@
                 "totalItems": totalQuantity.toString(),
                 "totalPrice": grandTotal,
                 "paymentMethod": paymentMethodFinal,
+                "discount": currentDiscountDataForSubmit,
                 "paidAmount": paidAmountBreakdown,
                 "totalReceived": totalReceivedStr,
                 "totalPaidAmount": paidAmountVal,
@@ -1834,6 +1982,8 @@
                 orderDate: bookingDate.toLocaleString(),
                 totalReceivedSum: totalReceivedSum,
                 totalPrice: grandTotal,
+                subtotal: subtotal,
+                discount: currentDiscountDataForSubmit,
                 totalPaidAmount: paidAmountVal,
                 mixPayments: mixDataForWA
             };
@@ -2027,7 +2177,13 @@
             `- ${i.itemName} (x${i.quantity}) ${i.duration}m: RM${i.price}`
         ).join('\n');
 
-        const grandTotal = currentBooking.items.reduce((sum, i) => sum + parseFloat(i.price), 0).toFixed(2);
+        const totalPriceVal = parseFloat(currentBooking.totalPrice) || 0;
+        let totalsText = `*Grand Total:* RM${totalPriceVal.toFixed(2)}\n`;
+        if (currentBooking.discount) {
+            totalsText = `*Subtotal:* RM${currentBooking.subtotal}\n` +
+                         `*Discount:* ${currentBooking.discount}\n` +
+                         `*Grand Total:* RM${totalPriceVal.toFixed(2)}\n`;
+        }
         
         // If paid amount is 0, show payment method as n/a for "book first" scenarios
         const paymentDisplay = (parseFloat(currentBooking.totalPaidAmount) || 0) > 0 ? currentBooking.paymentMethod : "n/a";
@@ -2041,7 +2197,6 @@
         }
 
         const totalReceivedSum = currentBooking.totalReceivedSum || 0;
-        const totalPriceVal = parseFloat(currentBooking.totalPrice) || 0;
         const changeVal = Math.max(0, totalReceivedSum - totalPriceVal).toFixed(2);
 
         let paidText = `*Paid:* RM${currentBooking.totalPaidAmount}`;
@@ -2061,7 +2216,7 @@
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
-                        `*Grand Total:* RM${grandTotal}\n` +
+                        `${totalsText}` +
                         `${paymentText}` +
                         `${paidText}\n` +
                         `*Change:* RM${changeVal}\n` +
@@ -2222,6 +2377,14 @@
 
         const paymentDisplay = (parseFloat(s.totalPaidAmount) || 0) > 0 ? s.paymentMethod : "n/a";
 
+        const subtotal = prices.reduce((sum, p) => sum + (parseFloat(p) || 0), 0).toFixed(2);
+        let totalsText = `*Grand Total:* RM${s.totalPrice}\n`;
+        if (s.discount) {
+            totalsText = `*Subtotal:* RM${subtotal}\n` +
+                         `*Discount:* ${s.discount}\n` +
+                         `*Grand Total:* RM${s.totalPrice}\n`;
+        }
+
         const message = `*MK MARINE WATERSPORT*\n` +
                         `---------------------------\n` +
                         `*Order ID:* ${s.orderId}\n` +
@@ -2231,7 +2394,7 @@
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
-                        `*Grand Total:* RM${s.totalPrice}\n` +
+                        `${totalsText}` +
                         `*Payment:* ${paymentDisplay}\n` +
                         `*Paid:* RM${s.totalPaidAmount} (${s.paidAmount})\n` +
                         `---------------------------\n` +
@@ -2293,6 +2456,13 @@
 
             fields.innerHTML = `
                 <input type="text" name="discountName" placeholder="Discount Name" value="${data.discountName ?? ''}" class="full-width" required>
+                <div class="input-group full-width">
+                    <label>Discount Status</label>
+                    <select name="discountStatus">
+                        <option value="Active" ${data.discountStatus === 'Active' ? 'selected' : ''}>Active</option>
+                        <option value="Inactive" ${data.discountStatus === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                    </select>
+                </div>
                 <div class="input-group full-width">
                     <label>Auto Apply</label>
                     <select id="discount-auto-apply-select" onchange="toggleDiscountAutoApply()">
