@@ -2732,7 +2732,57 @@
             });
             itemsTableHtml += `</tbody></table>`;
 
-            // Parse Payment Breakdown
+            // Parse Discount Breakdown
+            let discountHtml = "n/a";
+            if (data.discount) {
+                const discounts = data.discount.split(', ');
+                discountHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                            <th style="padding: 5px; text-align: left;">Discount Name</th>
+                            <th style="padding: 5px; text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                discounts.forEach(d => {
+                    const lastSpace = d.lastIndexOf(' ');
+                    const name = d.substring(0, lastSpace);
+                    const amount = d.substring(lastSpace + 1);
+                    discountHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 5px;">${name}</td>
+                            <td style="padding: 5px; text-align: right; color: #ff4b2b;">${amount}</td>
+                        </tr>`;
+                });
+                discountHtml += `</tbody></table>`;
+            }
+
+            // Parse Total Received Breakdown
+            let receivedHtml = "n/a";
+            if (data.totalReceived) {
+                const entries = data.totalReceived.split(', ');
+                receivedHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                            <th style="padding: 5px; text-align: left;">Received Type</th>
+                            <th style="padding: 5px; text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                entries.forEach(e => {
+                    const lastSpace = e.lastIndexOf(' ');
+                    const type = e.substring(0, lastSpace);
+                    const amount = e.substring(lastSpace + 1);
+                    receivedHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 5px;">${type}</td>
+                            <td style="padding: 5px; text-align: right; color: #25d366;">RM${amount}</td>
+                        </tr>`;
+                });
+                receivedHtml += `</tbody></table>`;
+            }
+
+            // Original Payment Breakdown (capped paid amount)
             const payMethods = (data.paymentMethod || '').split(', ');
             const payAmounts = (data.paidAmount || '').split(', ');
             let paymentsHtml = `
@@ -2797,6 +2847,18 @@
                     <label>Status</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderStatus ?? ''}</div>
                 </div>
+                <div class="full-width">
+                    <label>Total Received Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${receivedHtml}</div>
+                </div>
+                <div class="full-width">
+                    <label>Discount Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${discountHtml}</div>
+                </div>
+                <div class="input-group">
+                    <label>Payment Breakdown</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${paymentsHtml}</div>
+                </div>
                 <div class="input-group">
                     <label>Grand Total</label>
                     <div style="padding: 10px; color: #00d2ff; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
@@ -2804,10 +2866,6 @@
                 <div class="input-group">
                     <label>Total Paid</label>
                     <div style="padding: 10px; color: #25d366; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
-                </div>
-                <div class="input-group">
-                    <label>Payment Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${paymentsHtml}</div>
                 </div>
                 <div class="input-group">
                     <label>Order Taken By</label>
