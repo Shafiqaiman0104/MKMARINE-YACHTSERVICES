@@ -1639,6 +1639,11 @@
             timePoints.add(reqStartMs);
             timePoints.add(globalMaxEndMs);
 
+            // Ensure requested item end times are treated as boundaries
+            itemsToCheck.forEach(it => {
+                timePoints.add(reqStartMs + it.duration * 60000);
+            });
+
             sales.forEach(sale => {
                 const orderStart = new Date(sale.orderDate).getTime();
                 const names = (sale.orderItemName || '').split(', ');
