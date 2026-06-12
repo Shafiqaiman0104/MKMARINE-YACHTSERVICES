@@ -6,6 +6,10 @@
   <title>South Wave | Watersports & Yacht Services</title>
   <!-- Font Awesome 6 for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Three.js for 3D Model -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- GLTFLoader for .glb files -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <style>
     * {
       margin: 0;
@@ -242,6 +246,10 @@
       padding: 2rem 2rem 3rem;
     }
 
+    .gallery-section {
+      padding-top: 6rem;
+    }
+
     /* ---------- HOME : PARALLAX IMAGE with white logo images ---------- */
     .home-section {
       position: relative;
@@ -252,6 +260,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Floating Duck 3D Container */
+    #duck-container {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 300px;
+      z-index: 5;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
     }
 
     .home-overlay {
@@ -322,6 +344,8 @@
     /* ---------- ABOUT US (short text, compact cards) ---------- */
     .about-section {
       background: #ffffff;
+      position: relative;
+      z-index: 10; /* Higher than duck (z-index 5) to hide it */
     }
 
     .section-title {
@@ -432,6 +456,14 @@
     /* ---------- OUR SERVICE ---------- */
     .service-section {
       background: #f4faff;
+      position: relative;
+    }
+
+    .service-section .section-title,
+    .service-section .filter-bar,
+    .service-section .services-grid {
+      position: relative;
+      z-index: 6; /* Higher than duck (z-index 5) to put it behind content */
     }
 
     .filter-bar {
@@ -1147,6 +1179,165 @@
         }, 4000); // 4 seconds duration to let all logo animations finish
       });
 
+      // --- 3D PADDLE MODEL LOGIC ---
+      let duckModel, duckRenderer, duckScene, duckCamera;
+      const duckContainer = document.createElement('div');
+      duckContainer.id = 'duck-container';
+      document.body.appendChild(duckContainer);
+
+      function initDuck() {
+        duckScene = new THREE.Scene();
+        duckCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        duckCamera.position.set(0, 0, 100); // Moved back to accommodate huge scale
+
+        duckRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        duckRenderer.setSize(300, 300);
+        duckRenderer.setPixelRatio(window.devicePixelRatio);
+        duckContainer.appendChild(duckRenderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.5);
+        duckScene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        dirLight.position.set(20, 20, 100); // Adjusted light to match camera
+        duckScene.add(dirLight);
+
+        // --- PADDLE LOADING ---
+        const loader = new THREE.GLTFLoader();
+        // Loading your local paddleboat.glb file directly
+        loader.load('paddleboat.glb', function(gltf) {
+          duckModel = gltf.scene;
+          
+          // Center and Auto-Scale
+          const box = new THREE.Box3().setFromObject(duckModel);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          duckModel.position.sub(center);
+          
+          // Calculate scale to be smaller within the container
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const modelScale = 50 / maxDim; 
+          duckModel.scale.set(modelScale, modelScale, modelScale);
+          
+          duckScene.add(duckModel);
+          updateDuckPosition();
+        }, undefined, (err) => console.error('Error loading GLB file:', err));
+
+        function animate() {
+          requestAnimationFrame(animate);
+          
+          if (duckModel) {
+            // PHYSICS SIMULATION (Spring-Mass-Damper for water-like drift)
+            // Horizontal Physics
+            let ax = (targetX - currentX) * springStiffness;
+            velX += ax;
+            velX *= springDamping;
+            currentX += velX;
+
+            // Vertical Physics
+            let ay = (targetTop - currentTop) * springStiffness;
+            velY += ay;
+            velY *= springDamping;
+            currentTop += velY; 
+
+            // Rotation & Opacity Smoothing (Even slower for a heavy, water-like drift)
+            currentRotY += (targetRotY - currentRotY) * 0.02;
+            currentRotZ += (targetRotZ - currentRotZ) * 0.02;
+            currentRotX += (targetRotX - currentRotX) * 0.02;
+            currentOpacity += (targetOpacity - currentOpacity) * 0.02;
+
+            // Apply Styles
+            duckContainer.style.top = currentTop + 'px';
+            duckContainer.style.left = currentX + '%';
+            duckContainer.style.opacity = currentOpacity;
+            duckContainer.style.transform = 'translateX(-50%)';
+
+            duckModel.rotation.y = currentRotY;
+            duckModel.rotation.z = currentRotZ;
+            duckModel.rotation.x = currentRotX;
+          }
+
+          duckRenderer.render(duckScene, duckCamera);
+        }
+        animate();
+      }
+
+      // Physics State
+      let lastScrollY = window.scrollY;
+      let targetX = 50, currentX = 50, velX = 0;
+      let targetTop = 0, currentTop = 0, velY = 0;
+      let targetRotY = 0, currentRotY = 0;
+      let targetRotZ = 0, currentRotZ = 0;
+      let targetRotX = 0, currentRotX = 0;
+      let targetOpacity = 0, currentOpacity = 0;
+
+      const springStiffness = 0.008; // Even slower reaction to scroll
+      const springDamping = 0.96;   // Higher momentum, very smooth glide
+
+      function updateDuckPosition() {
+        if (!duckModel) return;
+        const scrollY = window.scrollY;
+        const vh = window.innerHeight;
+        const aboutSection = document.getElementById('about');
+        const serviceSection = document.getElementById('service');
+        const gallerySection = document.getElementById('gallery');
+        const galleryTitle = gallerySection.querySelector('.section-title');
+        const bookBtn = document.querySelector('.btn-book-transparent');
+
+        // Determine direction and speed for horizontal path
+        const pathWidth = 80;
+        const scrollFactor = 0.12;
+        const t = scrollY * scrollFactor;
+        const cycle = (t + pathWidth / 2) % (2 * pathWidth);
+        
+        targetX = 10 + (cycle < pathWidth ? cycle : 2 * pathWidth - cycle);
+        const moveDirection = cycle < pathWidth ? 1 : -1;
+
+        // Dynamic Rotation
+        targetRotY = scrollY * 0.01;
+        targetRotZ = moveDirection * 0.2; 
+        
+        // "Brake/Speed Bounce" Tilt: Lean forward/back based on scroll speed
+        const scrollDelta = scrollY - lastScrollY;
+        targetRotX = Math.min(Math.max(scrollDelta * 0.005, -0.4), 0.4);
+        lastScrollY = scrollY;
+
+        const aboutTop = aboutSection.offsetTop;
+        const serviceTop = serviceSection.offsetTop;
+
+        if (scrollY < aboutTop - 150) {
+          const rect = bookBtn.getBoundingClientRect();
+          targetTop = rect.bottom + 20 + (scrollY * 0.7);
+          targetOpacity = 1;
+        } else if (scrollY >= aboutTop - 150 && scrollY < serviceTop - 200) {
+          targetTop = vh * 0.45;
+          targetOpacity = 1;
+        } else if (scrollY >= serviceTop - 200) {
+          const duckFixedTop = vh * 0.82;
+          const titleTop = galleryTitle.offsetTop;
+          const titleHeight = galleryTitle.offsetHeight;
+          const parkingTopOnScreen = titleTop - scrollY;
+
+          // Calculate the offset needed to center the 300px container vertically with the title text
+          // containerHeight / 2 = 150. titleHeight / 2 is the vertical center of the text.
+          const vCenterOffset = 150 - (titleHeight / 2);
+          const adjustedParkingTop = parkingTopOnScreen - vCenterOffset;
+
+          // Parking logic: once the title reaches the paddleboat's floating level
+          if (adjustedParkingTop < duckFixedTop) {
+            targetTop = parkingTopOnScreen - 180; // Parked safely above the title text
+            targetX = 50; // Perfectly centered
+            
+            // Stop all rotations when parked
+            targetRotY = 0;
+            targetRotZ = 0;
+            targetRotX = 0;
+          } else {
+            targetTop = vh * 0.82; 
+          }
+          targetOpacity = 1;
+        }
+      }
+
       const servicesData = [
         { category: 'kayak', name: 'Single Kayak', price: 'RM 30', seater: '1 seater', duration: '60m', img: 'img/singleKayak.png' },
         { category: 'kayak', name: 'Double Kayak', price: 'RM 50', seater: '2 seater', duration: '60m', img: 'img/doubleKayak.png' },
@@ -1256,6 +1447,11 @@
 
       // Initial render
       renderServices('all');
+      
+      // Init 3D Duck
+      initDuck();
+      window.addEventListener('scroll', updateDuckPosition);
+      window.addEventListener('resize', updateDuckPosition);
 
       // Re-setup on resize to handle switching between mobile/desktop
       let resizeTimer;
