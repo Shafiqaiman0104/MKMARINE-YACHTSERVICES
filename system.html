@@ -471,6 +471,7 @@
                     <button class="tab-btn active" id="order-tab-pending" onclick="filterOrderTab('Pending')">Pending Status</button>
                     <button class="tab-btn" id="order-tab-complete" onclick="filterOrderTab('Complete')">Complete Status</button>
                     <button class="tab-btn" id="order-tab-all" onclick="filterOrderTab('All')">All Status</button>
+                    <button class="tab-btn" id="order-tab-timer" onclick="filterOrderTab('Timer')">All Timer</button>
                 </div>
             </div>
 
@@ -882,6 +883,7 @@
     let currentWaiverUrl = "";
     let currentOrderFilter = 'Pending';
     let currentDateFilter = 'Today';
+    let orderTableTimerInterval = null;
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -1470,6 +1472,14 @@
         if (f === 'Pending') document.getElementById('order-tab-pending').classList.add('active');
         if (f === 'Complete') document.getElementById('order-tab-complete').classList.add('active');
         if (f === 'All') document.getElementById('order-tab-all').classList.add('active');
+        if (f === 'Timer') document.getElementById('order-tab-timer').classList.add('active');
+
+        // Handle live updates for the Timer tab
+        if (orderTableTimerInterval) clearInterval(orderTableTimerInterval);
+        if (f === 'Timer') {
+            orderTableTimerInterval = setInterval(renderOrders, 1000);
+        }
+
         renderOrders();
     }
 
@@ -1488,6 +1498,8 @@
 
     function renderOrders() {
         const body = document.getElementById('order-body');
+        const orderTable = document.getElementById('order-table');
+        const thead = document.querySelector('#order-table thead');
         const now = new Date();
         const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
         
@@ -1520,17 +1532,107 @@
             if (currentOrderFilter === 'Complete') {
                 return isWaiverAgree && isOrderCompleted && isCustArrive;
             }
+            if (currentOrderFilter === 'Timer') {
+                return !!s.startTime;
+            }
             return true; // All
         });
 
         // Apply sorting based on the active status tab
-        if (currentOrderFilter === 'Complete') {
+        if (currentOrderFilter === 'Complete' || currentOrderFilter === 'Timer') {
             // Latest orderDate at top (Descending)
             filtered.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
         } else {
             // Latest orderDate at bottom (Ascending)
             filtered.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
         }
+
+        // Handle special table structure for All Timer tab
+        let timerDisplay = document.getElementById('order-timer-display');
+        if (currentOrderFilter === 'Timer') {
+            if (!timerDisplay) {
+                timerDisplay = document.createElement('div');
+                timerDisplay.id = 'order-timer-display';
+                orderTable.parentNode.insertBefore(timerDisplay, orderTable.nextSibling);
+            }
+
+            orderTable.style.display = 'none';
+            timerDisplay.style.display = 'block';
+
+            if (filtered.length === 0) {
+                timerDisplay.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5; color:white;">No active timers found for the selected date.</div>';
+                return;
+            }
+
+            timerDisplay.innerHTML = filtered.map(s => {
+                const start = new Date(s.startTime).getTime();
+                const names = (s.orderItemName || '').split(', ');
+                const qtys = (s.orderItemQuantity || '').split(', ');
+                const durs = (s.orderItemRentalDuration || '').split(', ');
+                
+                let itemRows = names.map((name, i) => {
+                    const durationMin = parseInt(durs[i]) || 0;
+                    const endTime = start + (durationMin * 60000);
+                    const diff = endTime - Date.now();
+                    const timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
+                    const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding:10px; white-space: nowrap;">${name}</td>
+                            <td style="padding:10px; text-align:center; white-space: nowrap;">${qtys[i]}</td>
+                            <td style="padding:10px; text-align:center; white-space: nowrap;">${durationMin}m</td>
+                            <td style="padding:10px; text-align:center; white-space: nowrap;">${endTimeStr}</td>
+                            <td style="padding:10px; text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div>
+                                <div style="color: #00d2ff; font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
+                                <div style="font-size: 0.85rem; opacity: 0.8;">${s.customerPhone} | ${new Date(s.orderDate).toLocaleString()}</div>
+                            </div>
+                            <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>
+                        </div>
+                        <div class="table-container" style="background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid rgba(0, 210, 255, 0.2);">
+                                        <th style="text-align:left; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Item</th>
+                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Qty</th>
+                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Duration</th>
+                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">End Time</th>
+                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Timer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${itemRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            return;
+        }
+
+        orderTable.style.display = 'table';
+        if (timerDisplay) timerDisplay.style.display = 'none';
+
+        // Reset to default Status Table Headers for other tabs
+        thead.innerHTML = `
+            <tr>
+                <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
+                <th style="white-space:nowrap;">Items</th>
+                <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Cust Status</th>
+                <th style="white-space:nowrap;">Served By</th>
+                <th style="white-space:nowrap;">Start Time</th>
+                <th style="white-space:nowrap;">Action</th>
+            </tr>
+        `;
 
         body.innerHTML = filtered.map(s => {
             const names = (s.orderItemName || '').split(', ');
