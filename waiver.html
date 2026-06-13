@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOUTH WAVE - Waiver Form</title>
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(45deg, #0f2027, #203a43, #2c5364); padding: 20px 0; }
+        .container { width: 95%; max-width: 500px; padding: 30px; background: rgba(255, 255, 255, 0.1); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); color: white; text-align: center; backdrop-filter: blur(10px); }
+        h2 { margin-bottom: 20px; font-weight: 300; letter-spacing: 2px; }
+        h3 { color:#00d2ff; margin-bottom: 5px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); text-align: left; }
+        input { width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; outline: none; color: white; margin-bottom: 15px; }
+        input:focus { border-color: #00d2ff; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { transform: translateY(-2px); }
+        #waiver-submit-btn { background: #25d366; }
+        .add-btn { background: #666; margin-bottom: 10px; }
+        .participant-entry { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; position: relative; }
+        .remove-btn { position: absolute; right: 0; top: -5px; background: none; color: #ff4b2b; width: auto; font-size: 0.8rem; }
+        .waiver-note { font-size: 0.75rem; line-height: 1.5; color: rgba(255,255,255,0.7); text-align: justify; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .agree-container { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; text-align: left; cursor: pointer; }
+        .agree-container input { width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0; }
+        .agree-container label { margin: 0; font-size: 0.9rem; color: #fff; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="waiver-form-content">
+    <h2>SOUTH WAVE</h2>
+    <img src="/img/logoWhite.png" alt="Logo" style="width: 120px; margin-bottom: 20px;">
+    <h3>Waiver Form</h3>
+    <p style="font-size: 0.8rem; margin-bottom: 25px; color: rgba(255,255,255,0.5);">Order ID: <span id="waiver-order-id-display"></span></p>
+    <div class="waiver-note">
+       <b> WAIVER/RELEASE OF LIABILITY AND ASSUMPTION OF RISK FOR SOUTH WAVE, WATERSPORTS ACTIVITIES </b> <br><br> I / We, the undersigned, hereby release and discharge MK MARINE & YACHT SERVICES, LOYALTY MARINE SDN. BHD., Pinetree Marina Resort Puteri Harbour and UEM Sunrise Berhad or its Managers, Employees, Officers, Agents, and Operators jointly and separately from any action, claims, demand, cost in respect to loss, injury, or death arising from the rental watersports equipment and activities managed by SOUTH WAVE, Watersports Adventure, including negligence which may have been or may be sustained by the undersigned in any way relating to or arising out of the activities or the use of the equipment. The undersigned desires and agrees to assume all risk. <br><br> I / We also fully agree, understand, and acknowledge the following: <br><br> 1. Warrant and certify that our physical condition is excellent and mental state is sufficiently stable to enable us to participate safely in these activities. <br><br> 2. Understand and agree to follow all safety rules and procedures. <br><br> I/We have read the Waiver/Release of Liability, Assumption of Risk, fully understand its items, understand that I have given up substantial rights by signing it, and aware of its legal consequences, and have signed it freely and voluntarily without any inducement.
+    </div>
+    
+    <div id="participant-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 20px; padding-right: 5px;">
+        <div class="participant-entry">
+            <label>Name</label>
+            <input type="text" name="p_name" placeholder="Enter Full Name">
+            <label>NRIC / PASSPORT</label>
+            <input type="text" name="p_nric" placeholder="Enter NRIC or Passport No">
+        </div>
+    </div>
+    
+    <button class="add-btn" onclick="addWaiverParticipant()">+ Add Participant</button>
+
+    <div class="agree-container" onclick="document.getElementById('agree-checkbox').click(); event.stopPropagation();">
+        <input type="checkbox" id="agree-checkbox" onclick="event.stopPropagation();">
+        <label for="agree-checkbox">I Agree to the Waiver/Release of Liability and Assumption of Risk stated above.</label>
+    </div>
+
+    <button id="waiver-submit-btn" onclick="submitWaiverForm()">Submit Waiver & Agree</button>
+</div>
+
+<script>
+    const pb = new PocketBase('https://pocketbase.venturerushtech.com');
+    pb.autoCancellation(false);
+
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('orderId');
+
+    window.onload = async () => {
+        if (!orderId) {
+            document.getElementById('waiver-form-content').innerHTML = `
+                <h2>SOUTH WAVE</h2>
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
+                <h3>Invalid Link</h3>
+                <p>Order ID is missing. Please use the link provided by the staff.</p>
+            `;
+            return;
+        }
+        document.getElementById('waiver-order-id-display').innerText = orderId;
+
+        try {
+            const record = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFirstListItem(`orderId="${orderId}"`);
+            
+            if (record.participantDetailsStatus === 'Agree') {
+                const firstName = record.participantDetails ? record.participantDetails.split(' ')[0] : 'Customer';
+                showSuccessUI(firstName, orderId);
+                return;
+            }
+
+            // Auto-generate fields based on totalPax (e.g., "A2, K1, T0" or "A2")
+            const paxStr = record.totalPax || "";
+            const paxParts = paxStr.split(', ');
+            let totalCount = 0;
+            paxParts.forEach(part => {
+                const num = parseInt(part.trim().substring(1)) || 0;
+                totalCount += num;
+            });
+
+            if (totalCount > 0) {
+                document.getElementById('participant-list').innerHTML = ''; // Clear default row
+                for (let i = 0; i < totalCount; i++) {
+                    addWaiverParticipant();
+                }
+            }
+        } catch (e) {
+            console.error("Status check failed", e);
+            alert("Wrong Order Id please use the correct link from staff");
+            document.getElementById('waiver-form-content').innerHTML = `
+                <h2>SOUTH WAVE</h2>
+                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
+                <h3>Order Not Found</h3>
+                <p>The Order ID provided is invalid. Please use the correct link from staff.</p>
+            `;
+        }
+    };
+
+    function addWaiverParticipant() {
+        const list = document.getElementById('participant-list');
+        const div = document.createElement('div');
+        div.className = 'participant-entry';
+        div.innerHTML = `
+            <button class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+            <label>Name</label>
+            <input type="text" name="p_name" placeholder="Enter Full Name">
+            <label>NRIC / PASSPORT</label>
+            <input type="text" name="p_nric" placeholder="Enter NRIC or Passport No">
+        `;
+        list.appendChild(div);
+        // Scroll to bottom
+        list.scrollTop = list.scrollHeight;
+    }
+
+    async function submitWaiverForm() {
+        const btn = document.getElementById('waiver-submit-btn');
+        const nameInputs = Array.from(document.querySelectorAll('input[name="p_name"]'));
+        const nricInputs = Array.from(document.querySelectorAll('input[name="p_nric"]'));
+        
+        const names = nameInputs.map(i => i.value.trim());
+        const nrics = nricInputs.map(i => i.value.trim());
+        
+        if (!document.getElementById('agree-checkbox').checked) {
+            alert("Please check the 'I Agree' box to proceed.");
+            return;
+        }
+
+        if (names.length === 0) {
+            alert("Please add at least one participant.");
+            return;
+        }
+
+        if (names.some(n => !n) || nrics.some(n => !n)) {
+            alert("Please fill all participant details");
+            return;
+        }
+
+        const details = names.map((n, i) => `${n} ${nrics[i]}`).join(', ');
+        
+        btn.disabled = true;
+        btn.innerText = "Submitting...";
+
+        try {
+            // Find the record
+            const record = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFirstListItem(`orderId="${orderId}"`);
+            
+            // Update record
+            await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(record.id, {
+                participantDetails: details,
+                participantDetailsStatus: 'Agree'
+            });
+
+            showSuccessUI(names[0], orderId);
+        } catch (e) {
+            console.error(e);
+            alert("Error: Order ID not found or server error.");
+            btn.disabled = false;
+            btn.innerText = "Submit Waiver & Agree";
+        }
+    }
+
+    function showSuccessUI(name, id) {
+        document.getElementById('waiver-form-content').innerHTML = `
+            <h2>SOUTH WAVE</h2>
+            <div style="margin: 30px 0;">
+                <i class="fas fa-check-circle" style="font-size: 5rem; color: #25d366; margin-bottom: 20px;"></i>
+                <h3 style="color: white;">Waiver Submitted!</h3>
+            </div>
+            <p style="margin-bottom: 20px; opacity: 0.8;">Thank you, <strong>${name}</strong> and team.</p>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">You have successfully agreed to the waiver terms for Order ${id}. You may close this page.</p>
+        `;
+    }
+</script>
+
+</body>
+</html>
