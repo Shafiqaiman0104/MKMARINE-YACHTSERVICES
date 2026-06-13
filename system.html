@@ -741,7 +741,7 @@
             <div style="margin: 15px 0; color: rgba(255,255,255,0.5); text-align: center;">— OR —</div>
             <div class="input-group">
                 <label>Enter Order ID</label>
-                <input type="text" id="manual-order-id" placeholder="e.g. MK-12345678">
+                <input type="text" id="manual-order-id" placeholder="e.g. SW-12345678">
             </div>
             <button onclick="handleOrderLookup(document.getElementById('manual-order-id').value)">Look up Order</button>
         </div>
@@ -766,7 +766,11 @@
         <h2 style="color: white; margin-bottom: 10px;">Order Place!!</h2>
         
         <div id="op-qrcode" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;"></div>
-        <div id="op-order-id" style="font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;">Order ID : MK-</div>
+        <div id="op-order-id" style="font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;">Order ID : SW-</div>
+
+        <div id="op-waiver-link-container" style="margin-bottom: 20px; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+            Waiver Form : <a id="op-waiver-url" href="#" target="_blank" style="color: #00d2ff; text-decoration: underline;"></a>
+        </div>
 
         <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;">
@@ -1963,7 +1967,7 @@
             return;
         }
 
-        const orderId = 'MK-' + Date.now().toString().slice(-8);
+        const orderId = 'SW-' + Date.now().toString().slice(-8);
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${orderId}`;
 
         // Combine items into single strings for one database record
@@ -2046,7 +2050,8 @@
                 "totalPaidAmount": paidAmountVal,
                 "orderBy": localStorage.getItem('mk_staffname') || 'Unknown',
                 "servedBy": "",
-                "customerStatus": "Pending"
+                "customerStatus": "Pending",
+                "participantDetailsStatus": "Pending"
             });
             
             // Save current cart data locally for the WhatsApp message generator
@@ -2214,6 +2219,10 @@
         document.getElementById('op-qrcode').innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 180px; height: 180px;">`;
         document.getElementById('op-order-id').innerText = "Order ID : " + orderId;
         
+        const waiverUrl = `https://southwavejb.com/waiver.html?orderId=${orderId}`;
+        document.getElementById('op-waiver-url').innerText = waiverUrl;
+        document.getElementById('op-waiver-url').href = waiverUrl;
+
         const total = parseFloat(currentBooking.totalPrice);
         const received = currentBooking.totalReceivedSum;
         const change = Math.max(0, received - total);
@@ -2301,6 +2310,8 @@
                         `${paymentText}` +
                         `${paidText}\n` +
                         `*Change:* RM${changeVal}\n` +
+                        `---------------------------\n` +
+                        `*Waiver Form:* https://southwavejb.com/waiver.html?orderId=${currentBooking.orderId}\n` +
                         `---------------------------\n` +
                         `*View QR Code:* ${currentBooking.orderQrUrl}\n` +
                         `---------------------------\n` +
