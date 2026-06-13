@@ -292,6 +292,7 @@
         <div class="tabs" id="nav-tabs" style="display: flex;">
             <button class="tab-btn active" onclick="switchTab('booking')">New Booking</button>
             <button class="tab-btn active" onclick="switchTab('staff')">Staff Management</button>
+            <button class="tab-btn" onclick="switchTab('role')">Role Management</button>
             <button class="tab-btn" onclick="switchTab('items')">Items Inventory</button>
             <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
             <button class="tab-btn" onclick="switchTab('discount')">Discount</button>
@@ -557,6 +558,24 @@
             </div>
         </div>
 
+        <!-- Role Section -->
+        <div id="role-section" class="section">
+            <div class="header-actions">
+                <h3>Role Management</h3>
+                <button class="btn-small" onclick="openModal('role')">+ Add Role</button>
+            </div>
+            <div class="table-container">
+                <table id="role-table">
+                    <thead>
+                        <tr>
+                            <th>Role Name</th><th>Permissions</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="role-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Items Section -->
         <div id="items-section" class="section">
             <div class="header-actions">
@@ -790,6 +809,7 @@
     pb.autoCancellation(false);
 
     let currentStaff = [];
+    let currentRoles = [];
     let currentItems = [];
     let currentSales = [];
     let currentDiscounts = [];
@@ -1115,11 +1135,13 @@
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        
-        if (event) event.target.classList.add('active');
+
+        const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(`'${tab}'`));
+        if (btn) btn.classList.add('active');
         document.getElementById(`${tab}-section`).classList.add('active');
         
         if (tab === 'staff') loadStaff();
+        else if (tab === 'role') loadRoles();
         else if (tab === 'items') loadItems();
         else if (tab === 'sales') loadSales();
         else if (tab === 'discount') loadDiscounts();
@@ -1137,6 +1159,44 @@
             loadBookingItems();
             document.getElementById('book-date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
         }
+    }
+
+    async function applyPermissions(roleName) {
+        let permissions = [];
+        try {
+            const roleRecord = await pb.collection('MKMARINE_WATERSPORT_ROLE_DATA').getFirstListItem(`roleName="${roleName}"`);
+            permissions = roleRecord.canAccess ? roleRecord.canAccess.split(',').map(p => p.trim()) : [];
+        } catch (e) {
+            if (roleName.toLowerCase() === 'admin') {
+                permissions = ["New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability"];
+            }
+        }
+
+        const tabMapping = {
+            "booking": "New Booking",
+            "staff": "Staff Management",
+            "role": "Role Management",
+            "items": "Items Inventory",
+            "sales": "Sales",
+            "discount": "Discount",
+            "order": "Order",
+            "availability": "Check Availability"
+        };
+
+        const buttons = document.querySelectorAll('#nav-tabs .tab-btn');
+        let firstVisibleTab = null;
+
+        buttons.forEach(btn => {
+            if (btn.innerText === 'Logout') return;
+            const onclick = btn.getAttribute('onclick') || '';
+            const tabKey = onclick.match(/'([^']+)'/)?.[1];
+            const permissionName = tabMapping[tabKey];
+            const hasAccess = permissions.includes(permissionName);
+            btn.style.display = hasAccess ? 'block' : 'none';
+            if (hasAccess && !firstVisibleTab) firstVisibleTab = tabKey;
+        });
+
+        return firstVisibleTab;
     }
 
     async function handleLogin(savedUser, savedPass) {
@@ -1157,10 +1217,11 @@
                 localStorage.setItem('mk_password', passVal);
                 localStorage.setItem('mk_staffname', record.name);
 
+                const startTab = await applyPermissions(record.role);
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('main-container').classList.add('dashboard-mode');
                 document.getElementById('dashboard').style.display = 'block';
-                switchTab('booking');
+                switchTab(startTab || 'booking');
             }
         } catch (error) {
             resultDiv.style.display = 'block';
@@ -1184,6 +1245,20 @@
                 <td>
                     <button class="btn-small" onclick="openModal('staff', '${s.id}')">Edit</button>
                     <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_LOGIN', '${s.id}', loadStaff)">Del</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadRoles() {
+        currentRoles = await pb.collection('MKMARINE_WATERSPORT_ROLE_DATA').getFullList();
+        const body = document.getElementById('role-body');
+        body.innerHTML = currentRoles.map(r => `
+            <tr>
+                <td>${r.roleName}</td><td><small>${r.canAccess}</small></td>
+                <td>
+                    <button class="btn-small" onclick="openModal('role', '${r.id}')">Edit</button>
+                    <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_ROLE_DATA', '${r.id}', loadRoles)">Del</button>
                 </td>
             </tr>
         `).join('');
@@ -2434,14 +2509,38 @@
         if (submitBtn) submitBtn.style.display = 'block';
 
         if (type === 'staff') {
+            if (currentRoles.length === 0) await loadRoles();
             const data = id ? currentStaff.find(s => s.id === id) : {};
             title.innerText = id ? 'Edit Staff' : 'Add New Staff';
+            const roleOptions = currentRoles.map(r => `<option value="${r.roleName}" ${data.role === r.roleName ? 'selected' : ''}>${r.roleName}</option>`).join('');
             fields.innerHTML = `
                 <input type="text" name="name" placeholder="Full Name" value="${data.name ?? ''}" required>
                 <input type="text" name="phone" placeholder="Phone" value="${data.phone ?? ''}" required>
-                <input type="text" name="role" placeholder="Role" value="${data.role ?? ''}" required>
+                <select name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option value="Admin" ${data.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                    ${roleOptions}
+                </select>
                 <input type="text" name="username" placeholder="Username" value="${data.username ?? ''}" required>
                 <input type="text" name="password" placeholder="Password" value="${data.password ?? ''}" class="full-width" required>
+            `;
+        } else if (type === 'role') {
+            const data = id ? currentRoles.find(r => r.id === id) : {};
+            title.innerText = id ? 'Edit Role' : 'Add New Role';
+            const perms = ["New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability"];
+            const currentPerms = data.canAccess ? data.canAccess.split(',').map(p => p.trim()) : [];
+            
+            let checkboxes = perms.map(p => `
+                <div style="display:flex; align-items:center; gap:10px; padding:5px;">
+                    <input type="checkbox" name="perm_check" value="${p}" ${currentPerms.includes(p) ? 'checked' : ''} style="width:auto;">
+                    <label style="margin:0;">${p}</label>
+                </div>
+            `).join('');
+
+            fields.innerHTML = `
+                <input type="text" name="roleName" placeholder="Role Name" value="${data.roleName ?? ''}" class="full-width" required>
+                <label class="full-width" style="margin-top:10px; color:#00d2ff;">Accessible Tabs:</label>
+                <div class="full-width" style="display:grid; grid-template-columns:1fr 1fr; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">${checkboxes}</div>
             `;
         } else if (type === 'items') {
             const data = id ? currentItems.find(i => i.id === id) : {};
@@ -3024,11 +3123,12 @@
         
         let collection;
         if (type === 'staff') collection = 'MKMARINE_WATERSPORT_LOGIN';
+        else if (type === 'role') collection = 'MKMARINE_WATERSPORT_ROLE_DATA';
         else if (type === 'items') collection = 'MKMARINE_WATERSPORT_ITEMS_DATA';
         else if (type === 'discount') collection = 'MKMARINE_WATERSPORT_DISCOUNT_DATA';
         else if (type === 'sales' || type === 'orderStatusUpdate') collection = 'MKMARINE_WATERSPORT_SALES_DATA';
         
-        const callback = type === 'staff' ? loadStaff : (type === 'items' ? loadItems : (type === 'discount' ? loadDiscounts : (type === 'orderStatusUpdate' ? loadOrders : loadSales)));
+        const callback = type === 'staff' ? loadStaff : (type === 'role' ? loadRoles : (type === 'items' ? loadItems : (type === 'discount' ? loadDiscounts : (type === 'orderStatusUpdate' ? loadOrders : loadSales))));
 
         try {
             if (type === 'orderStatusUpdate') {
@@ -3103,6 +3203,9 @@
                     formData.set('discountType', types.join(', '));
                     formData.set('discountValue', values.join(', '));
                 }
+            } else if (type === 'role') {
+                const selectedPerms = Array.from(form.querySelectorAll('input[name="perm_check"]:checked')).map(cb => cb.value);
+                formData.set('canAccess', selectedPerms.join(', '));
             }
             
             if (type === 'sales') {
