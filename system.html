@@ -2272,6 +2272,8 @@
         const paidAmountVal = Math.min(totalReceivedSum, dueAmount).toFixed(2);
         let remark = "";
 
+        const orderStatus = checkoutMode === 'Checkout' ? 'Completed' : 'Pending';
+
         try {
             // Create only ONE record in the database
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').create({
@@ -2285,7 +2287,7 @@
                 "orderItemRentalDuration": combinedDurations,
                 "orderItemPrice": combinedPrices,
                 "orderQrUrl": qrUrl,
-                "orderStatus": "Pending",
+                "orderStatus": orderStatus,
                 "orderRemark": remark,
                 "totalItems": totalQuantity.toString(),
                 "totalPrice": grandTotal,
