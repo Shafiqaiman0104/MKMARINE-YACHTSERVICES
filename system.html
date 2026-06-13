@@ -417,7 +417,7 @@
                             <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Items</th>
                             <th style="white-space:nowrap;">Grand Total</th><th style="white-space:nowrap;">Total Paid</th><th style="white-space:nowrap;">Remark</th>
-                            <th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
+                            <th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
                             <th style="white-space:nowrap;">Actions</th>
                         </tr>
@@ -457,7 +457,7 @@
                         <tr>
                             <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Items</th>
-                            <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
+                            <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
                             <th style="white-space:nowrap;">Action</th>
                         </tr>
@@ -1390,7 +1390,8 @@
                 <td style="font-weight:bold; color:#00d2ff;">RM${s.totalPrice}</td>
                 <td style="font-weight:bold; color:#25d366;">RM${s.totalPaidAmount}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
-                <td>${s.orderStatus}</td>
+                <td><span style="color: ${s.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${s.orderStatus === 'Completed' ? 'normal' : 'bold'};">${s.orderStatus}</span></td>
+                <td><span style="color: ${s.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${s.participantDetailsStatus || 'Pending'}</span></td>
                 <td>${s.orderBy || '-'}</td>
                 <td>${s.customerStatus || '-'}</td>
                 <td>${s.servedBy || '-'}</td>
@@ -1422,7 +1423,8 @@
                 <td style="font-size:0.8rem;">${s.totalPax || '-'}</td>
                 <td>${itemsHtml}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
-                <td>${s.orderStatus}</td>
+                <td><span style="color: ${s.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${s.participantDetailsStatus || 'Pending'}</span></td>
+                <td><span style="color: ${s.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${s.orderStatus === 'Completed' ? 'normal' : 'bold'};">${s.orderStatus}</span></td>
                 <td>${s.orderBy || '-'}</td>
                 <td>${s.customerStatus || '-'}</td>
                 <td>${s.servedBy || '-'}</td>
@@ -2389,11 +2391,13 @@
             resultDiv.innerHTML = `
                 <input type="hidden" id="serve-record-id" value="${record.id}">
                 <input type="hidden" id="serve-order-status" value="${record.orderStatus}">
+                <input type="hidden" id="serve-waiver-status-val" value="${record.participantDetailsStatus || 'Pending'}">
                 <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
                 <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.customerName}</div></div>
                 <div class="input-group"><label>Total Pax Breakdown</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
                 <div class="input-group"><label>Order Items</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${itemsTable}</div></div>
-                <div class="input-group"><label>Order Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderStatus}</div></div>
+                <div class="input-group"><label>Waiver Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color: ${record.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${record.participantDetailsStatus || 'Pending'}</div></div>
+                <div class="input-group"><label>Order Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color: ${record.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${record.orderStatus === 'Completed' ? 'normal' : 'bold'};">${record.orderStatus}</div></div>
                 <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderRemark || '-'}</div></div>
                 <div class="input-group">
                     <label>Customer Status</label>
@@ -2414,8 +2418,14 @@
     async function confirmOrderServed() {
         const id = document.getElementById('serve-record-id').value;
         const orderStatus = document.getElementById('serve-order-status').value;
+        const waiverStatus = document.getElementById('serve-waiver-status-val').value;
         const customerStatus = document.getElementById('serve-customer-status').value;
         const staffName = localStorage.getItem('mk_staffname') || 'Unknown';
+
+        if (waiverStatus !== 'Agree') {
+            alert("Waiver status is pending please tell customer to complete the waiver form");
+            return;
+        }
 
         if (orderStatus !== 'Completed') {
             alert("order status not completed please tell your p.i.c");
@@ -2885,6 +2895,26 @@
             const itemPrices = (data.orderItemPrice || '').split(', ');
             const subtotalSum = itemPrices.reduce((sum, p) => sum + (parseFloat(p) || 0), 0);
 
+            // Parse Participant Details
+            let participantHtml = "n/a";
+            if (data.participantDetails) {
+                const participants = data.participantDetails.split(', ');
+                participantHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                            <th style="padding: 5px; text-align: left;">Name Nric/Passport</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                participants.forEach(p => {
+                    participantHtml += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 5px;">${p}</td>
+                        </tr>`;
+                });
+                participantHtml += `</tbody></table>`;
+            }
+
             let itemsTableHtml = `
                 <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
                     <thead>
@@ -3054,6 +3084,14 @@
                     <label>Order Taken By</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderBy ?? '-'}</div>
                 </div>
+                <div class="input-group">
+                    <label>Waiver Status</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; color: ${data.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${data.participantDetailsStatus || 'Pending'}</div>
+                </div>
+                <div class="full-width">
+                    <label>Participant List</label>
+                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${participantHtml}</div>
+                </div>
                 <div class="form-grid full-width">
                     <div class="input-group">
                         <label>Served By</label>
@@ -3144,9 +3182,16 @@
         try {
             if (type === 'orderStatusUpdate') {
                 const record = currentSales.find(s => s.id === id);
-                if (record && record.orderStatus !== 'Completed') {
-                    alert("order status not completed please tell your p.i.c");
-                    return;
+                const newCustomerStatus = formData.get('customerStatus');
+                if (newCustomerStatus === 'Arrive') {
+                    if (record && record.orderStatus !== 'Completed') {
+                        alert("Order status not completed please tell your pic");
+                        return;
+                    }
+                    if (record && record.participantDetailsStatus !== 'Agree') {
+                        alert("Waiver status is pending please tell customer to complete the waiver form");
+                        return;
+                    }
                 }
             }
 
