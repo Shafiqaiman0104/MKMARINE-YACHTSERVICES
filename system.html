@@ -2637,10 +2637,13 @@
             const resultDiv = document.getElementById('order-lookup-result');
             resultDiv.style.display = 'block';
             
-            const orderDateStr = new Date(record.orderDate).toLocaleDateString('en-CA');
+            const orderDateObj = new Date(record.orderDate);
+            const orderDateStr = orderDateObj.toLocaleDateString('en-CA');
             const todayStr = new Date().toLocaleDateString('en-CA');
-            if (orderDateStr !== todayStr) {
-                alert("this order id is for orderDate not today, please contact your p.i.c to confirm it");
+            const isNotToday = orderDateStr !== todayStr;
+            if (isNotToday) {
+                const displayDate = orderDateObj.toLocaleDateString('en-GB');
+                alert(`this order id is for ${displayDate} not today, please contact your p.i.c to confirm it`);
             }
 
             const currentStatus = record.customerStatus || 'Pending';
@@ -2689,8 +2692,8 @@
             `;
             const serveBtn = document.getElementById('confirm-serve-btn');
             serveBtn.style.display = 'block';
-            serveBtn.disabled = isFinished;
-            serveBtn.style.opacity = isFinished ? "0.5" : "1";
+            serveBtn.disabled = isFinished || isNotToday;
+            serveBtn.style.opacity = (isFinished || isNotToday) ? "0.5" : "1";
         } catch (err) {
             alert("Order not found or database error.");
             if (!html5QrCode || !html5QrCode.isScanning) openScanModal();
@@ -2775,10 +2778,13 @@
         const customerStatus = document.getElementById('serve-customer-status').value;
         const staffName = localStorage.getItem('mk_staffname') || 'Unknown';
 
-        const orderDateStr = new Date(orderDateRaw).toLocaleDateString('en-CA');
+        const orderDateObj = new Date(orderDateRaw);
+        const orderDateStr = orderDateObj.toLocaleDateString('en-CA');
         const todayStr = new Date().toLocaleDateString('en-CA');
         if (orderDateStr !== todayStr) {
-            alert("this order id is for orderDate not today, please contact your p.i.c to confirm it");
+            const displayDate = orderDateObj.toLocaleDateString('en-GB');
+            alert(`this order id is for ${displayDate} not today, please contact your p.i.c to confirm it`);
+            return;
         }
 
         if (customerStatus === 'Pending') {
