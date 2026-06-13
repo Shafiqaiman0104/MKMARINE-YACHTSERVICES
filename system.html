@@ -451,14 +451,38 @@
                 <h3>Orders Management</h3>
                 <button class="btn-small" onclick="openScanModal()" style="background:#00d2ff; width:auto; padding: 10px 20px;">Scan Order ID</button>
             </div>
+            
+            <div style="margin-top: 15px;">
+                <div style="margin-bottom: 15px; width: 200px;">
+                    <select id="order-date-select" onchange="filterOrderDate(this.value)">
+                        <option value="Today">Today</option>
+                        <option value="All">All</option>
+                        <option value="Custom">Custom Date</option>
+                    </select>
+                </div>
+                
+                <div id="order-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <input type="date" id="order-date-from" onchange="renderOrders()" style="width: auto;">
+                    <span>to</span>
+                    <input type="date" id="order-date-to" onchange="renderOrders()" style="width: auto;">
+                </div>
+
+                <div class="tabs" style="display: flex; margin-bottom: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    <button class="tab-btn active" id="order-tab-pending" onclick="filterOrderTab('Pending')">Pending Status</button>
+                    <button class="tab-btn" id="order-tab-complete" onclick="filterOrderTab('Complete')">Complete Status</button>
+                    <button class="tab-btn" id="order-tab-all" onclick="filterOrderTab('All')">All Status</button>
+                </div>
+            </div>
+
             <div class="table-container">
                 <table id="order-table">
                     <thead>
                         <tr>
                             <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Items</th>
-                            <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
+                            <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
+                            <th style="white-space:nowrap;">Start Time</th>
                             <th style="white-space:nowrap;">Action</th>
                         </tr>
                     </thead>
@@ -698,6 +722,28 @@
     </div>
 </div>
 
+<!-- Live Timer Modal -->
+<div class="form-overlay" id="timer-overlay">
+    <div class="form-content" style="max-width: 800px;">
+        <h3 style="margin-bottom:20px; color:#00d2ff;">Live Rental Timer</h3>
+        <div class="table-container">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid rgba(0, 210, 255, 0.3);">
+                        <th style="text-align:left; padding:10px; white-space: nowrap;">Item</th>
+                        <th style="text-align:center; padding:10px; white-space: nowrap;">Qty</th>
+                        <th style="text-align:center; padding:10px; white-space: nowrap;">Duration</th>
+                        <th style="text-align:center; padding:10px; white-space: nowrap;">End Time</th>
+                        <th style="text-align:center; padding:10px; white-space: nowrap;">Timer</th>
+                    </tr>
+                </thead>
+                <tbody id="timer-list-body"></tbody>
+            </table>
+        </div>
+        <button class="btn-danger" onclick="closeTimerModal()" style="margin-top:20px;">Close</button>
+    </div>
+</div>
+
 <!-- Generic CRUD Modal -->
 <div class="form-overlay" id="form-overlay">
     <div class="form-content">
@@ -768,8 +814,18 @@
         <div id="op-qrcode" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;"></div>
         <div id="op-order-id" style="font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;">Order ID : SW-</div>
 
-        <div id="op-waiver-link-container" style="margin-bottom: 20px; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
-            Waiver Form : <a id="op-waiver-url" href="#" target="_blank" style="color: #00d2ff; text-decoration: underline;"></a>
+        <div style="margin-bottom: 25px;">
+            <div style="color: white; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">Waiver Form</div>
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                <div style="display: flex; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 2px; width: 120px; border: 1px solid rgba(255,255,255,0.2);">
+                    <button id="waiver-toggle-link" onclick="toggleWaiverDisplay('link')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: #00d2ff; color: white;">Link</button>
+                    <button id="waiver-toggle-qr" onclick="toggleWaiverDisplay('qr')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: transparent; color: white;">QR</button>
+                </div>
+            </div>
+            <div style="background: white; padding: 15px; border-radius: 12px; min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 320px;">
+                <a id="op-waiver-url" href="#" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.8rem; word-break: break-all;"></a>
+                <div id="op-waiver-qr" style="display: none;"></div>
+            </div>
         </div>
 
         <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
@@ -823,6 +879,9 @@
     let currentBooking = null;
     let html5QrCode = null;
     let cart = [];
+    let currentWaiverUrl = "";
+    let currentOrderFilter = 'Pending';
+    let currentDateFilter = 'Today';
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -1405,15 +1464,79 @@
         `;}).join('');
     }
 
+    function filterOrderTab(f) {
+        currentOrderFilter = f;
+        document.querySelectorAll('#order-section .tab-btn').forEach(b => b.classList.remove('active'));
+        if (f === 'Pending') document.getElementById('order-tab-pending').classList.add('active');
+        if (f === 'Complete') document.getElementById('order-tab-complete').classList.add('active');
+        if (f === 'All') document.getElementById('order-tab-all').classList.add('active');
+        renderOrders();
+    }
+
+    function filterOrderDate(mode) {
+        currentDateFilter = mode;
+        const customInputs = document.getElementById('order-custom-date-inputs');
+        customInputs.style.display = (mode === 'Custom') ? 'flex' : 'none';
+        
+        renderOrders();
+    }
+
     async function loadOrders() {
-        currentSales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-created' });
+        currentSales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: 'orderDate' });
+        renderOrders();
+    }
+
+    function renderOrders() {
         const body = document.getElementById('order-body');
-        body.innerHTML = currentSales.map(s => {
+        const now = new Date();
+        const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        
+        const filtered = currentSales.filter(s => {
+            // Date Filter Logic
+            const orderDate = new Date(s.orderDate);
+            const orderDateStr = orderDate.toLocaleDateString('en-CA');
+            let dateMatch = true;
+
+            if (currentDateFilter === 'Today') {
+                dateMatch = (orderDateStr === todayStr);
+            } else if (currentDateFilter === 'Custom') {
+                const from = document.getElementById('order-date-from').value;
+                const to = document.getElementById('order-date-to').value;
+                if (from && to) {
+                    dateMatch = (orderDateStr >= from && orderDateStr <= to);
+                }
+            }
+
+            if (!dateMatch) return false;
+
+            // Status Filter Logic
+            const isWaiverAgree = s.participantDetailsStatus === 'Agree';
+            const isOrderCompleted = s.orderStatus === 'Completed';
+            const isCustArrive = s.customerStatus === 'Arrive';
+
+            if (currentOrderFilter === 'Pending') {
+                return !isWaiverAgree || !isOrderCompleted || !isCustArrive;
+            }
+            if (currentOrderFilter === 'Complete') {
+                return isWaiverAgree && isOrderCompleted && isCustArrive;
+            }
+            return true; // All
+        });
+
+        // Apply sorting based on the active status tab
+        if (currentOrderFilter === 'Complete') {
+            // Latest orderDate at top (Descending)
+            filtered.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+        } else {
+            // Latest orderDate at bottom (Ascending)
+            filtered.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
+        }
+
+        body.innerHTML = filtered.map(s => {
             const names = (s.orderItemName || '').split(', ');
             const qtys = (s.orderItemQuantity || '').split(', ');
             const durs = (s.orderItemRentalDuration || '').split(', ');
-            const prices = (s.orderItemPrice || '').split(', ');
-            const itemsHtml = names.map((n, i) => `<div style="white-space:nowrap; font-size:0.75rem;">${n} (x${qtys[i]}, ${durs[i]}m, RM${prices[i]})</div>`).join('');
+            const itemsHtml = names.map((n, i) => `<div style="white-space:nowrap; font-size:0.75rem;">${n} (x${qtys[i]}, ${durs[i]}m)</div>`).join('');
 
             return `
             <tr>
@@ -1425,11 +1548,18 @@
                 <td><small>${s.orderRemark || '-'}</small></td>
                 <td><span style="color: ${s.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${s.participantDetailsStatus || 'Pending'}</span></td>
                 <td><span style="color: ${s.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${s.orderStatus === 'Completed' ? 'normal' : 'bold'};">${s.orderStatus}</span></td>
-                <td>${s.orderBy || '-'}</td>
                 <td>${s.customerStatus || '-'}</td>
                 <td>${s.servedBy || '-'}</td>
+                <td><small>${s.startTime ? new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '-'}</small></td>
                 <td style="white-space:nowrap;">
                     <button class="btn-small" onclick="openModal('orderStatusUpdate', '${s.id}')">Edit</button>
+                    ${!s.startTime ? 
+                        `<button class="btn-small" onclick="startOrder('${s.id}')" style="background:#25d366;">Start</button>` : 
+                        `
+                        <button class="btn-small" onclick="openTimerModal('${s.id}')" style="background:#00d2ff;">View Timer</button>
+                        <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366;">Whatsapp</button>
+                        `
+                    }
                 </td>
             </tr>
         `;}).join('');
@@ -2222,8 +2352,11 @@
         document.getElementById('op-order-id').innerText = "Order ID : " + orderId;
         
         const waiverUrl = `https://southwavejb.com/waiver.html?orderId=${orderId}`;
+        currentWaiverUrl = waiverUrl;
         document.getElementById('op-waiver-url').innerText = waiverUrl;
         document.getElementById('op-waiver-url').href = waiverUrl;
+
+        toggleWaiverDisplay('link');
 
         const total = parseFloat(currentBooking.totalPrice);
         const received = currentBooking.totalReceivedSum;
@@ -2255,6 +2388,28 @@
         
         // Original behavior: hide the old result container if it exists
         document.getElementById('qr-result-container').style.display = 'none';
+    }
+
+    function toggleWaiverDisplay(mode) {
+        const linkBtn = document.getElementById('waiver-toggle-link');
+        const qrBtn = document.getElementById('waiver-toggle-qr');
+        const linkEl = document.getElementById('op-waiver-url');
+        const qrEl = document.getElementById('op-waiver-qr');
+
+        if (mode === 'link') {
+            linkBtn.style.background = '#00d2ff';
+            qrBtn.style.background = 'transparent';
+            linkEl.style.display = 'block';
+            qrEl.style.display = 'none';
+        } else {
+            linkBtn.style.background = 'transparent';
+            qrBtn.style.background = '#00d2ff';
+            linkEl.style.display = 'none';
+            qrEl.style.display = 'block';
+            
+            const qrSize = 150;
+            qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(currentWaiverUrl)}" alt="Waiver QR" style="display:block;">`;
+        }
     }
 
     function closeOrderPlacedPopup() {
@@ -2368,6 +2523,9 @@
             const resultDiv = document.getElementById('order-lookup-result');
             resultDiv.style.display = 'block';
             
+            const currentStatus = record.customerStatus || 'Pending';
+            const isFinished = (currentStatus === 'Arrive' || currentStatus === 'No Show');
+            
             const names = (record.orderItemName || '').split(', ');
             const qtys = (record.orderItemQuantity || '').split(', ');
             const durs = (record.orderItemRentalDuration || '').split(', ');
@@ -2401,18 +2559,91 @@
                 <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderRemark || '-'}</div></div>
                 <div class="input-group">
                     <label>Customer Status</label>
-                    <select id="serve-customer-status">
-                        <option value="Pending" ${record.customerStatus === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Arrive" ${record.customerStatus === 'Arrive' ? 'selected' : ''}>Arrive</option>
-                        <option value="No Show" ${record.customerStatus === 'No Show' ? 'selected' : ''}>No Show</option>
+                    <select id="serve-customer-status" ${isFinished ? 'disabled' : ''}>
+                        <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Arrive" ${currentStatus === 'Arrive' ? 'selected' : ''}>Arrive</option>
+                        ${currentStatus === 'No Show' ? `<option value="No Show" selected>No Show</option>` : ''}
                     </select>
                 </div>
             `;
-            document.getElementById('confirm-serve-btn').style.display = 'block';
+            const serveBtn = document.getElementById('confirm-serve-btn');
+            serveBtn.style.display = 'block';
+            serveBtn.disabled = isFinished;
+            serveBtn.style.opacity = isFinished ? "0.5" : "1";
         } catch (err) {
             alert("Order not found or database error.");
             if (!html5QrCode || !html5QrCode.isScanning) openScanModal();
         }
+    }
+
+    async function startOrder(id) {
+        const s = currentSales.find(x => x.id === id);
+        if (!s) return;
+
+        // Validation checks
+        if (s.participantDetailsStatus !== 'Agree') {
+            alert("Waiver status is pending. Please tell customer to complete the waiver form.");
+            return;
+        }
+        if (s.orderStatus !== 'Completed') {
+            alert("Order status not completed. Please tell your P.I.C.");
+            return;
+        }
+        if (s.customerStatus !== 'Arrive') {
+            alert("Customer status must be 'Arrive' before starting the timer.");
+            return;
+        }
+
+        if (!confirm("Start this order now?")) return;
+        try {
+            const now = new Date().toISOString();
+            await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
+                startTime: now
+            });
+            loadOrders();
+        } catch (err) {
+            alert("Error starting order: " + err.message);
+        }
+    }
+
+    let timerInterval = null;
+    function openTimerModal(id) {
+        const s = currentSales.find(x => x.id === id);
+        if (!s || !s.startTime) return;
+        document.getElementById('timer-overlay').style.display = 'flex';
+        updateTimerUI(s);
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => updateTimerUI(s), 1000);
+    }
+
+    function updateTimerUI(s) {
+        const start = new Date(s.startTime).getTime();
+        const names = (s.orderItemName || '').split(', ');
+        const qtys = (s.orderItemQuantity || '').split(', ');
+        const durs = (s.orderItemRentalDuration || '').split(', ');
+        const body = document.getElementById('timer-list-body');
+        let html = '';
+        names.forEach((name, i) => {
+            const durationMin = parseInt(durs[i]) || 0;
+            const qty = qtys[i] || '0';
+            const endTime = start + (durationMin * 60000);
+            const diff = endTime - Date.now();
+            let timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`;
+            const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+            html += `<tr>
+                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); white-space: nowrap;">${name}</td>
+                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; white-space: nowrap;">${qty}</td>
+                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; white-space: nowrap;">${durationMin}m</td>
+                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; white-space: nowrap;">${endTimeStr}</td>
+                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
+            </tr>`;
+        });
+        body.innerHTML = html;
+    }
+
+    function closeTimerModal() {
+        document.getElementById('timer-overlay').style.display = 'none';
+        if (timerInterval) clearInterval(timerInterval);
     }
 
     async function confirmOrderServed() {
@@ -2421,6 +2652,11 @@
         const waiverStatus = document.getElementById('serve-waiver-status-val').value;
         const customerStatus = document.getElementById('serve-customer-status').value;
         const staffName = localStorage.getItem('mk_staffname') || 'Unknown';
+
+        if (customerStatus === 'Pending') {
+            alert("please change the customer status to arrive to proceed");
+            return;
+        }
 
         if (waiverStatus !== 'Agree') {
             alert("Waiver status is pending please tell customer to complete the waiver form");
@@ -2508,9 +2744,42 @@
                         `*Payment:* ${paymentDisplay}\n` +
                         `*Paid:* RM${s.totalPaidAmount} (${s.paidAmount})\n` +
                         `---------------------------\n` +
+                        `*Waiver Form:* https://southwavejb.com/waiver.html?orderId=${s.orderId}\n` +
+                        `---------------------------\n` +
                         `*View QR Code:* ${s.orderQrUrl}\n` +
                         `---------------------------\n` +
                         `Thank you for your booking!\n` +
+                        `_*- Powered By VentureRush Tech*_`;
+
+        window.open(`https://wa.me/${s.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function sendOrderTimerWhatsApp(id) {
+        const s = currentSales.find(x => x.id === id);
+        if (!s || !s.startTime) return;
+
+        const start = new Date(s.startTime).getTime();
+        const names = (s.orderItemName || '').split(', ');
+        const qtys = (s.orderItemQuantity || '').split(', ');
+        const durs = (s.orderItemRentalDuration || '').split(', ');
+        
+        let tableText = "Item | Qty | Duration | End Time | Timer\n";
+        names.forEach((name, i) => {
+            const durationMin = parseInt(durs[i]) || 0;
+            const qty = qtys[i] || '0';
+            const endTimeMs = start + (durationMin * 60000);
+            const diff = endTimeMs - Date.now();
+            
+            const endTimeStr = new Date(endTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+            let timerStr = (diff <= 0) ? "End" : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
+            
+            tableText += `${name.trim()} | ${qty.trim()} | ${durationMin}m | ${endTimeStr} | ${timerStr}\n`;
+        });
+
+        const message = `Hi this is SOUTH WAVE crew,\n` +
+                        `just want to remind you about the timer of the item:\n\n` +
+                        `${tableText}\n` +
+                        `Thank you!\n` +
                         `_*- Powered By VentureRush Tech*_`;
 
         window.open(`https://wa.me/${s.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -2873,6 +3142,19 @@
         } else if (type === 'orderStatusUpdate') {
             const data = id ? currentSales.find(s => s.id === id) : {};
             title.innerText = 'Update Customer Status';
+            
+            let startTimeHtml = '';
+            if (data.startTime) {
+                const st = new Date(data.startTime);
+                const stVal = new Date(st.getTime() - st.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                startTimeHtml = `
+                    <div class="input-group full-width">
+                        <label>Edit Start Time</label>
+                        <input type="datetime-local" name="startTime" value="${stVal}">
+                    </div>
+                `;
+            }
+
             fields.innerHTML = `
                 <div class="input-group full-width">
                     <label>Customer Status</label>
@@ -2882,6 +3164,7 @@
                         <option value="No Show" ${data.customerStatus === 'No Show' ? 'selected' : ''}>No Show</option>
                     </select>
                 </div>
+                ${startTimeHtml}
             `;
         } else if (type === 'salesView') {
             const data = id ? currentSales.find(s => s.id === id) : {};
@@ -3192,6 +3475,11 @@
                         alert("Waiver status is pending please tell customer to complete the waiver form");
                         return;
                     }
+                }
+
+                const stVal = formData.get('startTime');
+                if (stVal) {
+                    formData.set('startTime', new Date(stVal).toISOString());
                 }
             }
 
