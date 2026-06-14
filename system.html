@@ -348,6 +348,19 @@
             </div>
 
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Payment Methods Summary</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Payment Method</th>
+                            <th style="text-align: right;">Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dash-payment-body"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
                 <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
                 <table id="top-items-table">
                     <thead>
@@ -2386,7 +2399,9 @@
             let totalItems = 0;
             let adults = 0, kids = 0, toddlers = 0;
             let itemMap = {};
+            let paymentMap = {};
             let hourlyProfit = new Array(24).fill(0);
+            let dailyProfitMap = {};
 
             filtered.forEach(s => {
                 totalProfit += parseFloat(s.totalPaidAmount) || 0;
@@ -2410,14 +2425,39 @@
                 });
 
                 // Hourly profit
-                const hour = new Date(s.orderDate).getHours();
+                const oDate = new Date(s.orderDate);
+                const hour = oDate.getHours();
                 hourlyProfit[hour] += parseFloat(s.totalPaidAmount) || 0;
+
+                // Daily profit for "All" or multi-day custom
+                const dateKey = oDate.toLocaleDateString('en-CA');
+                dailyProfitMap[dateKey] = (dailyProfitMap[dateKey] || 0) + (parseFloat(s.totalPaidAmount) || 0);
+
+                // Payment Method Mapping
+                const pMethods = (s.paymentMethod || "").split(", ");
+                const pAmounts = (s.paidAmount || "").split(", ");
+                pMethods.forEach((method, i) => {
+                    const m = method.trim();
+                    const a = parseFloat(pAmounts[i]) || 0;
+                    if (m && m !== 'Mix') {
+                        paymentMap[m] = (paymentMap[m] || 0) + a;
+                    }
+                });
             });
 
             document.getElementById('dash-total-order').innerText = filtered.length;
             document.getElementById('dash-total-profit').innerText = `RM${totalProfit.toFixed(2)}`;
             document.getElementById('dash-total-item').innerText = totalItems;
             document.getElementById('dash-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
+
+            // Render Payment Summary
+            const payments = Object.entries(paymentMap).sort((a, b) => b[1] - a[1]);
+            document.getElementById('dash-payment-body').innerHTML = payments.map(p => `
+                <tr>
+                    <td>${p[0]}</td>
+                    <td style="text-align:right; font-weight:bold; color:#25d366;">RM${p[1].toFixed(2)}</td>
+                </tr>
+            `).join('');
 
             // Render Ranking
             const ranking = Object.entries(itemMap).sort((a, b) => b[1] - a[1]);
@@ -2428,18 +2468,37 @@
                 </tr>
             `).join('');
 
-            // Render Chart
-            renderProfitChart(hourlyProfit);
+            // Determine Chart Mode
+            let chartLabels = [];
+            let chartData = [];
+            let chartMode = 'hourly';
+
+            if (currentDashDateFilter === 'All') {
+                chartMode = 'daily';
+            } else if (currentDashDateFilter === 'Custom') {
+                const from = new Date(document.getElementById('dash-date-from').value);
+                const to = new Date(document.getElementById('dash-date-to').value);
+                const diffDays = (to - from) / (1000 * 60 * 60 * 24);
+                if (diffDays > 1) chartMode = 'daily';
+            }
+
+            if (chartMode === 'daily') {
+                chartLabels = Object.keys(dailyProfitMap).sort();
+                chartData = chartLabels.map(k => dailyProfitMap[k]);
+            } else {
+                chartLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
+                chartData = hourlyProfit;
+            }
+
+            renderProfitChart(chartLabels, chartData);
 
         } catch (e) { console.error("Dashboard Load Error", e); }
     }
 
-    function renderProfitChart(data) {
+    function renderProfitChart(labels, data) {
         const ctx = document.getElementById('profitChart').getContext('2d');
         if (myChart) myChart.destroy();
 
-        const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
-        
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
