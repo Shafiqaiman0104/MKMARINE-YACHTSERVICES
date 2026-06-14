@@ -829,6 +829,20 @@
             </div>
         </div>
 
+        <div style="margin-bottom: 25px;">
+            <div style="color: white; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">Rental Timer</div>
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                <div style="display: flex; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 2px; width: 120px; border: 1px solid rgba(255,255,255,0.2);">
+                    <button id="timer-toggle-link" onclick="toggleTimerDisplay('link')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: #00d2ff; color: white;">Link</button>
+                    <button id="timer-toggle-qr" onclick="toggleTimerDisplay('qr')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: transparent; color: white;">QR</button>
+                </div>
+            </div>
+            <div style="background: white; padding: 15px; border-radius: 12px; min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 320px;">
+                <a id="op-timer-url" href="#" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.8rem; word-break: break-all;"></a>
+                <div id="op-timer-qr" style="display: none;"></div>
+            </div>
+        </div>
+
         <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;">
                 <span>Total Amount</span>
@@ -881,6 +895,7 @@
     let html5QrCode = null;
     let cart = [];
     let currentWaiverUrl = "";
+    let currentTimerUrl = "";
     let currentOrderFilter = 'Pending';
     let currentDateFilter = 'Today';
     let orderTableTimerInterval = null;
@@ -2474,6 +2489,12 @@
 
         toggleWaiverDisplay('link');
 
+        const timerUrl = `https://southwavejb.com/timer.html?orderId=${orderId}`;
+        currentTimerUrl = timerUrl;
+        document.getElementById('op-timer-url').innerText = timerUrl;
+        document.getElementById('op-timer-url').href = timerUrl;
+        toggleTimerDisplay('link');
+
         const total = parseFloat(currentBooking.totalPrice);
         const received = currentBooking.totalReceivedSum;
         const change = Math.max(0, received - total);
@@ -2525,6 +2546,28 @@
             
             const qrSize = 150;
             qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(currentWaiverUrl)}" alt="Waiver QR" style="display:block;">`;
+        }
+    }
+
+    function toggleTimerDisplay(mode) {
+        const linkBtn = document.getElementById('timer-toggle-link');
+        const qrBtn = document.getElementById('timer-toggle-qr');
+        const linkEl = document.getElementById('op-timer-url');
+        const qrEl = document.getElementById('op-timer-qr');
+
+        if (mode === 'link') {
+            linkBtn.style.background = '#00d2ff';
+            qrBtn.style.background = 'transparent';
+            linkEl.style.display = 'block';
+            qrEl.style.display = 'none';
+        } else {
+            linkBtn.style.background = 'transparent';
+            qrBtn.style.background = '#00d2ff';
+            linkEl.style.display = 'none';
+            qrEl.style.display = 'block';
+            
+            const qrSize = 150;
+            qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(currentTimerUrl)}" alt="Timer QR" style="display:block;">`;
         }
     }
 
@@ -2585,6 +2628,7 @@
                         `*Change:* RM${changeVal}\n` +
                         `---------------------------\n` +
                         `*Waiver Form:* https://southwavejb.com/waiver.html?orderId=${currentBooking.orderId}\n` +
+                        `*Timer:* https://southwavejb.com/timer.html?orderId=${currentBooking.orderId}\n` +
                         `---------------------------\n` +
                         `*View QR Code:* ${currentBooking.orderQrUrl}\n` +
                         `---------------------------\n` +
@@ -2881,6 +2925,7 @@
                         `*Paid:* RM${s.totalPaidAmount} (${s.paidAmount})\n` +
                         `---------------------------\n` +
                         `*Waiver Form:* https://southwavejb.com/waiver.html?orderId=${s.orderId}\n` +
+                        `*Timer:* https://southwavejb.com/timer.html?orderId=${s.orderId}\n` +
                         `---------------------------\n` +
                         `*View QR Code:* ${s.orderQrUrl}\n` +
                         `---------------------------\n` +
