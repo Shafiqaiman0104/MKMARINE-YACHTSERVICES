@@ -2229,7 +2229,7 @@
         }
 
         const orderId = 'SW-' + Date.now().toString().slice(-8);
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${orderId}`;
+        const qrUrl = `https://southwavejb.com/qrcode.html?orderId=${orderId}`;
 
         // Combine items into single strings for one database record
         const combinedNames = cart.map(i => i.itemName).join(', ');
@@ -2479,7 +2479,8 @@
 
     function showBookingResult(orderId, qrUrl) {
         document.getElementById('order-placed-overlay').style.display = 'flex';
-        document.getElementById('op-qrcode').innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 180px; height: 180px;">`;
+        const qrImgApi = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrUrl)}`;
+        document.getElementById('op-qrcode').innerHTML = `<img src="${qrImgApi}" alt="QR Code" style="width: 180px; height: 180px;">`;
         document.getElementById('op-order-id').innerText = "Order ID : " + orderId;
         
         const waiverUrl = `https://southwavejb.com/waiver.html?orderId=${orderId}`;
@@ -3485,7 +3486,7 @@
 
             fields.innerHTML = `
                 <div class="full-width" style="text-align: center; margin-bottom: 15px;">
-                    <img src="${data.orderQrUrl}" alt="QR Code" style="width: 150px; height: 150px; background: white; padding: 10px; border-radius: 8px; display: block; margin: 0 auto;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.orderQrUrl)}" alt="QR Code" style="width: 150px; height: 150px; background: white; padding: 10px; border-radius: 8px; display: block; margin: 0 auto;">
                     <small style="color: #00d2ff; word-break: break-all; margin-top: 10px; display: block;">${data.orderQrUrl ?? ''}</small>
                 </div>
                 <div class="input-group">
