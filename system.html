@@ -410,13 +410,33 @@
             <div class="header-actions">
                 <h3>Sales History</h3>
             </div>
+            <div style="margin-top: 15px;">
+                <div style="margin-bottom: 15px; width: 200px;">
+                    <select id="sales-date-select" onchange="filterSalesDate(this.value)">
+                        <option value="Today">Today</option>
+                        <option value="All">All</option>
+                        <option value="Custom">Custom Date</option>
+                    </select>
+                </div>
+                <div id="sales-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <input type="date" id="sales-date-from" onchange="renderSales()" style="width: auto;">
+                    <span>to</span>
+                    <input type="date" id="sales-date-to" onchange="renderSales()" style="width: auto;">
+                </div>
+
+                <div class="tabs" style="display: flex; margin-bottom: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    <button class="tab-btn active" id="sales-tab-pending" onclick="filterSalesTab('Pending')">Pending Status</button>
+                    <button class="tab-btn" id="sales-tab-complete" onclick="filterSalesTab('Complete')">Complete Status</button>
+                    <button class="tab-btn" id="sales-tab-all" onclick="filterSalesTab('All')">All Status</button>
+                </div>
+            </div>
             <div class="table-container">
                 <table id="sales-table">
                     <thead>
                         <tr>
                             <th style="white-space:nowrap;">Order ID</th><th style="white-space:nowrap;">Date & Time</th><th style="white-space:nowrap;">Customer</th><th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Items</th>
-                            <th style="white-space:nowrap;">Grand Total</th><th style="white-space:nowrap;">Total Paid</th><th style="white-space:nowrap;">Remark</th>
+                            <th style="white-space:nowrap;">Grand Total</th><th style="white-space:nowrap;">Total Paid</th><th style="white-space:nowrap;">Payment By</th><th style="white-space:nowrap;">Remark</th>
                             <th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order By</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
                             <th style="white-space:nowrap;">Actions</th>
@@ -889,6 +909,8 @@
     let currentSales = [];
     let currentDiscounts = [];
     let appliedDiscounts = [];
+    let currentSalesStatusFilter = 'Pending';
+    let currentSalesDateFilter = 'Today';
     let currentDiscountDataForSubmit = "";
     let selectedItem = null;
     let currentBooking = null;
@@ -1223,9 +1245,15 @@
         if (tab === 'staff') loadStaff();
         else if (tab === 'role') loadRoles();
         else if (tab === 'items') loadItems();
-        else if (tab === 'sales') loadSales();
+        else if (tab === 'sales') {
+            filterSalesTab('Pending');
+            loadSales();
+        }
         else if (tab === 'discount') loadDiscounts();
-        else if (tab === 'order') loadOrders();
+        else if (tab === 'order') {
+            filterOrderTab('Pending');
+            loadOrders();
+        }
         else if (tab === 'availability') {
             document.getElementById('avail-datetime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
             document.getElementById('avail-item-select').value = 'all';
@@ -1446,15 +1474,78 @@
         tbody.appendChild(tr);
     }
 
+    function filterSalesDate(mode) {
+        currentSalesDateFilter = mode;
+        const customInputs = document.getElementById('sales-custom-date-inputs');
+        customInputs.style.display = (mode === 'Custom') ? 'flex' : 'none';
+        renderSales();
+    }
+
+    function filterSalesTab(f) {
+        currentSalesStatusFilter = f;
+        document.querySelectorAll('#sales-section .tab-btn').forEach(b => b.classList.remove('active'));
+        if (f === 'Pending') document.getElementById('sales-tab-pending').classList.add('active');
+        if (f === 'Complete') document.getElementById('sales-tab-complete').classList.add('active');
+        if (f === 'All') document.getElementById('sales-tab-all').classList.add('active');
+        renderSales();
+    }
+
     async function loadSales() {
         currentSales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-created' });
+        renderSales();
+    }
+
+    function renderSales() {
         const body = document.getElementById('sales-body');
-        body.innerHTML = currentSales.map(s => {
+        const now = new Date();
+        const todayStr = now.toLocaleDateString('en-CA');
+
+        const filtered = currentSales.filter(s => {
+            const orderDate = new Date(s.orderDate);
+            const orderDateStr = orderDate.toLocaleDateString('en-CA');
+            
+            if (currentSalesDateFilter === 'Today') {
+                return orderDateStr === todayStr;
+            } else if (currentSalesDateFilter === 'Custom') {
+                const from = document.getElementById('sales-date-from').value;
+                const to = document.getElementById('sales-date-to').value;
+                if (from && to) {
+                    return (orderDateStr >= from && orderDateStr <= to);
+                }
+            }
+            return true;
+        }).filter(s => {
+            // Status Filter Logic
+            const isWaiverAgree = s.participantDetailsStatus === 'Agree';
+            const isOrderCompleted = s.orderStatus === 'Completed';
+            const isCustArrive = s.customerStatus === 'Arrive';
+
+            if (currentSalesStatusFilter === 'Pending') {
+                return !isWaiverAgree || !isOrderCompleted || !isCustArrive;
+            }
+            if (currentSalesStatusFilter === 'Complete') {
+                return isWaiverAgree && isOrderCompleted && isCustArrive;
+            }
+            return true; // All Status
+        });
+
+        // Apply sorting based on the active sales status tab
+        if (currentSalesStatusFilter === 'Complete') {
+            // Latest orderDate at top (Descending)
+            filtered.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+        } else {
+            // Latest orderDate at bottom (Ascending)
+            filtered.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
+        }
+
+        body.innerHTML = filtered.map(s => {
             const names = (s.orderItemName || '').split(', ');
             const qtys = (s.orderItemQuantity || '').split(', ');
             const durs = (s.orderItemRentalDuration || '').split(', ');
             const prices = (s.orderItemPrice || '').split(', ');
             const itemsHtml = names.map((n, i) => `<div style="white-space:nowrap; font-size:0.75rem;">${n} (x${qtys[i]}, ${durs[i]}m, RM${prices[i]})</div>`).join('');
+
+            const paymentBy = (s.paymentMethod || '').includes(',') ? 'Mix' : (s.paymentMethod || '-');
 
             return `
             <tr>
@@ -1465,6 +1556,7 @@
                 <td>${itemsHtml}</td>
                 <td style="font-weight:bold; color:#00d2ff;">RM${s.totalPrice}</td>
                 <td style="font-weight:bold; color:#25d366;">RM${s.totalPaidAmount}</td>
+                <td style="font-size: 0.85rem;">${paymentBy}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
                 <td><span style="color: ${s.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${s.orderStatus === 'Completed' ? 'normal' : 'bold'};">${s.orderStatus}</span></td>
                 <td><span style="color: ${s.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${s.participantDetailsStatus || 'Pending'}</span></td>
