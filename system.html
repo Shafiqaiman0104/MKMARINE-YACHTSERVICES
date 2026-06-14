@@ -2627,12 +2627,11 @@
                         `${paymentText}` +
                         `${paidText}\n` +
                         `*Change:* RM${changeVal}\n` +
-                        `---------------------------\n` +
-                        `*Waiver Form:* https://southwavejb.com/waiver.html?orderId=${currentBooking.orderId}\n` +
-                        `*Timer:* https://southwavejb.com/timer.html?orderId=${currentBooking.orderId}\n` +
-                        `---------------------------\n` +
-                        `*View QR Code:* ${currentBooking.orderQrUrl}\n` +
-                        `---------------------------\n` +
+                        `---------------------------\n\n` +
+                        `1) Waiver form : https://southwavejb.com/waiver.html?orderId=${currentBooking.orderId}\n\n` +
+                        `2) Order Id QR : ${currentBooking.orderQrUrl}\n\n` +
+                        `3) Timer: https://southwavejb.com/timer.html?orderId=${currentBooking.orderId}\n\n` +
+                        `---------------------------\n\n` +
                         `Thank you for your booking!\n` +
                         `_*- Powered By VentureRush Tech*_`;
         
@@ -2924,12 +2923,11 @@
                         `${totalsText}` +
                         `*Payment:* ${paymentDisplay}\n` +
                         `*Paid:* RM${s.totalPaidAmount} (${s.paidAmount})\n` +
-                        `---------------------------\n` +
-                        `*Waiver Form:* https://southwavejb.com/waiver.html?orderId=${s.orderId}\n` +
-                        `*Timer:* https://southwavejb.com/timer.html?orderId=${s.orderId}\n` +
-                        `---------------------------\n` +
-                        `*View QR Code:* ${s.orderQrUrl}\n` +
-                        `---------------------------\n` +
+                        `---------------------------\n\n` +
+                        `1) Waiver form : https://southwavejb.com/waiver.html?orderId=${s.orderId}\n\n` +
+                        `2) Order Id QR : ${s.orderQrUrl}\n\n` +
+                        `3) Timer: https://southwavejb.com/timer.html?orderId=${s.orderId}\n\n` +
+                        `---------------------------\n\n` +
                         `Thank you for your booking!\n` +
                         `_*- Powered By VentureRush Tech*_`;
 
