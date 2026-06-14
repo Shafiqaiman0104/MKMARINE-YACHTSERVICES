@@ -57,8 +57,12 @@
 
     window.onload = async () => {
         if (!orderId) {
-            alert("Error: order id please use the correct link that staff provide");
-            document.getElementById('timer-content').innerHTML = `<h2>SOUTH WAVE</h2><h3>Invalid Link</h3><p>Order ID is missing.</p>`;
+            document.getElementById('timer-content').innerHTML = `
+                <h2>SOUTH WAVE</h2>
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
+                <h3>Invalid Link</h3>
+                <p>Order ID is missing. Please use the link provided by the staff.</p>
+            `;
             return;
         }
         document.getElementById('display-order-id').innerText = orderId;
@@ -77,8 +81,14 @@
             updateTimers(record);
             timerInterval = setInterval(() => updateTimers(record), 1000);
         } catch (e) {
-            alert("Error: order id please use the correct link that staff provide");
-            document.getElementById('timer-status').innerText = "Order not found or error loading data.";
+            console.error("Timer data loading failed", e);
+            alert("Order Id not valid, please use the correct link provide by staff");
+            document.getElementById('timer-content').innerHTML = `
+                <h2>SOUTH WAVE</h2>
+                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
+                <h3>Order Not Found</h3>
+                <p>The Order ID provided is invalid. Please use the correct link from staff.</p>
+            `;
         }
     };
 
