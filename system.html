@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -290,15 +291,74 @@
 
     <div id="dashboard" style="display: none;">
         <div class="tabs" id="nav-tabs" style="display: flex;">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab-btn active" onclick="switchTab('booking')">New Booking</button>
             <button class="tab-btn active" onclick="switchTab('staff')">Staff Management</button>
             <button class="tab-btn" onclick="switchTab('role')">Role Management</button>
             <button class="tab-btn" onclick="switchTab('items')">Items Inventory</button>
-            <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
+            <button class="tab-btn" onclick="switchTab('sales')">Sales History</button>
             <button class="tab-btn" onclick="switchTab('discount')">Discount</button>
             <button class="tab-btn" onclick="switchTab('order')">Order</button>
             <button class="tab-btn" onclick="switchTab('availability')">Check Availability</button>
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section">
+            <div class="header-actions">
+                <h3>Business Dashboard</h3>
+            </div>
+            <div style="margin-top: 15px;">
+                <div style="margin-bottom: 15px; width: 200px;">
+                    <select id="dash-date-select" onchange="filterDashDate(this.value)">
+                        <option value="Today">Today</option>
+                        <option value="All">All</option>
+                        <option value="Custom">Custom Date</option>
+                    </select>
+                </div>
+                <div id="dash-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <input type="date" id="dash-date-from" onchange="loadDashboardData()" style="width: auto;">
+                    <span>to</span>
+                    <input type="date" id="dash-date-to" onchange="loadDashboardData()" style="width: auto;">
+                </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL ORDER</div>
+                    <div class="pay-value" id="dash-total-order">0</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL PROFIT</div>
+                    <div class="pay-value" id="dash-total-profit">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL ITEM</div>
+                    <div class="pay-value" id="dash-total-item">0</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL PAX</div>
+                    <div id="dash-total-pax" style="font-size: 0.8rem; margin-top: 5px; color: #00d2ff; font-weight: bold;">Adult: 0 | Kid: 0 | Tod: 0</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Hourly Profit Trend</h4>
+                <canvas id="profitChart" style="max-height: 300px; width: 100%;"></canvas>
+            </div>
+
+            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
+                <table id="top-items-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Item Name</th>
+                            <th style="text-align: center;">Qty Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-items-body"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Booking Section -->
@@ -921,6 +981,8 @@
     let currentOrderFilter = 'Pending';
     let currentDateFilter = 'Today';
     let orderTableTimerInterval = null;
+    let myChart = null;
+    let currentDashDateFilter = 'Today';
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -1242,6 +1304,7 @@
         if (btn) btn.classList.add('active');
         document.getElementById(`${tab}-section`).classList.add('active');
         
+        if (tab === 'dashboard') loadDashboardData();
         if (tab === 'staff') loadStaff();
         else if (tab === 'role') loadRoles();
         else if (tab === 'items') loadItems();
@@ -1281,6 +1344,7 @@
         }
 
         const tabMapping = {
+            "dashboard": "Dashboard",
             "booking": "New Booking",
             "staff": "Staff Management",
             "role": "Role Management",
@@ -2293,6 +2357,116 @@
         grandTotalDisplay.innerText = `RM${total.toFixed(2)}`;
     }
 
+    function filterDashDate(mode) {
+        currentDashDateFilter = mode;
+        document.getElementById('dash-custom-date-inputs').style.display = (mode === 'Custom') ? 'flex' : 'none';
+        loadDashboardData();
+    }
+
+    async function loadDashboardData() {
+        try {
+            const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-created' });
+            const now = new Date();
+            const todayStr = now.toLocaleDateString('en-CA');
+
+            const filtered = sales.filter(s => {
+                const orderDate = new Date(s.orderDate);
+                const orderDateStr = orderDate.toLocaleDateString('en-CA');
+                if (currentDashDateFilter === 'Today') return orderDateStr === todayStr;
+                if (currentDashDateFilter === 'Custom') {
+                    const from = document.getElementById('dash-date-from').value;
+                    const to = document.getElementById('dash-date-to').value;
+                    if (from && to) return (orderDateStr >= from && orderDateStr <= to);
+                }
+                return true;
+            });
+
+            // Metrics
+            let totalProfit = 0;
+            let totalItems = 0;
+            let adults = 0, kids = 0, toddlers = 0;
+            let itemMap = {};
+            let hourlyProfit = new Array(24).fill(0);
+
+            filtered.forEach(s => {
+                totalProfit += parseFloat(s.totalPaidAmount) || 0;
+                totalItems += parseInt(s.totalItems) || 0;
+                
+                // Pax breakdown
+                (s.totalPax || "").split(", ").forEach(p => {
+                    const val = parseInt(p.substring(1)) || 0;
+                    if (p.startsWith('A')) adults += val;
+                    else if (p.startsWith('K')) kids += val;
+                    else if (p.startsWith('T')) toddlers += val;
+                });
+
+                // Item mapping
+                const names = (s.orderItemName || "").split(", ");
+                const qtys = (s.orderItemQuantity || "").split(", ");
+                names.forEach((name, i) => {
+                    const n = name.trim();
+                    const q = parseInt(qtys[i]) || 0;
+                    if(n) itemMap[n] = (itemMap[n] || 0) + q;
+                });
+
+                // Hourly profit
+                const hour = new Date(s.orderDate).getHours();
+                hourlyProfit[hour] += parseFloat(s.totalPaidAmount) || 0;
+            });
+
+            document.getElementById('dash-total-order').innerText = filtered.length;
+            document.getElementById('dash-total-profit').innerText = `RM${totalProfit.toFixed(2)}`;
+            document.getElementById('dash-total-item').innerText = totalItems;
+            document.getElementById('dash-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
+
+            // Render Ranking
+            const ranking = Object.entries(itemMap).sort((a, b) => b[1] - a[1]);
+            document.getElementById('top-items-body').innerHTML = ranking.map(r => `
+                <tr>
+                    <td>${r[0]}</td>
+                    <td style="text-align:center; font-weight:bold; color:#00d2ff;">${r[1]}</td>
+                </tr>
+            `).join('');
+
+            // Render Chart
+            renderProfitChart(hourlyProfit);
+
+        } catch (e) { console.error("Dashboard Load Error", e); }
+    }
+
+    function renderProfitChart(data) {
+        const ctx = document.getElementById('profitChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+        
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Profit (RM)',
+                    data: data,
+                    borderColor: '#00d2ff',
+                    backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
+                    x: { grid: { display: false }, ticks: { color: '#fff' } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
     function removeFromCart(index) {
         cart.splice(index, 1);
         renderCart();
@@ -3088,7 +3262,7 @@
         } else if (type === 'role') {
             const data = id ? currentRoles.find(r => r.id === id) : {};
             title.innerText = id ? 'Edit Role' : 'Add New Role';
-            const perms = ["New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability"];
+            const perms = ["Dashboard", "New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability"];
             const currentPerms = data.canAccess ? data.canAccess.split(',').map(p => p.trim()) : [];
             
             let checkboxes = perms.map(p => `
