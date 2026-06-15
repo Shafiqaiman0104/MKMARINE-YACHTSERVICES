@@ -290,6 +290,7 @@
     <div id="result" class="error"></div>
 
     <div id="dashboard" style="display: none;">
+        <div id="welcome-msg" style="margin-bottom: 15px; font-size: 1rem; color: #00d2ff; text-align: right; font-weight: 500;"></div>
         <div class="tabs" id="nav-tabs" style="display: flex;">
             <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab-btn active" onclick="switchTab('booking')">New Booking</button>
@@ -1411,6 +1412,7 @@
                 localStorage.setItem('mk_staffname', record.name);
 
                 const startTab = await applyPermissions(record.role);
+                document.getElementById('welcome-msg').innerText = `Welcome, ${record.name} (${record.role})!!`;
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('main-container').classList.add('dashboard-mode');
                 document.getElementById('dashboard').style.display = 'block';
