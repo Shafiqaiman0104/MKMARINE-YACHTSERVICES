@@ -8,32 +8,32 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(45deg, #0f2027, #203a43, #2c5364); padding: 20px 0; }
-        .container { width: 95%; max-width: 500px; padding: 30px; background: rgba(255, 255, 255, 0.1); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); color: white; text-align: center; backdrop-filter: blur(10px); }
-        h2 { margin-bottom: 20px; font-weight: 300; letter-spacing: 2px; }
-        h3 { color:#00d2ff; margin-bottom: 5px; }
-        label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); text-align: left; }
-        input { width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; outline: none; color: white; margin-bottom: 15px; }
-        input:focus { border-color: #00d2ff; }
+        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px 0; }
+        .container { width: 95%; max-width: 500px; padding: 30px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #1a1a1b; text-align: center; }
+        h2 { margin-bottom: 20px; font-weight: 700; letter-spacing: 2px; color: #001f3f; }
+        h3 { color: #ff6600; margin-bottom: 5px; font-weight: 600; }
+        label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: #555; text-align: left; font-weight: 600; }
+        input { width: 100%; padding: 12px; background: #fff; border: 1px solid #ccd0d5; border-radius: 8px; outline: none; color: #000; margin-bottom: 15px; }
+        input:focus { border-color: #ff6600; box-shadow: 0 0 0 2px rgba(255,102,0,0.1); }
         button { width: 100%; padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         button:hover { transform: translateY(-2px); }
-        #waiver-submit-btn { background: #25d366; }
-        .add-btn { background: #666; margin-bottom: 10px; }
-        .participant-entry { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px; position: relative; }
-        .remove-btn { position: absolute; right: 0; top: -5px; background: none; color: #ff4b2b; width: auto; font-size: 0.8rem; }
-        .waiver-note { font-size: 0.75rem; line-height: 1.5; color: rgba(255,255,255,0.7); text-align: justify; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        #waiver-submit-btn { background: #ff6600; }
+        .add-btn { background: #001f3f; margin-bottom: 10px; }
+        .participant-entry { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; position: relative; }
+        .remove-btn { position: absolute; right: 0; top: -5px; background: none; color: #d93025; width: auto; font-size: 0.8rem; }
+        .waiver-note { font-size: 0.75rem; line-height: 1.5; color: #4b4f56; text-align: justify; background: #f5f6f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
         .agree-container { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; text-align: left; cursor: pointer; }
         .agree-container input { width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0; }
-        .agree-container label { margin: 0; font-size: 0.9rem; color: #fff; cursor: pointer; font-weight: bold; }
+        .agree-container label { margin: 0; font-size: 0.9rem; color: #1c1e21; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container" id="waiver-form-content">
     <h2>SOUTH WAVE</h2>
-    <img src="/img/logoWhite.png" alt="Logo" style="width: 120px; margin-bottom: 20px;">
+    <img src="/img/logoBlue.png" alt="Logo" style="width: 120px; margin-bottom: 20px;">
     <h3>Waiver Form</h3>
-    <p style="font-size: 0.8rem; margin-bottom: 25px; color: rgba(255,255,255,0.5);">Order ID: <span id="waiver-order-id-display"></span></p>
+    <p style="font-size: 0.8rem; margin-bottom: 25px; color: #777;">Order ID: <span id="waiver-order-id-display" style="font-weight: bold; color: #001f3f;"></span></p>
     <div class="waiver-note">
        <b> WAIVER/RELEASE OF LIABILITY AND ASSUMPTION OF RISK FOR SOUTH WAVE, WATERSPORTS ACTIVITIES </b> <br><br> I / We, the undersigned, hereby release and discharge MK MARINE & YACHT SERVICES, LOYALTY MARINE SDN. BHD., Pinetree Marina Resort Puteri Harbour and UEM Sunrise Berhad or its Managers, Employees, Officers, Agents, and Operators jointly and separately from any action, claims, demand, cost in respect to loss, injury, or death arising from the rental watersports equipment and activities managed by SOUTH WAVE, Watersports Adventure, including negligence which may have been or may be sustained by the undersigned in any way relating to or arising out of the activities or the use of the equipment. The undersigned desires and agrees to assume all risk. <br><br> I / We also fully agree, understand, and acknowledge the following: <br><br> 1. Warrant and certify that our physical condition is excellent and mental state is sufficiently stable to enable us to participate safely in these activities. <br><br> 2. Understand and agree to follow all safety rules and procedures. <br><br> I/We have read the Waiver/Release of Liability, Assumption of Risk, fully understand its items, understand that I have given up substantial rights by signing it, and aware of its legal consequences, and have signed it freely and voluntarily without any inducement.
     </div>
@@ -67,9 +67,9 @@
     window.onload = async () => {
         if (!orderId) {
             document.getElementById('waiver-form-content').innerHTML = `
-                <h2>SOUTH WAVE</h2>
-                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
-                <h3>Invalid Link</h3>
+                <h2 style="color: #001f3f;">SOUTH WAVE</h2>
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #d93025; margin-bottom: 20px;"></i>
+                <h3 style="color: #d93025;">Invalid Link</h3>
                 <p>Order ID is missing. Please use the link provided by the staff.</p>
             `;
             return;
@@ -104,9 +104,9 @@
             console.error("Status check failed", e);
             alert("Wrong Order Id please use the correct link from staff");
             document.getElementById('waiver-form-content').innerHTML = `
-                <h2>SOUTH WAVE</h2>
-                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
-                <h3>Order Not Found</h3>
+                <h2 style="color: #001f3f;">SOUTH WAVE</h2>
+                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #d93025; margin-bottom: 20px;"></i>
+                <h3 style="color: #d93025;">Order Not Found</h3>
                 <p>The Order ID provided is invalid. Please use the correct link from staff.</p>
             `;
         }
@@ -177,13 +177,13 @@
 
     function showSuccessUI(name, id) {
         document.getElementById('waiver-form-content').innerHTML = `
-            <h2>SOUTH WAVE</h2>
+            <h2 style="color: #001f3f;">SOUTH WAVE</h2>
             <div style="margin: 30px 0;">
                 <i class="fas fa-check-circle" style="font-size: 5rem; color: #25d366; margin-bottom: 20px;"></i>
-                <h3 style="color: white;">Waiver Submitted!</h3>
+                <h3 style="color: #1a1a1b;">Waiver Submitted!</h3>
             </div>
-            <p style="margin-bottom: 20px; opacity: 0.8;">Thank you, <strong>${name}</strong> and team.</p>
-            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">You have successfully agreed to the waiver terms for Order ${id}. You may close this page.</p>
+            <p style="margin-bottom: 20px; color: #444;">Thank you, <strong>${name}</strong> and team.</p>
+            <p style="font-size: 0.9rem; color: #777;">You have successfully agreed to the waiver terms for Order ${id}. You may close this page.</p>
         `;
     }
 </script>
