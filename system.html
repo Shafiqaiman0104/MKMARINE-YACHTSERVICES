@@ -2694,17 +2694,45 @@
         if (currentExportFormat === 'Excel') exportReportToExcel(scope);
         else exportReportToPDF(scope);
     }
+    
+    function getReportDateRangeLabel(forFilename = false) {
+        let label = "";
+        if (currentReportDateFilter === 'Today') {
+            label = new Date().toLocaleDateString('en-GB'); // "DD/MM/YYYY"
+        } else if (currentReportDateFilter === 'All') {
+            label = 'All';
+        } else if (currentReportDateFilter === 'Custom') {
+            const from = document.getElementById('report-date-from').value;
+            const to = document.getElementById('report-date-to').value;
+            if (from && to) {
+                const f = new Date(from).toLocaleDateString('en-GB');
+                const t = new Date(to).toLocaleDateString('en-GB');
+                label = `${f}_To_${t}`;
+            } else {
+                label = 'Custom';
+            }
+        }
+        
+        if (forFilename) {
+            return label.replaceAll('/', '_');
+        }
+        return label;
+    }
 
     function exportReportToExcel(scope) {
         const wb = XLSX.utils.book_new();
-        const dateSuffix = new Date().toISOString().split('T')[0];
+        const rangeLabelDisplay = getReportDateRangeLabel(false);
+        const rangeLabelFile = getReportDateRangeLabel(true);
+        const timestamp = new Date().toLocaleString();
 
         if (scope === 'Sales') {
             const summary = getReportSummaryData(lastFilteredReportData);
             
             // Table 0: Summary Sheet
             const summaryRows = [
-                ["SUMMARY REPORT - " + dateSuffix],
+                ["SUMMARY REPORT"],
+                [`Date : ${rangeLabelDisplay}`],
+                [`Generated at : ${timestamp}`],
                 [""],
                 ["SALES DATA"],
                 ["Metric", "Value"],
@@ -2771,7 +2799,7 @@
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(participantRows), "Participant Report");
         }
 
-        XLSX.writeFile(wb, `SouthWave_${scope}_Report_${dateSuffix}.xlsx`);
+        XLSX.writeFile(wb, `SouthWave_${scope}_Report_${rangeLabelFile}.xlsx`);
     }
 
     function getPaymentBreakdown(s) {
@@ -2861,17 +2889,19 @@
         const doc = new jsPDF('l', 'mm', 'a4');
         
         const timestamp = new Date().toLocaleString();
-        const dateSuffix = new Date().toISOString().split('T')[0];
+        const rangeLabelDisplay = getReportDateRangeLabel(false);
+        const rangeLabelFile = getReportDateRangeLabel(true);
 
         if (scope === 'Sales') {
             const summary = getReportSummaryData(lastFilteredReportData);
             
             // Page 1: Summary Report
             doc.setFontSize(16); doc.text("Summary Report", 14, 15);
-            doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 22);
+            doc.setFontSize(10); doc.text(`Date : ${rangeLabelDisplay}`, 14, 22);
+            doc.setFontSize(10); doc.text(`Generated at : ${timestamp}`, 14, 28);
             
-            doc.setFontSize(12); doc.text("Sales Data", 14, 32);
-            doc.autoTable({ startY: 35, head: [["Metric", "Value"]], body: summary.sales, theme: 'striped', styles: { fontSize: 8 } });
+            doc.setFontSize(12); doc.text("Sales Data", 14, 38);
+            doc.autoTable({ startY: 41, head: [["Metric", "Value"]], body: summary.sales, theme: 'striped', styles: { fontSize: 8 } });
             
             doc.setFontSize(12); doc.text("Pax Data", 14, doc.lastAutoTable.finalY + 10);
             doc.autoTable({ startY: doc.lastAutoTable.finalY + 15, head: [["Category", "Count"]], body: summary.pax, theme: 'striped', styles: { fontSize: 8 } });
@@ -2909,7 +2939,7 @@
             doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
         }
 
-        doc.save(`SouthWave_${scope}_Report_${dateSuffix}.pdf`);
+        doc.save(`SouthWave_${scope}_Report_${rangeLabelFile}.pdf`);
     }
 
     async function loadDashboardData() {
