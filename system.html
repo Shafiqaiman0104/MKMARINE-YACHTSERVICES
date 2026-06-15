@@ -865,6 +865,17 @@
     </div>
 </div>
 
+<!-- Participant Export Type Modal -->
+<div class="form-overlay" id="participant-export-type-overlay">
+    <div class="form-content" style="max-width: 400px; text-align: center;">
+        <h3 style="margin-bottom:20px; color:#00d2ff;">Participant Report Type</h3>
+        <p style="margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">Select the version of the participant report.</p>
+        <button onclick="executeFinalExport('Participant')" style="background:#00d2ff; margin-bottom: 10px;">Report</button>
+        <button onclick="executeFinalExport('Marina')" style="background:#25d366; margin-bottom: 10px;">Marina</button>
+        <button class="btn-danger" onclick="document.getElementById('participant-export-type-overlay').style.display='none'" style="margin-top:10px;">Cancel</button>
+    </div>
+</div>
+
 <!-- Checkout Modal -->
 <div class="checkout-overlay" id="checkout-overlay">
     <div class="checkout-container">
@@ -2691,6 +2702,16 @@
 
     function executeExport(scope) {
         document.getElementById('export-selection-overlay').style.display = 'none';
+        if (scope === 'Participant') {
+            document.getElementById('participant-export-type-overlay').style.display = 'flex';
+        } else {
+            if (currentExportFormat === 'Excel') exportReportToExcel(scope);
+            else exportReportToPDF(scope);
+        }
+    }
+
+    function executeFinalExport(scope) {
+        document.getElementById('participant-export-type-overlay').style.display = 'none';
         if (currentExportFormat === 'Excel') exportReportToExcel(scope);
         else exportReportToPDF(scope);
     }
@@ -2786,7 +2807,31 @@
                 "Refund By": s.refundBy || '-'
             }));
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), "Refund Report");
-        } else {
+        } else if (scope === 'Marina') {
+            const marinaRows = [];
+            lastFilteredReportData.forEach(s => {
+                const partsArr = (s.participantDetails || '').split(', ');
+                const maxDur = Math.max(...(s.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0));
+                const timeIn = new Date(s.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                const timeOut = new Date(new Date(s.orderDate).getTime() + (maxDur * 60000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                
+                partsArr.forEach(entry => {
+                    const chunks = entry.trim().split(' ');
+                    if (!entry.trim() || chunks.length === 0) return;
+                    const id = chunks.length > 1 ? chunks.pop() : chunks[0];
+                    const name = chunks.length > 0 ? chunks.join(' ') : '-';
+                    marinaRows.push({ "Name": name, "Nric/Passport": id, "Time In": timeIn, "Time Out": timeOut });
+                });
+            });
+            const sheetData = [
+                ["Company : South Wave"],
+                [`Date : ${rangeLabelDisplay}`],
+                [""],
+                ["Name", "Nric/Passport", "Time In", "Time Out"]
+            ];
+            marinaRows.forEach(r => sheetData.push([r.Name, r["Nric/Passport"], r["Time In"], r["Time Out"]]));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), "Marina Report");
+        } else if (scope === 'Participant') {
             // Table 3: Participants
             const participantRows = lastFilteredReportData.map(s => ({
                 "Order ID": s.orderId,
@@ -2934,7 +2979,7 @@
                 const refundData = refundRowsFiltered.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
                 doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 55, styles: { fontSize: 7 } });
             }
-        } else {
+        } else if (scope === 'Participant') {
             // Table 3: Participants
             doc.addImage(logoPath, 'PNG', 14, 10, 40, 40);
             doc.setFontSize(16); doc.text("Participant Report", 60, 30);
@@ -2944,6 +2989,29 @@
             const partKeys = ["Order ID","Date","Customer","Pax","Waiver","Participants"];
             const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
             doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 71, styles: { fontSize: 7 } });
+        } else if (scope === 'Marina') {
+            doc.addImage(logoPath, 'PNG', 14, 10, 40, 40);
+            doc.setFontSize(16); doc.text("Marina Report", 60, 30);
+            doc.setFontSize(10); doc.text(`Company : South Wave`, 14, 55);
+            doc.setFontSize(10); doc.text(`Date : ${rangeLabelDisplay}`, 14, 61);
+
+            const marinaRows = [];
+            lastFilteredReportData.forEach(s => {
+                const partsArr = (s.participantDetails || '').split(', ');
+                const maxDur = Math.max(...(s.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0));
+                const timeIn = new Date(s.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                const timeOut = new Date(new Date(s.orderDate).getTime() + (maxDur * 60000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                
+                partsArr.forEach(entry => {
+                    const chunks = entry.trim().split(' ');
+                    if (!entry.trim() || chunks.length === 0) return;
+                    const id = chunks.length > 1 ? chunks.pop() : chunks[0];
+                    const name = chunks.length > 0 ? chunks.join(' ') : '-';
+                    marinaRows.push([name, id, timeIn, timeOut]);
+                });
+            });
+
+            doc.autoTable({ head: [["Name", "Nric/Passport", "Time In", "Time Out"]], body: marinaRows, startY: 71, styles: { fontSize: 8 } });
         }
 
         doc.save(`SouthWave_${scope}_Report_${rangeLabelFile}.pdf`);
