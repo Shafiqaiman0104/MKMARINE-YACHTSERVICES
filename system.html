@@ -1160,6 +1160,16 @@
     </div>
 </div>
 
+<!-- Timeout Overlay -->
+<div class="form-overlay" id="timeout-overlay" style="z-index: 10001; display: none;">
+    <div class="form-content" style="max-width: 320px; text-align: center; border-color: #f1c40f;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 5rem; color: #f1c40f; margin-bottom: 20px;"></i>
+        <h2 style="color: white; margin-bottom: 10px;">Oops Timeout!!</h2>
+        <h3 style="color: white; margin-bottom: 15px; font-weight: normal; font-size: 1rem;">no activity in 3 minutes please refresh.</h3>
+        <button onclick="location.reload()" style="background: #00d2ff; font-weight: bold;">Refresh</button>
+    </div>
+</div>
+
 <script>
     const pb = new PocketBase('https://pocketbase.venturerushtech.com');
     // Disable auto-cancellation globally to prevent the "autocancelled" error
@@ -1261,6 +1271,22 @@
     window.addEventListener('online', updateConnectionStatus);
     window.addEventListener('offline', updateConnectionStatus);
     if (navigator.connection) navigator.connection.addEventListener('change', updateConnectionStatus);
+
+    // Inactivity Timeout Logic
+    let inactivityTimer;
+    function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+            document.getElementById('timeout-overlay').style.display = 'flex';
+        }, 3 * 60 * 1000); // 3 minutes
+    }
+
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('mousedown', resetInactivityTimer);
+    window.addEventListener('keypress', resetInactivityTimer);
+    window.addEventListener('touchstart', resetInactivityTimer);
+    window.addEventListener('scroll', resetInactivityTimer);
+    resetInactivityTimer();
 
     async function openCheckoutModal(mode) {
         if (cart.length === 0) return alert("Cart is empty");
