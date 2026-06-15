@@ -8,26 +8,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(45deg, #0f2027, #203a43, #2c5364); padding: 20px; }
-        .container { width: 100%; max-width: 400px; padding: 40px; background: rgba(255, 255, 255, 0.1); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); color: white; text-align: center; backdrop-filter: blur(10px); }
-        h2 { margin-bottom: 20px; font-weight: 300; letter-spacing: 2px; }
-        .qr-box { background: white; padding: 20px; border-radius: 12px; display: inline-block; margin: 20px 0; border: 1px solid #00d2ff; }
-        .order-id { font-size: 1.2rem; font-weight: bold; color: #00d2ff; margin-bottom: 10px; }
-        #loading { opacity: 0.6; font-style: italic; }
+        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; }
+        .container { width: 100%; max-width: 400px; padding: 40px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #1a1a1b; text-align: center; }
+        h2 { margin-bottom: 20px; font-weight: 700; letter-spacing: 2px; color: #001f3f; }
+        .qr-box { background: white; padding: 20px; border-radius: 12px; display: inline-block; margin: 20px 0; border: 2px solid #001f3f; }
+        .order-id { font-size: 1.2rem; font-weight: bold; color: #ff6600; margin-bottom: 10px; }
+        #loading { color: #666; font-style: italic; }
     </style>
 </head>
 <body>
 <div class="container" id="content">
     <h2>SOUTH WAVE</h2>
-    <img src="/img/logoWhite.png" alt="Logo" style="width: 120px; margin-bottom: 20px;">
+    <img src="/img/logoBlue.png" alt="Logo" style="width: 120px; margin-bottom: 20px;">
     
     <div id="loading">Verifying Order...</div>
 
-    <div id="qr-container" style="display: none;">
-        <p style="font-size: 0.9rem; margin-bottom: 5px;">Rental Order QR</p>
+    <div id="qr-container" style="display: none; color: #333;">
+        <p style="font-size: 0.9rem; margin-bottom: 5px; font-weight: 600;">Rental Order QR</p>
         <div class="qr-box" id="qrcode"></div>
         <div class="order-id" id="display-order-id"></div>
-        <p style="font-size: 0.85rem; opacity: 0.7;">Please present this QR code to the security guard at the marina entrance gate / staff at the watersports area for processing.</p>
+        <p style="font-size: 0.85rem; color: #666;">Please present this QR code to the security guard at the marina entrance gate / staff at the watersports area for processing.</p>
     </div>
 </div>
 
@@ -68,10 +68,10 @@
     function handleInvalid() {
         alert("Order Id not valid, please use the correct link provide by staff");
         document.getElementById('content').innerHTML = `
-            <h2>SOUTH WAVE</h2>
-            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ff4b2b; margin-bottom: 20px;"></i>
-            <h3 style="color: white;">Invalid Link</h3>
-            <p style="margin-top: 15px; opacity: 0.8;">Order Id not valid, please use the correct link provide by staff.</p>
+            <h2 style="color: #001f3f;">SOUTH WAVE</h2>
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #d93025; margin-bottom: 20px;"></i>
+            <h3 style="color: #d93025;">Invalid Link</h3>
+            <p style="margin-top: 15px; color: #666;">Order Id not valid, please use the correct link provide by staff.</p>
         `;
     }
 </script>
