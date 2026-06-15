@@ -41,6 +41,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             text-align: center;
+            position: relative;
             transition: width 0.5s ease;
         }
 
@@ -293,6 +294,12 @@
     <div id="result" class="error"></div>
 
     <div id="dashboard" style="display: none;">
+        <!-- Connection Status Bars -->
+        <div id="connection-status" style="position: absolute; top: 15px; right: 20px; display: flex; gap: 3px; align-items: flex-end; height: 20px;">
+            <div class="conn-bar" style="width: 5px; height: 7px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+            <div class="conn-bar" style="width: 5px; height: 11px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+            <div class="conn-bar" style="width: 5px; height: 15px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+        </div>
         <div id="welcome-msg" style="margin-bottom: 15px; font-size: 1rem; color: #00d2ff; text-align: right; font-weight: 500;"></div>
         <div class="tabs" id="nav-tabs" style="display: flex;">
             <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
@@ -1144,6 +1151,15 @@
     </div>
 </div>
 
+<!-- Offline Overlay -->
+<div class="form-overlay" id="offline-overlay" style="z-index: 10000; display: none;">
+    <div class="form-content" style="max-width: 320px; text-align: center; border-color: #ff4b2b;">
+        <i class="fas fa-frown" style="font-size: 5rem; color: #ff4b2b; margin-bottom: 20px;"></i>
+        <h3 style="color: white; margin-bottom: 15px;">No connection please refresh.</h3>
+        <button onclick="location.reload()" style="background: #00d2ff; font-weight: bold;">Refresh</button>
+    </div>
+</div>
+
 <script>
     const pb = new PocketBase('https://pocketbase.venturerushtech.com');
     // Disable auto-cancellation globally to prevent the "autocancelled" error
@@ -1203,6 +1219,48 @@
         }
         updateCheckoutDisplay();
     }
+
+    // Connection Monitoring Logic
+    function updateConnectionStatus() {
+        const bars = document.querySelectorAll('.conn-bar');
+        const overlay = document.getElementById('offline-overlay');
+
+        if (!navigator.onLine) {
+            bars.forEach(b => b.style.background = '#ff4b2b'); // 3 red
+            overlay.style.display = 'flex';
+            return;
+        }
+
+        overlay.style.display = 'none';
+        
+        // Try to estimate speed using Network Information API
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        let speedStatus = 'fast'; 
+        
+        if (conn) {
+            const type = conn.effectiveType; // '4g', '3g', '2g', etc.
+            const downlink = conn.downlink; // Mb/s
+            
+            if (type === '2g' || downlink < 1) speedStatus = 'too-slow';
+            else if (type === '3g' || downlink < 4) speedStatus = 'slow';
+        }
+
+        if (speedStatus === 'fast') {
+            bars.forEach(b => b.style.background = '#25d366'); // 3 Green
+        } else if (speedStatus === 'slow') {
+            bars[0].style.background = 'black';
+            bars[1].style.background = 'black';
+            bars[2].style.background = '#666'; // Grey
+        } else if (speedStatus === 'too-slow') {
+            bars[0].style.background = 'black';
+            bars[1].style.background = '#666'; // Grey
+            bars[2].style.background = '#666'; // Grey
+        }
+    }
+
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    if (navigator.connection) navigator.connection.addEventListener('change', updateConnectionStatus);
 
     async function openCheckoutModal(mode) {
         if (cart.length === 0) return alert("Cart is empty");
@@ -1585,6 +1643,7 @@
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('main-container').classList.add('dashboard-mode');
                 document.getElementById('dashboard').style.display = 'block';
+                updateConnectionStatus();
                 switchTab(startTab || 'booking');
             }
         } catch (error) {
