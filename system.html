@@ -353,6 +353,14 @@
                     <div class="pay-label">TOTAL PROFIT</div>
                     <div class="pay-value" id="dash-total-profit">RM0.00</div>
                 </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL REFUND</div>
+                    <div class="pay-value" id="dash-total-refund" style="color: #ff4b2b;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">NETT PROFIT</div>
+                    <div class="pay-value" id="dash-nett-profit">RM0.00</div>
+                </div>
             </div>
 
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
@@ -712,6 +720,14 @@
                 <div class="pay-box" style="text-align: center; padding: 15px;">
                     <div class="pay-label">TOTAL PROFIT</div>
                     <div class="pay-value" id="report-total-profit" style="font-size: 1rem;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">TOTAL REFUND</div>
+                    <div class="pay-value" id="report-total-refund" style="font-size: 1rem; color: #ff4b2b;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">NETT PROFIT</div>
+                    <div class="pay-value" id="report-nett-profit" style="font-size: 1rem;">RM0.00</div>
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 15px;">
                     <div class="pay-label">TOTAL DISCOUNT</div>
@@ -2555,7 +2571,7 @@
             lastFilteredReportData = filtered;
             const stackData = (str) => (str || '').split(', ').join('<br>');
 
-            let tSales = 0, tProfit = 0, tDiscount = 0, tItems = 0;
+            let tSales = 0, tProfit = 0, tDiscount = 0, tItems = 0, tRefund = 0;
             let adults = 0, kids = 0, toddlers = 0;
             let paymentMap = { 'Cash': 0, 'Online Transfer': 0, 'Card': 0 };
             let itemMap = {};
@@ -2564,6 +2580,7 @@
             body.innerHTML = filtered.map(s => {
                 const profit = parseFloat(s.totalPaidAmount) || 0;
                 tProfit += profit;
+                tRefund += (parseFloat(s.refundAmount) || 0);
                 tItems += parseInt(s.totalItems) || 0;
 
                 const saleSum = (s.orderItemPrice || '').split(', ').reduce((sum, p) => sum + (parseFloat(p) || 0), 0);
@@ -2647,6 +2664,8 @@
             document.getElementById('report-total-item').innerText = tItems;
             document.getElementById('report-total-sales').innerText = `RM${tSales.toFixed(2)}`;
             document.getElementById('report-total-profit').innerText = `RM${tProfit.toFixed(2)}`;
+            document.getElementById('report-total-refund').innerText = `RM${tRefund.toFixed(2)}`;
+            document.getElementById('report-nett-profit').innerText = `RM${(tProfit - tRefund).toFixed(2)}`;
             document.getElementById('report-total-discount').innerText = `RM${tDiscount.toFixed(2)}`;
             document.getElementById('report-total-cash').innerText = `RM${paymentMap['Cash'].toFixed(2)}`;
             document.getElementById('report-total-online').innerText = `RM${paymentMap['Online Transfer'].toFixed(2)}`;
@@ -2818,6 +2837,7 @@
             let totalSales = 0;
             let totalDiscount = 0;
             let totalItems = 0;
+            let totalRefund = 0;
             let adults = 0, kids = 0, toddlers = 0;
             let itemMap = {};
             let paymentMap = {};
@@ -2835,6 +2855,7 @@
             filtered.forEach(s => {
                 const profit = parseFloat(s.totalPaidAmount) || 0;
                 totalProfit += profit;
+                totalRefund += (parseFloat(s.refundAmount) || 0);
                 totalItems += parseInt(s.totalItems) || 0;
 
                 // Calculate Sale Sum (Subtotal) from orderItemPrice
@@ -2898,6 +2919,8 @@
 
             document.getElementById('dash-total-order').innerText = filtered.length;
             document.getElementById('dash-total-profit').innerText = `RM${totalProfit.toFixed(2)}`;
+            document.getElementById('dash-total-refund').innerText = `RM${totalRefund.toFixed(2)}`;
+            document.getElementById('dash-nett-profit').innerText = `RM${(totalProfit - totalRefund).toFixed(2)}`;
             document.getElementById('dash-total-sales').innerText = `RM${totalSales.toFixed(2)}`;
             document.getElementById('dash-total-discount').innerText = `RM${totalDiscount.toFixed(2)}`;
             document.getElementById('dash-total-item').innerText = totalItems;
