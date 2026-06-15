@@ -2891,17 +2891,19 @@
         const timestamp = new Date().toLocaleString();
         const rangeLabelDisplay = getReportDateRangeLabel(false);
         const rangeLabelFile = getReportDateRangeLabel(true);
+        const logoPath = 'img/logoWithNameBlue.png';
 
         if (scope === 'Sales') {
             const summary = getReportSummaryData(lastFilteredReportData);
             
             // Page 1: Summary Report
-            doc.setFontSize(16); doc.text("Summary Report", 14, 15);
-            doc.setFontSize(10); doc.text(`Date : ${rangeLabelDisplay}`, 14, 22);
-            doc.setFontSize(10); doc.text(`Generated at : ${timestamp}`, 14, 28);
+            doc.addImage(logoPath, 'PNG', 14, 10, 40, 15);
+            doc.setFontSize(16); doc.text("Summary Report", 60, 20);
+            doc.setFontSize(10); doc.text(`Date : ${rangeLabelDisplay}`, 14, 35);
+            doc.setFontSize(10); doc.text(`Generated at : ${timestamp}`, 14, 41);
             
-            doc.setFontSize(12); doc.text("Sales Data", 14, 38);
-            doc.autoTable({ startY: 41, head: [["Metric", "Value"]], body: summary.sales, theme: 'striped', styles: { fontSize: 8 } });
+            doc.setFontSize(12); doc.text("Sales Data", 14, 51);
+            doc.autoTable({ startY: 54, head: [["Metric", "Value"]], body: summary.sales, theme: 'striped', styles: { fontSize: 8 } });
             
             doc.setFontSize(12); doc.text("Pax Data", 14, doc.lastAutoTable.finalY + 10);
             doc.autoTable({ startY: doc.lastAutoTable.finalY + 15, head: [["Category", "Count"]], body: summary.pax, theme: 'striped', styles: { fontSize: 8 } });
@@ -2912,31 +2914,36 @@
             doc.addPage();
 
             // Table 1: Sales
-            doc.setFontSize(14); doc.text("1. Sales Report", 14, 15);
-            doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 20);
+            doc.addImage(logoPath, 'PNG', 14, 10, 40, 15);
+            doc.setFontSize(14); doc.text("1. Sales Report", 60, 20);
+            doc.setFontSize(8); doc.text(`Generated at : ${timestamp}`, 14, 32);
             const salesKeys = ["Order ID","Date","Customer","Pax","Items","Qty","Dur","Total Price","Discount","Paid","Cash","Online Transfer","Card","Order Status","Cust Status","Waiver","Order By","Served By"];
             const salesData = lastFilteredReportData.map(s => {
                 const p = getPaymentBreakdown(s);
                 return { "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Items": s.orderItemName, "Qty": s.orderItemQuantity, "Dur": s.orderItemRentalDuration, "Total Price": s.totalPrice, "Discount": getDiscountNumeric(s.discount), "Paid": s.totalPaidAmount, "Cash": p.rowCash.toFixed(2), "Online Transfer": p.rowOnline.toFixed(2), "Card": p.rowCard.toFixed(2), "Order Status": s.orderStatus, "Cust Status": s.customerStatus || '-', "Waiver": s.participantDetailsStatus || 'Pending', "Order By": s.orderBy || '-', "Served By": s.servedBy || '-' };
             });
-            doc.autoTable({ head: [salesKeys], body: salesData.map(r => salesKeys.map(k => r[k])), startY: 25, styles: { fontSize: 6 } });
+            doc.autoTable({ head: [salesKeys], body: salesData.map(r => salesKeys.map(k => r[k])), startY: 38, styles: { fontSize: 6 } });
 
             // Table 2: Refund
             const refundRowsFiltered = lastFilteredReportData.filter(s => s.orderStatus === 'Refund');
             if (refundRowsFiltered.length > 0) {
                 doc.addPage();
-                doc.setFontSize(14); doc.text("2. Refund Report", 14, 15);
+                doc.addImage(logoPath, 'PNG', 14, 10, 40, 15);
+                doc.setFontSize(14); doc.text("2. Refund Report", 60, 20);
                 const refundKeys = ["Order ID","Date","Customer","Paid","Refund Amt","Refund Method","Refund Remark","Refund By"];
                 const refundData = refundRowsFiltered.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
-                doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+                doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 32, styles: { fontSize: 7 } });
             }
         } else {
             // Table 3: Participants
-            doc.setFontSize(14); doc.text("1. Participant Report", 14, 15);
-            doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 20);
+            doc.addImage(logoPath, 'PNG', 14, 10, 40, 15);
+            doc.setFontSize(16); doc.text("Participant Report", 60, 20);
+            doc.setFontSize(10); doc.text(`Date : ${rangeLabelDisplay}`, 14, 35);
+            doc.setFontSize(10); doc.text(`Generated at : ${timestamp}`, 14, 41);
+            
             const partKeys = ["Order ID","Date","Customer","Pax","Waiver","Participants"];
             const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
-            doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+            doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 51, styles: { fontSize: 7 } });
         }
 
         doc.save(`SouthWave_${scope}_Report_${rangeLabelFile}.pdf`);
