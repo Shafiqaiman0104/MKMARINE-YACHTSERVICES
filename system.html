@@ -3441,6 +3441,7 @@
 
             // Format Discount Breakdown for display
             let discountHtml = "n/a";
+            let totalDiscountVal = 0;
             if (data.discount) {
                 const discounts = data.discount.split(', ');
                 discountHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.8rem;">
@@ -3449,6 +3450,7 @@
                     const lastSpace = d.lastIndexOf(' ');
                     const name = d.substring(0, lastSpace);
                     const amount = d.substring(lastSpace + 1);
+                    totalDiscountVal += parseFloat(amount.replace('RM', '')) || 0;
                     discountHtml += `
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <td style="padding: 4px;">${name}</td>
@@ -3478,6 +3480,7 @@
             }
 
             fields.innerHTML = `
+                <input type="hidden" id="edit-discount-total-val" value="${totalDiscountVal}">
                 <div class="input-group full-width">
                     <label>Order ID (Read-only)</label>
                     <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.orderId ?? ''}</div>
@@ -4010,7 +4013,9 @@
 
                 // Recalculate Totals
                 const totalItems = formData.getAll('item_qty').reduce((sum, val) => sum + (parseInt(val) || 0), 0);
-                const totalPrice = formData.getAll('item_price').reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                const subtotal = formData.getAll('item_price').reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+                const discountVal = parseFloat(document.getElementById('edit-discount-total-val')?.value || 0);
+                const totalPrice = Math.max(0, subtotal - discountVal);
                 const totalPaid = formData.getAll('pay_amount').reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
 
                 formData.set('totalItems', totalItems.toString());
@@ -4177,10 +4182,11 @@
         document.querySelectorAll('#items-edit-body input[name="item_price"]').forEach(input => {
             subtotal += parseFloat(input.value) || 0;
         });
-        let grandTotal = 0;
-        document.querySelectorAll('#items-edit-body input[name="item_price"]').forEach(input => {
-            grandTotal += parseFloat(input.value) || 0;
-        });
+
+        const discountEl = document.getElementById('edit-discount-total-val');
+        const totalDiscount = discountEl ? parseFloat(discountEl.value) : 0;
+        let grandTotal = Math.max(0, subtotal - totalDiscount);
+
         let totalPaid = 0;
         document.querySelectorAll('#payments-edit-body input[name="pay_amount"]').forEach(input => {
             totalPaid += parseFloat(input.value) || 0;
