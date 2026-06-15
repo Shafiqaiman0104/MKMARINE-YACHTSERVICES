@@ -757,10 +757,24 @@
                             <th style="white-space:nowrap;">Customer</th>
                             <th style="white-space:nowrap;">Pax</th>
                             <th style="white-space:nowrap;">Items</th>
+                            <th style="white-space:nowrap;">Qty</th>
+                            <th style="white-space:nowrap;">Dur</th>
                             <th style="white-space:nowrap;">Total Price</th>
+                            <th style="white-space:nowrap;">Discount</th>
                             <th style="white-space:nowrap;">Paid</th>
-                            <th style="white-space:nowrap;">Method</th>
-                            <th style="white-space:nowrap;">Status</th>
+                            <th style="white-space:nowrap;">Cash</th>
+                            <th style="white-space:nowrap;">Online Transfer</th>
+                            <th style="white-space:nowrap;">Card</th>
+                            <th style="white-space:nowrap;">Order Status</th>
+                            <th style="white-space:nowrap;">Cust Status</th>
+                            <th style="white-space:nowrap;">Waiver</th>
+                            <th style="white-space:nowrap;">Participants</th>
+                            <th style="white-space:nowrap;">Order By</th>
+                            <th style="white-space:nowrap;">Served By</th>
+                            <th style="white-space:nowrap;">Refund Amt</th>
+                            <th style="white-space:nowrap;">Refund Method</th>
+                            <th style="white-space:nowrap;">Refund Remark</th>
+                            <th style="white-space:nowrap;">Refund By</th>
                         </tr>
                     </thead>
                     <tbody id="report-body"></tbody>
@@ -1118,6 +1132,7 @@
     let myChart = null;
     let currentDashDateFilter = 'Today';
     let currentReportDateFilter = 'Today';
+    let lastFilteredReportData = [];
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -2525,6 +2540,9 @@
                 return true;
             });
 
+            lastFilteredReportData = filtered;
+            const stackData = (str) => (str || '').split(', ').join('<br>');
+
             let tSales = 0, tProfit = 0, tDiscount = 0, tItems = 0;
             let adults = 0, kids = 0, toddlers = 0;
             let paymentMap = { 'Cash': 0, 'Online Transfer': 0, 'Card': 0 };
@@ -2569,16 +2587,47 @@
                     if(n) itemMap[n] = (itemMap[n] || 0) + q;
                 });
 
+                // Payment Breakdown Logic for the specific row
+                let rowCash = 0, rowOnline = 0, rowCard = 0;
+                
+                pMethods.forEach((m, i) => {
+                    const method = m.trim();
+                    const amt = parseFloat(pAmounts[i]) || 0;
+                    if (method === 'Cash') rowCash += amt;
+                    else if (method === 'Online Transfer') rowOnline += amt;
+                    else if (method === 'Card') rowCard += amt;
+                });
+
+                // Extract numeric value from discount string (e.g., "Promo RM50.00" -> "50.00")
+                const discountNumbers = (s.discount || '').split(', ').map(d => {
+                    const match = d.match(/RM([\d.]+)/);
+                    return match ? match[1] : '';
+                }).filter(v => v).join('<br>');
+
                 return `<tr>
-                    <td>${s.orderId}</td>
-                    <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
-                    <td>${s.customerName}</td>
-                    <td><small>${s.totalPax}</small></td>
-                    <td><small>${s.orderItemName}</small></td>
-                    <td>RM${s.totalPrice}</td>
-                    <td>RM${s.totalPaidAmount}</td>
-                    <td>${s.paymentMethod.includes(',') ? 'Mix' : s.paymentMethod}</td>
-                    <td>${s.orderStatus}</td>
+                    <td style="white-space:nowrap;">${s.orderId}</td>
+                    <td style="white-space:nowrap;"><small>${new Date(s.orderDate).toLocaleString()}</small></td>
+                    <td style="white-space:nowrap;">${s.customerName}</td>
+                    <td style="white-space:nowrap;"><small>${stackData(s.totalPax)}</small></td>
+                    <td style="white-space:nowrap;"><small>${stackData(s.orderItemName)}</small></td>
+                    <td style="white-space:nowrap;"><small>${stackData(s.orderItemQuantity)}</small></td>
+                    <td style="white-space:nowrap;"><small>${stackData(s.orderItemRentalDuration)}</small></td>
+                    <td style="white-space:nowrap;">${s.totalPrice}</td>
+                    <td style="white-space:nowrap;"><small>${discountNumbers || '0.00'}</small></td>
+                    <td style="white-space:nowrap;">${s.totalPaidAmount}</td>
+                    <td style="white-space:nowrap;">${rowCash.toFixed(2)}</td>
+                    <td style="white-space:nowrap;">${rowOnline.toFixed(2)}</td>
+                    <td style="white-space:nowrap;">${rowCard.toFixed(2)}</td>
+                    <td style="white-space:nowrap;">${s.orderStatus}</td>
+                    <td style="white-space:nowrap;">${s.customerStatus || '-'}</td>
+                    <td style="white-space:nowrap;"><span style="color: ${s.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}">${s.participantDetailsStatus || 'Pending'}</span></td>
+                    <td style="white-space:nowrap;"><small>${stackData(s.participantDetails) || '-'}</small></td>
+                    <td style="white-space:nowrap;">${s.orderBy || '-'}</td>
+                    <td style="white-space:nowrap;">${s.servedBy || '-'}</td>
+                    <td style="white-space:nowrap;">${s.refundAmount ? s.refundAmount : '-'}</td>
+                    <td style="white-space:nowrap;">${s.refundMethod || '-'}</td>
+                    <td style="white-space:nowrap;"><small>${stackData(s.refundRemark) || '-'}</small></td>
+                    <td style="white-space:nowrap;">${s.refundBy || '-'}</td>
                 </tr>`;
             }).join('');
 
@@ -2604,24 +2653,117 @@
     }
 
     function exportReportToExcel() {
-        const table = document.getElementById('report-table');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Sales Report" });
-        XLSX.writeFile(wb, `SouthWave_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        if (lastFilteredReportData.length === 0) return alert("No data to export");
+
+        const wb = XLSX.utils.book_new();
+
+        // Table 1: Sales
+        const salesRows = lastFilteredReportData.map(s => {
+            const { rowCash, rowOnline, rowCard } = getPaymentBreakdown(s);
+            return {
+                "Order ID": s.orderId,
+                "Date": new Date(s.orderDate).toLocaleString(),
+                "Customer": s.customerName,
+                "Pax": s.totalPax,
+                "Items": s.orderItemName,
+                "Qty": s.orderItemQuantity,
+                "Dur": s.orderItemRentalDuration,
+                "Total Price": s.totalPrice,
+                "Discount": getDiscountNumeric(s.discount),
+                "Paid": s.totalPaidAmount,
+                "Cash": rowCash.toFixed(2),
+                "Online Transfer": rowOnline.toFixed(2),
+                "Card": rowCard.toFixed(2),
+                "Order Status": s.orderStatus,
+                "Cust Status": s.customerStatus || '-',
+                "Waiver": s.participantDetailsStatus || 'Pending',
+                "Order By": s.orderBy || '-',
+                "Served By": s.servedBy || '-'
+            };
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesRows), "Sales Report");
+
+        // Table 2: Refund
+        const refundRows = lastFilteredReportData.filter(s => s.orderStatus === 'Refund').map(s => ({
+            "Order ID": s.orderId,
+            "Date": new Date(s.orderDate).toLocaleString(),
+            "Customer": s.customerName,
+            "Paid": s.totalPaidAmount,
+            "Refund Amt": s.refundAmount || '0.00',
+            "Refund Method": s.refundMethod || '-',
+            "Refund Remark": s.refundRemark || '-',
+            "Refund By": s.refundBy || '-'
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), "Refund Report");
+
+        // Table 3: Participants
+        const participantRows = lastFilteredReportData.map(s => ({
+            "Order ID": s.orderId,
+            "Date": new Date(s.orderDate).toLocaleString(),
+            "Customer": s.customerName,
+            "Pax": s.totalPax,
+            "Waiver": s.participantDetailsStatus || 'Pending',
+            "Participants": s.participantDetails || '-'
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(participantRows), "Participant Report");
+
+        XLSX.writeFile(wb, `SouthWave_Full_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function getPaymentBreakdown(s) {
+        const pMethods = (s.paymentMethod || "").split(", ");
+        const pAmounts = (s.paidAmount || "").split(", ");
+        let rowCash = 0, rowOnline = 0, rowCard = 0;
+        pMethods.forEach((m, i) => {
+            const method = m.trim();
+            const amt = parseFloat(pAmounts[i]) || 0;
+            if (method === 'Cash') rowCash += amt;
+            else if (method === 'Online Transfer') rowOnline += amt;
+            else if (method === 'Card') rowCard += amt;
+        });
+        return { rowCash, rowOnline, rowCard };
+    }
+
+    function getDiscountNumeric(discountStr) {
+        return (discountStr || '').split(', ').map(d => {
+            const match = d.match(/RM([\d.]+)/);
+            return match ? match[1] : '';
+        }).filter(v => v).join(', ') || '0.00';
     }
 
     function exportReportToPDF() {
+        if (lastFilteredReportData.length === 0) return alert("No data to export");
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
-        doc.setFontSize(18);
-        doc.text("SOUTH WAVE - Sales Report", 14, 15);
-        doc.setFontSize(10);
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
-        doc.autoTable({ 
-            html: '#report-table', 
-            startY: 30,
-            styles: { fontSize: 8 }
+        
+        const timestamp = new Date().toLocaleString();
+        const prepareTable = (headers, keys, data) => [headers, ...data.map(row => keys.map(k => row[k]))];
+
+        // Table 1: Sales
+        doc.setFontSize(14); doc.text("1. Sales Report", 14, 15);
+        doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 20);
+        const salesKeys = ["Order ID","Date","Customer","Pax","Items","Qty","Dur","Total Price","Discount","Paid","Cash","Online Transfer","Card","Order Status","Cust Status","Waiver","Order By","Served By"];
+        const salesData = lastFilteredReportData.map(s => {
+            const p = getPaymentBreakdown(s);
+            return { "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Items": s.orderItemName, "Qty": s.orderItemQuantity, "Dur": s.orderItemRentalDuration, "Total Price": s.totalPrice, "Discount": getDiscountNumeric(s.discount), "Paid": s.totalPaidAmount, "Cash": p.rowCash.toFixed(2), "Online Transfer": p.rowOnline.toFixed(2), "Card": p.rowCard.toFixed(2), "Order Status": s.orderStatus, "Cust Status": s.customerStatus || '-', "Waiver": s.participantDetailsStatus || 'Pending', "Order By": s.orderBy || '-', "Served By": s.servedBy || '-' };
         });
-        doc.save(`SouthWave_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.autoTable({ head: [salesKeys], body: salesData.map(r => salesKeys.map(k => r[k])), startY: 25, styles: { fontSize: 6 } });
+
+        // Table 2: Refund
+        doc.addPage();
+        doc.setFontSize(14); doc.text("2. Refund Report", 14, 15);
+        const refundKeys = ["Order ID","Date","Customer","Paid","Refund Amt","Refund Method","Refund Remark","Refund By"];
+        const refundData = lastFilteredReportData.filter(s => s.orderStatus === 'Refund').map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
+        doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+
+        // Table 3: Participants
+        doc.addPage();
+        doc.setFontSize(14); doc.text("3. Participant Report", 14, 15);
+        const partKeys = ["Order ID","Date","Customer","Pax","Waiver","Participants"];
+        const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
+        doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+
+        doc.save(`SouthWave_Full_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
     async function loadDashboardData() {
