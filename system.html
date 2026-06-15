@@ -8,6 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -301,6 +304,7 @@
             <button class="tab-btn" onclick="switchTab('discount')">Discount</button>
             <button class="tab-btn" onclick="switchTab('order')">Order</button>
             <button class="tab-btn" onclick="switchTab('availability')">Check Availability</button>
+            <button class="tab-btn" onclick="switchTab('report')">Report</button>
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
         </div>
 
@@ -667,6 +671,103 @@
             </div>
         </div>
 
+        <!-- Report Section -->
+        <div id="report-section" class="section">
+            <div class="header-actions">
+                <h3>Sales Report</h3>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-small" onclick="exportReportToExcel()" style="background: #25d366; width:auto; padding: 8px 15px;"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn-small" onclick="exportReportToPDF()" style="background: #ff4b2b; width:auto; padding: 8px 15px;"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <div style="margin-bottom: 15px; width: 200px;">
+                    <select id="report-date-select" onchange="filterReportDate(this.value)">
+                        <option value="Today">Today</option>
+                        <option value="All">All</option>
+                        <option value="Custom">Custom Date</option>
+                    </select>
+                </div>
+                <div id="report-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <input type="date" id="report-date-from" onchange="loadReportData()" style="width: auto;">
+                    <span>to</span>
+                    <input type="date" id="report-date-to" onchange="loadReportData()" style="width: auto;">
+                </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 20px;">
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">TOTAL ORDER</div>
+                    <div class="pay-value" id="report-total-order" style="font-size: 1rem;">0</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">TOTAL ITEM</div>
+                    <div class="pay-value" id="report-total-item" style="font-size: 1rem;">0</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">TOTAL SALES</div>
+                    <div class="pay-value" id="report-total-sales" style="font-size: 1rem;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">TOTAL PROFIT</div>
+                    <div class="pay-value" id="report-total-profit" style="font-size: 1rem;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">TOTAL DISCOUNT</div>
+                    <div class="pay-value" id="report-total-discount" style="font-size: 1rem;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">CASH</div>
+                    <div class="pay-value" id="report-total-cash" style="font-size: 1rem; color: #25d366;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">ONLINE</div>
+                    <div class="pay-value" id="report-total-online" style="font-size: 1rem; color: #25d366;">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 15px;">
+                    <div class="pay-label">CARD</div>
+                    <div class="pay-value" id="report-total-card" style="font-size: 1rem; color: #25d366;">RM0.00</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; background: rgba(0, 210, 255, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.3);">
+                 <div id="report-total-pax" style="font-size: 0.9rem; color: #00d2ff; font-weight: bold; text-align: center;">Adult: 0 | Kid: 0 | Tod: 0</div>
+            </div>
+
+            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
+                <table id="report-top-items-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Item Name</th>
+                            <th style="text-align: center;">Qty Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-top-items-body"></tbody>
+                </table>
+            </div>
+
+            <div class="table-container" style="margin-top: 30px;">
+                <table id="report-table">
+                    <thead>
+                        <tr>
+                            <th style="white-space:nowrap;">Order ID</th>
+                            <th style="white-space:nowrap;">Date</th>
+                            <th style="white-space:nowrap;">Customer</th>
+                            <th style="white-space:nowrap;">Pax</th>
+                            <th style="white-space:nowrap;">Items</th>
+                            <th style="white-space:nowrap;">Total Price</th>
+                            <th style="white-space:nowrap;">Paid</th>
+                            <th style="white-space:nowrap;">Method</th>
+                            <th style="white-space:nowrap;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Staff Section -->
         <div id="staff-section" class="section">
             <div class="header-actions">
@@ -1016,6 +1117,7 @@
     let orderTableTimerInterval = null;
     let myChart = null;
     let currentDashDateFilter = 'Today';
+    let currentReportDateFilter = 'Today';
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -1346,6 +1448,7 @@
             loadSales();
         }
         else if (tab === 'discount') loadDiscounts();
+        else if (tab === 'report') loadReportData();
         else if (tab === 'order') {
             filterOrderTab('Pending');
             loadOrders();
@@ -1385,7 +1488,8 @@
             "sales": "Sales",
             "discount": "Discount",
             "order": "Order",
-            "availability": "Check Availability"
+            "availability": "Check Availability",
+            "report": "Report"
         };
 
         const buttons = document.querySelectorAll('#nav-tabs .tab-btn');
@@ -2395,6 +2499,129 @@
         currentDashDateFilter = mode;
         document.getElementById('dash-custom-date-inputs').style.display = (mode === 'Custom') ? 'flex' : 'none';
         loadDashboardData();
+    }
+
+    function filterReportDate(mode) {
+        currentReportDateFilter = mode;
+        document.getElementById('report-custom-date-inputs').style.display = (mode === 'Custom') ? 'flex' : 'none';
+        loadReportData();
+    }
+
+    async function loadReportData() {
+        try {
+            const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-orderDate' });
+            const now = new Date();
+            const todayStr = now.toLocaleDateString('en-CA');
+
+            const filtered = sales.filter(s => {
+                const orderDate = new Date(s.orderDate);
+                const orderDateStr = orderDate.toLocaleDateString('en-CA');
+                if (currentReportDateFilter === 'Today') return orderDateStr === todayStr;
+                if (currentReportDateFilter === 'Custom') {
+                    const from = document.getElementById('report-date-from').value;
+                    const to = document.getElementById('report-date-to').value;
+                    if (from && to) return (orderDateStr >= from && orderDateStr <= to);
+                }
+                return true;
+            });
+
+            let tSales = 0, tProfit = 0, tDiscount = 0, tItems = 0;
+            let adults = 0, kids = 0, toddlers = 0;
+            let paymentMap = { 'Cash': 0, 'Online Transfer': 0, 'Card': 0 };
+            let itemMap = {};
+
+            const body = document.getElementById('report-body');
+            body.innerHTML = filtered.map(s => {
+                const profit = parseFloat(s.totalPaidAmount) || 0;
+                tProfit += profit;
+                tItems += parseInt(s.totalItems) || 0;
+
+                const saleSum = (s.orderItemPrice || '').split(', ').reduce((sum, p) => sum + (parseFloat(p) || 0), 0);
+                tSales += saleSum;
+
+                const discountSum = (s.discount || '').split(', ').reduce((sum, d) => {
+                    const lastSpace = d.lastIndexOf(' ');
+                    if (lastSpace === -1) return sum;
+                    return sum + (parseFloat(d.substring(lastSpace + 1).replace('RM', '')) || 0);
+                }, 0);
+                tDiscount += discountSum;
+
+                (s.totalPax || "").split(", ").forEach(p => {
+                    const val = parseInt(p.trim().substring(1)) || 0;
+                    if (p.startsWith('A')) adults += val;
+                    else if (p.startsWith('K')) kids += val;
+                    else if (p.startsWith('T')) toddlers += val;
+                });
+
+                const pMethods = (s.paymentMethod || "").split(", ");
+                const pAmounts = (s.paidAmount || "").split(", ");
+                pMethods.forEach((method, i) => {
+                    const m = method.trim();
+                    const a = parseFloat(pAmounts[i]) || 0;
+                    if (paymentMap.hasOwnProperty(m)) paymentMap[m] += a;
+                });
+
+                const names = (s.orderItemName || "").split(", ");
+                const qtys = (s.orderItemQuantity || "").split(", ");
+                names.forEach((name, i) => {
+                    const n = name.trim();
+                    const q = parseInt(qtys[i]) || 0;
+                    if(n) itemMap[n] = (itemMap[n] || 0) + q;
+                });
+
+                return `<tr>
+                    <td>${s.orderId}</td>
+                    <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
+                    <td>${s.customerName}</td>
+                    <td><small>${s.totalPax}</small></td>
+                    <td><small>${s.orderItemName}</small></td>
+                    <td>RM${s.totalPrice}</td>
+                    <td>RM${s.totalPaidAmount}</td>
+                    <td>${s.paymentMethod.includes(',') ? 'Mix' : s.paymentMethod}</td>
+                    <td>${s.orderStatus}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('report-total-order').innerText = filtered.length;
+            document.getElementById('report-total-item').innerText = tItems;
+            document.getElementById('report-total-sales').innerText = `RM${tSales.toFixed(2)}`;
+            document.getElementById('report-total-profit').innerText = `RM${tProfit.toFixed(2)}`;
+            document.getElementById('report-total-discount').innerText = `RM${tDiscount.toFixed(2)}`;
+            document.getElementById('report-total-cash').innerText = `RM${paymentMap['Cash'].toFixed(2)}`;
+            document.getElementById('report-total-online').innerText = `RM${paymentMap['Online Transfer'].toFixed(2)}`;
+            document.getElementById('report-total-card').innerText = `RM${paymentMap['Card'].toFixed(2)}`;
+            document.getElementById('report-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
+
+            const ranking = Object.entries(itemMap).sort((a, b) => b[1] - a[1]);
+            document.getElementById('report-top-items-body').innerHTML = ranking.map(r => `
+                <tr>
+                    <td>${r[0]}</td>
+                    <td style="text-align:center; font-weight:bold; color:#00d2ff;">${r[1]}</td>
+                </tr>
+            `).join('');
+
+        } catch (e) { console.error("Report Load Error", e); }
+    }
+
+    function exportReportToExcel() {
+        const table = document.getElementById('report-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Sales Report" });
+        XLSX.writeFile(wb, `SouthWave_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function exportReportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        doc.setFontSize(18);
+        doc.text("SOUTH WAVE - Sales Report", 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+        doc.autoTable({ 
+            html: '#report-table', 
+            startY: 30,
+            styles: { fontSize: 8 }
+        });
+        doc.save(`SouthWave_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     }
 
     async function loadDashboardData() {
@@ -3458,7 +3685,7 @@
         } else if (type === 'role') {
             const data = id ? currentRoles.find(r => r.id === id) : {};
             title.innerText = id ? 'Edit Role' : 'Add New Role';
-            const perms = ["Dashboard", "New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability"];
+            const perms = ["Dashboard", "New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability", "Report"];
             const currentPerms = data.canAccess ? data.canAccess.split(',').map(p => p.trim()) : [];
             
             let checkboxes = perms.map(p => `
