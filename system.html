@@ -676,8 +676,8 @@
             <div class="header-actions">
                 <h3>Sales Report</h3>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn-small" onclick="exportReportToExcel()" style="background: #25d366; width:auto; padding: 8px 15px;"><i class="fas fa-file-excel"></i> Excel</button>
-                    <button class="btn-small" onclick="exportReportToPDF()" style="background: #ff4b2b; width:auto; padding: 8px 15px;"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn-small" onclick="openExportSelection('Excel')" style="background: #25d366; width:auto; padding: 8px 15px;"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn-small" onclick="openExportSelection('PDF')" style="background: #ff4b2b; width:auto; padding: 8px 15px;"><i class="fas fa-file-pdf"></i> PDF</button>
                 </div>
             </div>
 
@@ -835,6 +835,17 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Export Selection Modal -->
+<div class="form-overlay" id="export-selection-overlay">
+    <div class="form-content" style="max-width: 400px; text-align: center;">
+        <h3 style="margin-bottom:20px; color:#00d2ff;">Export Report</h3>
+        <p style="margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">Select the type of report you want to generate.</p>
+        <button onclick="executeExport('Sales')" style="background:#00d2ff; margin-bottom: 10px;">Print Sales</button>
+        <button onclick="executeExport('Participant')" style="background:#25d366; margin-bottom: 10px;">Print Participant</button>
+        <button class="btn-danger" onclick="document.getElementById('export-selection-overlay').style.display='none'" style="margin-top:10px;">Cancel</button>
     </div>
 </div>
 
@@ -1133,6 +1144,7 @@
     let currentDashDateFilter = 'Today';
     let currentReportDateFilter = 'Today';
     let lastFilteredReportData = [];
+    let currentExportFormat = '';
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -2652,62 +2664,75 @@
         } catch (e) { console.error("Report Load Error", e); }
     }
 
-    function exportReportToExcel() {
+    function openExportSelection(format) {
         if (lastFilteredReportData.length === 0) return alert("No data to export");
+        currentExportFormat = format;
+        document.getElementById('export-selection-overlay').style.display = 'flex';
+    }
 
+    function executeExport(scope) {
+        document.getElementById('export-selection-overlay').style.display = 'none';
+        if (currentExportFormat === 'Excel') exportReportToExcel(scope);
+        else exportReportToPDF(scope);
+    }
+
+    function exportReportToExcel(scope) {
         const wb = XLSX.utils.book_new();
+        const dateSuffix = new Date().toISOString().split('T')[0];
 
-        // Table 1: Sales
-        const salesRows = lastFilteredReportData.map(s => {
-            const { rowCash, rowOnline, rowCard } = getPaymentBreakdown(s);
-            return {
+        if (scope === 'Sales') {
+            // Table 1: Sales
+            const salesRows = lastFilteredReportData.map(s => {
+                const { rowCash, rowOnline, rowCard } = getPaymentBreakdown(s);
+                return {
+                    "Order ID": s.orderId,
+                    "Date": new Date(s.orderDate).toLocaleString(),
+                    "Customer": s.customerName,
+                    "Pax": s.totalPax,
+                    "Items": s.orderItemName,
+                    "Qty": s.orderItemQuantity,
+                    "Dur": s.orderItemRentalDuration,
+                    "Total Price": s.totalPrice,
+                    "Discount": getDiscountNumeric(s.discount),
+                    "Paid": s.totalPaidAmount,
+                    "Cash": rowCash.toFixed(2),
+                    "Online Transfer": rowOnline.toFixed(2),
+                    "Card": rowCard.toFixed(2),
+                    "Order Status": s.orderStatus,
+                    "Cust Status": s.customerStatus || '-',
+                    "Waiver": s.participantDetailsStatus || 'Pending',
+                    "Order By": s.orderBy || '-',
+                    "Served By": s.servedBy || '-'
+                };
+            });
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesRows), "Sales Report");
+
+            // Table 2: Refund
+            const refundRows = lastFilteredReportData.filter(s => s.orderStatus === 'Refund').map(s => ({
+                "Order ID": s.orderId,
+                "Date": new Date(s.orderDate).toLocaleString(),
+                "Customer": s.customerName,
+                "Paid": s.totalPaidAmount,
+                "Refund Amt": s.refundAmount || '0.00',
+                "Refund Method": s.refundMethod || '-',
+                "Refund Remark": s.refundRemark || '-',
+                "Refund By": s.refundBy || '-'
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), "Refund Report");
+        } else {
+            // Table 3: Participants
+            const participantRows = lastFilteredReportData.map(s => ({
                 "Order ID": s.orderId,
                 "Date": new Date(s.orderDate).toLocaleString(),
                 "Customer": s.customerName,
                 "Pax": s.totalPax,
-                "Items": s.orderItemName,
-                "Qty": s.orderItemQuantity,
-                "Dur": s.orderItemRentalDuration,
-                "Total Price": s.totalPrice,
-                "Discount": getDiscountNumeric(s.discount),
-                "Paid": s.totalPaidAmount,
-                "Cash": rowCash.toFixed(2),
-                "Online Transfer": rowOnline.toFixed(2),
-                "Card": rowCard.toFixed(2),
-                "Order Status": s.orderStatus,
-                "Cust Status": s.customerStatus || '-',
                 "Waiver": s.participantDetailsStatus || 'Pending',
-                "Order By": s.orderBy || '-',
-                "Served By": s.servedBy || '-'
-            };
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(salesRows), "Sales Report");
+                "Participants": s.participantDetails || '-'
+            }));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(participantRows), "Participant Report");
+        }
 
-        // Table 2: Refund
-        const refundRows = lastFilteredReportData.filter(s => s.orderStatus === 'Refund').map(s => ({
-            "Order ID": s.orderId,
-            "Date": new Date(s.orderDate).toLocaleString(),
-            "Customer": s.customerName,
-            "Paid": s.totalPaidAmount,
-            "Refund Amt": s.refundAmount || '0.00',
-            "Refund Method": s.refundMethod || '-',
-            "Refund Remark": s.refundRemark || '-',
-            "Refund By": s.refundBy || '-'
-        }));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), "Refund Report");
-
-        // Table 3: Participants
-        const participantRows = lastFilteredReportData.map(s => ({
-            "Order ID": s.orderId,
-            "Date": new Date(s.orderDate).toLocaleString(),
-            "Customer": s.customerName,
-            "Pax": s.totalPax,
-            "Waiver": s.participantDetailsStatus || 'Pending',
-            "Participants": s.participantDetails || '-'
-        }));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(participantRows), "Participant Report");
-
-        XLSX.writeFile(wb, `SouthWave_Full_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `SouthWave_${scope}_Report_${dateSuffix}.xlsx`);
     }
 
     function getPaymentBreakdown(s) {
@@ -2731,39 +2756,43 @@
         }).filter(v => v).join(', ') || '0.00';
     }
 
-    function exportReportToPDF() {
-        if (lastFilteredReportData.length === 0) return alert("No data to export");
+    function exportReportToPDF(scope) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('l', 'mm', 'a4');
         
         const timestamp = new Date().toLocaleString();
-        const prepareTable = (headers, keys, data) => [headers, ...data.map(row => keys.map(k => row[k]))];
+        const dateSuffix = new Date().toISOString().split('T')[0];
 
-        // Table 1: Sales
-        doc.setFontSize(14); doc.text("1. Sales Report", 14, 15);
-        doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 20);
-        const salesKeys = ["Order ID","Date","Customer","Pax","Items","Qty","Dur","Total Price","Discount","Paid","Cash","Online Transfer","Card","Order Status","Cust Status","Waiver","Order By","Served By"];
-        const salesData = lastFilteredReportData.map(s => {
-            const p = getPaymentBreakdown(s);
-            return { "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Items": s.orderItemName, "Qty": s.orderItemQuantity, "Dur": s.orderItemRentalDuration, "Total Price": s.totalPrice, "Discount": getDiscountNumeric(s.discount), "Paid": s.totalPaidAmount, "Cash": p.rowCash.toFixed(2), "Online Transfer": p.rowOnline.toFixed(2), "Card": p.rowCard.toFixed(2), "Order Status": s.orderStatus, "Cust Status": s.customerStatus || '-', "Waiver": s.participantDetailsStatus || 'Pending', "Order By": s.orderBy || '-', "Served By": s.servedBy || '-' };
-        });
-        doc.autoTable({ head: [salesKeys], body: salesData.map(r => salesKeys.map(k => r[k])), startY: 25, styles: { fontSize: 6 } });
+        if (scope === 'Sales') {
+            // Table 1: Sales
+            doc.setFontSize(14); doc.text("1. Sales Report", 14, 15);
+            doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 20);
+            const salesKeys = ["Order ID","Date","Customer","Pax","Items","Qty","Dur","Total Price","Discount","Paid","Cash","Online Transfer","Card","Order Status","Cust Status","Waiver","Order By","Served By"];
+            const salesData = lastFilteredReportData.map(s => {
+                const p = getPaymentBreakdown(s);
+                return { "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Items": s.orderItemName, "Qty": s.orderItemQuantity, "Dur": s.orderItemRentalDuration, "Total Price": s.totalPrice, "Discount": getDiscountNumeric(s.discount), "Paid": s.totalPaidAmount, "Cash": p.rowCash.toFixed(2), "Online Transfer": p.rowOnline.toFixed(2), "Card": p.rowCard.toFixed(2), "Order Status": s.orderStatus, "Cust Status": s.customerStatus || '-', "Waiver": s.participantDetailsStatus || 'Pending', "Order By": s.orderBy || '-', "Served By": s.servedBy || '-' };
+            });
+            doc.autoTable({ head: [salesKeys], body: salesData.map(r => salesKeys.map(k => r[k])), startY: 25, styles: { fontSize: 6 } });
 
-        // Table 2: Refund
-        doc.addPage();
-        doc.setFontSize(14); doc.text("2. Refund Report", 14, 15);
-        const refundKeys = ["Order ID","Date","Customer","Paid","Refund Amt","Refund Method","Refund Remark","Refund By"];
-        const refundData = lastFilteredReportData.filter(s => s.orderStatus === 'Refund').map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
-        doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+            // Table 2: Refund
+            const refundRowsFiltered = lastFilteredReportData.filter(s => s.orderStatus === 'Refund');
+            if (refundRowsFiltered.length > 0) {
+                doc.addPage();
+                doc.setFontSize(14); doc.text("2. Refund Report", 14, 15);
+                const refundKeys = ["Order ID","Date","Customer","Paid","Refund Amt","Refund Method","Refund Remark","Refund By"];
+                const refundData = refundRowsFiltered.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
+                doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+            }
+        } else {
+            // Table 3: Participants
+            doc.setFontSize(14); doc.text("1. Participant Report", 14, 15);
+            doc.setFontSize(8); doc.text(`Generated: ${timestamp}`, 14, 20);
+            const partKeys = ["Order ID","Date","Customer","Pax","Waiver","Participants"];
+            const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
+            doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
+        }
 
-        // Table 3: Participants
-        doc.addPage();
-        doc.setFontSize(14); doc.text("3. Participant Report", 14, 15);
-        const partKeys = ["Order ID","Date","Customer","Pax","Waiver","Participants"];
-        const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
-        doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 25, styles: { fontSize: 7 } });
-
-        doc.save(`SouthWave_Full_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`SouthWave_${scope}_Report_${dateSuffix}.pdf`);
     }
 
     async function loadDashboardData() {
