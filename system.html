@@ -333,6 +333,14 @@
                     <div class="pay-value" id="dash-total-profit">RM0.00</div>
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL SALES</div>
+                    <div class="pay-value" id="dash-total-sales">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
+                    <div class="pay-label">TOTAL DISCOUNT</div>
+                    <div class="pay-value" id="dash-total-discount">RM0.00</div>
+                </div>
+                <div class="pay-box" style="text-align: center; padding: 20px;">
                     <div class="pay-label">TOTAL ITEM</div>
                     <div class="pay-value" id="dash-total-item">0</div>
                 </div>
@@ -343,12 +351,12 @@
             </div>
 
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Hourly Profit Trend</h4>
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Business Performance Trend (RM & Pax)</h4>
                 <canvas id="profitChart" style="max-height: 300px; width: 100%;"></canvas>
             </div>
 
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Payment Methods Summary</h4>
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Profit Payment Methods Summary</h4>
                 <table>
                     <thead>
                         <tr>
@@ -2396,20 +2404,46 @@
 
             // Metrics
             let totalProfit = 0;
+            let totalSales = 0;
+            let totalDiscount = 0;
             let totalItems = 0;
             let adults = 0, kids = 0, toddlers = 0;
             let itemMap = {};
             let paymentMap = {};
+            
             let hourlyProfit = new Array(24).fill(0);
+            let hourlySales = new Array(24).fill(0);
+            let hourlyDiscount = new Array(24).fill(0);
+            let hourlyPax = new Array(24).fill(0);
+
             let dailyProfitMap = {};
+            let dailySalesMap = {};
+            let dailyDiscountMap = {};
+            let dailyPaxMap = {};
 
             filtered.forEach(s => {
-                totalProfit += parseFloat(s.totalPaidAmount) || 0;
+                const profit = parseFloat(s.totalPaidAmount) || 0;
+                totalProfit += profit;
                 totalItems += parseInt(s.totalItems) || 0;
+
+                // Calculate Sale Sum (Subtotal) from orderItemPrice
+                const saleSum = (s.orderItemPrice || '').split(', ').reduce((sum, p) => sum + (parseFloat(p) || 0), 0);
+                totalSales += saleSum;
+
+                // Calculate Discount Sum from discount string (e.g. "Promo RM50.00")
+                const discountSum = (s.discount || '').split(', ').reduce((sum, d) => {
+                    const lastSpace = d.lastIndexOf(' ');
+                    if (lastSpace === -1) return sum;
+                    const amountStr = d.substring(lastSpace + 1).replace('RM', '');
+                    return sum + (parseFloat(amountStr) || 0);
+                }, 0);
+                totalDiscount += discountSum;
                 
-                // Pax breakdown
+                // Pax breakdown & Sum for Chart
+                let orderPaxSum = 0;
                 (s.totalPax || "").split(", ").forEach(p => {
-                    const val = parseInt(p.substring(1)) || 0;
+                    const val = parseInt(p.trim().substring(1)) || 0;
+                    orderPaxSum += val;
                     if (p.startsWith('A')) adults += val;
                     else if (p.startsWith('K')) kids += val;
                     else if (p.startsWith('T')) toddlers += val;
@@ -2427,11 +2461,17 @@
                 // Hourly profit
                 const oDate = new Date(s.orderDate);
                 const hour = oDate.getHours();
-                hourlyProfit[hour] += parseFloat(s.totalPaidAmount) || 0;
+                hourlyProfit[hour] += profit;
+                hourlySales[hour] += saleSum;
+                hourlyDiscount[hour] += discountSum;
+                hourlyPax[hour] += orderPaxSum;
 
                 // Daily profit for "All" or multi-day custom
                 const dateKey = oDate.toLocaleDateString('en-CA');
-                dailyProfitMap[dateKey] = (dailyProfitMap[dateKey] || 0) + (parseFloat(s.totalPaidAmount) || 0);
+                dailyProfitMap[dateKey] = (dailyProfitMap[dateKey] || 0) + profit;
+                dailySalesMap[dateKey] = (dailySalesMap[dateKey] || 0) + saleSum;
+                dailyDiscountMap[dateKey] = (dailyDiscountMap[dateKey] || 0) + discountSum;
+                dailyPaxMap[dateKey] = (dailyPaxMap[dateKey] || 0) + orderPaxSum;
 
                 // Payment Method Mapping
                 const pMethods = (s.paymentMethod || "").split(", ");
@@ -2447,6 +2487,8 @@
 
             document.getElementById('dash-total-order').innerText = filtered.length;
             document.getElementById('dash-total-profit').innerText = `RM${totalProfit.toFixed(2)}`;
+            document.getElementById('dash-total-sales').innerText = `RM${totalSales.toFixed(2)}`;
+            document.getElementById('dash-total-discount').innerText = `RM${totalDiscount.toFixed(2)}`;
             document.getElementById('dash-total-item').innerText = totalItems;
             document.getElementById('dash-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
 
@@ -2470,7 +2512,10 @@
 
             // Determine Chart Mode
             let chartLabels = [];
-            let chartData = [];
+            let chartProfit = [];
+            let chartSales = [];
+            let chartDiscount = [];
+            let chartPax = [];
             let chartMode = 'hourly';
 
             if (currentDashDateFilter === 'All') {
@@ -2484,18 +2529,24 @@
 
             if (chartMode === 'daily') {
                 chartLabels = Object.keys(dailyProfitMap).sort();
-                chartData = chartLabels.map(k => dailyProfitMap[k]);
+                chartProfit = chartLabels.map(k => dailyProfitMap[k]);
+                chartSales = chartLabels.map(k => dailySalesMap[k]);
+                chartDiscount = chartLabels.map(k => dailyDiscountMap[k]);
+                chartPax = chartLabels.map(k => dailyPaxMap[k]);
             } else {
                 chartLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
-                chartData = hourlyProfit;
+                chartProfit = hourlyProfit;
+                chartSales = hourlySales;
+                chartDiscount = hourlyDiscount;
+                chartPax = hourlyPax;
             }
 
-            renderProfitChart(chartLabels, chartData);
+            renderProfitChart(chartLabels, chartProfit, chartSales, chartDiscount, chartPax);
 
         } catch (e) { console.error("Dashboard Load Error", e); }
     }
 
-    function renderProfitChart(labels, data) {
+    function renderProfitChart(labels, profitData, salesData, discountData, paxData) {
         const ctx = document.getElementById('profitChart').getContext('2d');
         if (myChart) myChart.destroy();
 
@@ -2503,14 +2554,41 @@
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Profit (RM)',
-                    data: data,
-                    borderColor: '#00d2ff',
-                    backgroundColor: 'rgba(0, 210, 255, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
+                datasets: [
+                    {
+                        label: 'Sales (RM)',
+                        data: salesData,
+                        borderColor: '#25d366',
+                        backgroundColor: 'rgba(37, 211, 102, 0.1)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Profit (RM)',
+                        data: profitData,
+                        borderColor: '#00d2ff',
+                        backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Discount (RM)',
+                        data: discountData,
+                        borderColor: '#ff4b2b',
+                        backgroundColor: 'rgba(255, 75, 43, 0.1)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Total Pax',
+                        data: paxData,
+                        borderColor: '#f1c40f',
+                        backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        borderDash: [5, 5] // Dashed line to distinguish count from currency
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -2520,7 +2598,10 @@
                     x: { grid: { display: false }, ticks: { color: '#fff' } }
                 },
                 plugins: {
-                    legend: { display: false }
+                    legend: { 
+                        display: true,
+                        labels: { color: '#fff', boxWidth: 12, font: { size: 10 } }
+                    }
                 }
             }
         });
