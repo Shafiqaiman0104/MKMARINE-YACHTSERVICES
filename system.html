@@ -2563,7 +2563,7 @@
 
     async function loadReportData() {
         try {
-            const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-orderDate' });
+            const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: 'orderDate' });
             const now = new Date();
             const todayStr = now.toLocaleDateString('en-CA');
 
@@ -2647,7 +2647,7 @@
                 return `<tr>
                     <td style="white-space:nowrap;">${s.orderId}</td>
                     <td style="white-space:nowrap;"><small>${new Date(s.orderDate).toLocaleString()}</small></td>
-                    <td style="white-space:nowrap;">${s.customerName}</td>
+                    <td style="white-space:nowrap;">${s.customerName} ${s.customerPhone}</td>
                     <td style="white-space:nowrap;"><small>${stackData(s.totalPax)}</small></td>
                     <td style="white-space:nowrap;"><small>${stackData(s.orderItemName)}</small></td>
                     <td style="white-space:nowrap;"><small>${stackData(s.orderItemQuantity)}</small></td>
@@ -2775,7 +2775,7 @@
                 return {
                     "Order ID": s.orderId,
                     "Date": new Date(s.orderDate).toLocaleString(),
-                    "Customer": s.customerName,
+                    "Customer": `${s.customerName}, ${s.customerPhone}`,
                     "Pax": s.totalPax,
                     "Items": s.orderItemName,
                     "Qty": s.orderItemQuantity,
@@ -2799,7 +2799,7 @@
             const refundRows = lastFilteredReportData.filter(s => s.orderStatus === 'Refund').map(s => ({
                 "Order ID": s.orderId,
                 "Date": new Date(s.orderDate).toLocaleString(),
-                "Customer": s.customerName,
+                "Customer": `${s.customerName}, ${s.customerPhone}`,
                 "Paid": s.totalPaidAmount,
                 "Refund Amt": s.refundAmount || '0.00',
                 "Refund Method": s.refundMethod || '-',
@@ -2809,18 +2809,34 @@
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(refundRows), "Refund Report");
         } else if (scope === 'Marina') {
             const marinaRows = [];
+            let includeDate = false;
+            if (currentReportDateFilter === 'All') {
+                includeDate = true;
+            } else if (currentReportDateFilter === 'Custom') {
+                const from = document.getElementById('report-date-from').value;
+                const to = document.getElementById('report-date-to').value;
+                if (from && to && from !== to) includeDate = true;
+            }
+
             lastFilteredReportData.forEach(s => {
                 const partsArr = (s.participantDetails || '').split(', ');
                 const maxDur = Math.max(...(s.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0));
-                const timeIn = new Date(s.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
-                const timeOut = new Date(new Date(s.orderDate).getTime() + (maxDur * 60000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
                 
+                const dateIn = new Date(s.orderDate);
+                const dateOut = new Date(dateIn.getTime() + (maxDur * 60000));
+
+                const timeIn = dateIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                const timeOut = dateOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
+                const displayIn = includeDate ? `${dateIn.toLocaleDateString('en-GB')} ${timeIn}` : timeIn;
+                const displayOut = includeDate ? `${dateOut.toLocaleDateString('en-GB')} ${timeOut}` : timeOut;
+
                 partsArr.forEach(entry => {
                     const chunks = entry.trim().split(' ');
                     if (!entry.trim() || chunks.length === 0) return;
                     const id = chunks.length > 1 ? chunks.pop() : chunks[0];
                     const name = chunks.length > 0 ? chunks.join(' ') : '-';
-                    marinaRows.push({ "Name": name, "Nric/Passport": id, "Time In": timeIn, "Time Out": timeOut });
+                    marinaRows.push({ "Name": name, "Nric/Passport": id, "Time In": displayIn, "Time Out": displayOut });
                 });
             });
             const sheetData = [
@@ -2836,7 +2852,7 @@
             const participantRows = lastFilteredReportData.map(s => ({
                 "Order ID": s.orderId,
                 "Date": new Date(s.orderDate).toLocaleString(),
-                "Customer": s.customerName,
+                "Customer": `${s.customerName}, ${s.customerPhone}`,
                 "Pax": s.totalPax,
                 "Waiver": s.participantDetailsStatus || 'Pending',
                 "Participants": s.participantDetails || '-'
@@ -2965,7 +2981,7 @@
             const salesKeys = ["Order ID","Date","Customer","Pax","Items","Qty","Dur","Total Price","Discount","Paid","Cash","Online Transfer","Card","Order Status","Cust Status","Waiver","Order By","Served By"];
             const salesData = lastFilteredReportData.map(s => {
                 const p = getPaymentBreakdown(s);
-                return { "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Items": s.orderItemName, "Qty": s.orderItemQuantity, "Dur": s.orderItemRentalDuration, "Total Price": s.totalPrice, "Discount": getDiscountNumeric(s.discount), "Paid": s.totalPaidAmount, "Cash": p.rowCash.toFixed(2), "Online Transfer": p.rowOnline.toFixed(2), "Card": p.rowCard.toFixed(2), "Order Status": s.orderStatus, "Cust Status": s.customerStatus || '-', "Waiver": s.participantDetailsStatus || 'Pending', "Order By": s.orderBy || '-', "Served By": s.servedBy || '-' };
+                return { "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": `${s.customerName}, ${s.customerPhone}`, "Pax": s.totalPax, "Items": s.orderItemName, "Qty": s.orderItemQuantity, "Dur": s.orderItemRentalDuration, "Total Price": s.totalPrice, "Discount": getDiscountNumeric(s.discount), "Paid": s.totalPaidAmount, "Cash": p.rowCash.toFixed(2), "Online Transfer": p.rowOnline.toFixed(2), "Card": p.rowCard.toFixed(2), "Order Status": s.orderStatus, "Cust Status": s.customerStatus || '-', "Waiver": s.participantDetailsStatus || 'Pending', "Order By": s.orderBy || '-', "Served By": s.servedBy || '-' };
             });
             doc.autoTable({ head: [salesKeys], body: salesData.map(r => salesKeys.map(k => r[k])), startY: 60, styles: { fontSize: 6 } });
 
@@ -2976,7 +2992,7 @@
                 doc.addImage(logoPath, 'PNG', 14, 10, 40, 40);
                 doc.setFontSize(14); doc.text("2. Refund Report", 60, 30);
                 const refundKeys = ["Order ID","Date","Customer","Paid","Refund Amt","Refund Method","Refund Remark","Refund By"];
-                const refundData = refundRowsFiltered.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
+                const refundData = refundRowsFiltered.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": `${s.customerName}, ${s.customerPhone}`, "Paid": s.totalPaidAmount, "Refund Amt": s.refundAmount || '0.00', "Refund Method": s.refundMethod || '-', "Refund Remark": s.refundRemark || '-', "Refund By": s.refundBy || '-' }));
                 doc.autoTable({ head: [refundKeys], body: refundData.map(r => refundKeys.map(k => r[k])), startY: 55, styles: { fontSize: 7 } });
             }
         } else if (scope === 'Participant') {
@@ -2987,7 +3003,7 @@
             doc.setFontSize(10); doc.text(`Generated at : ${timestamp}`, 14, 61);
             
             const partKeys = ["Order ID","Date","Customer","Pax","Waiver","Participants"];
-            const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": s.customerName, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
+            const partData = lastFilteredReportData.map(s => ({ "Order ID": s.orderId, "Date": new Date(s.orderDate).toLocaleString(), "Customer": `${s.customerName}, ${s.customerPhone}`, "Pax": s.totalPax, "Waiver": s.participantDetailsStatus || 'Pending', "Participants": s.participantDetails || '-' }));
             doc.autoTable({ head: [partKeys], body: partData.map(r => partKeys.map(k => r[k])), startY: 71, styles: { fontSize: 7 } });
         } else if (scope === 'Marina') {
             doc.addImage(logoPath, 'PNG', 14, 10, 40, 40);
@@ -2995,24 +3011,46 @@
             doc.setFontSize(10); doc.text(`Company : South Wave`, 14, 55);
             doc.setFontSize(10); doc.text(`Date : ${rangeLabelDisplay}`, 14, 61);
 
+            let includeDate = false;
+            if (currentReportDateFilter === 'All') {
+                includeDate = true;
+            } else if (currentReportDateFilter === 'Custom') {
+                const from = document.getElementById('report-date-from').value;
+                const to = document.getElementById('report-date-to').value;
+                if (from && to && from !== to) includeDate = true;
+            }
+
             const marinaRows = [];
             lastFilteredReportData.forEach(s => {
                 const partsArr = (s.participantDetails || '').split(', ');
                 const maxDur = Math.max(...(s.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0));
-                const timeIn = new Date(s.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
-                const timeOut = new Date(new Date(s.orderDate).getTime() + (maxDur * 60000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
                 
+                const dateIn = new Date(s.orderDate);
+                const dateOut = new Date(dateIn.getTime() + (maxDur * 60000));
+
+                const timeIn = dateIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                const timeOut = dateOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
+                const displayIn = includeDate ? `${dateIn.toLocaleDateString('en-GB')} ${timeIn}` : timeIn;
+                const displayOut = includeDate ? `${dateOut.toLocaleDateString('en-GB')} ${timeOut}` : timeOut;
+
                 partsArr.forEach(entry => {
                     const chunks = entry.trim().split(' ');
                     if (!entry.trim() || chunks.length === 0) return;
                     const id = chunks.length > 1 ? chunks.pop() : chunks[0];
                     const name = chunks.length > 0 ? chunks.join(' ') : '-';
-                    marinaRows.push([name, id, timeIn, timeOut]);
+                    marinaRows.push([name, id, displayIn, displayOut]);
                 });
             });
 
             doc.autoTable({ head: [["Name", "Nric/Passport", "Time In", "Time Out"]], body: marinaRows, startY: 71, styles: { fontSize: 8 } });
         }
+
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setPage(pageCount);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bolditalic");
+        doc.text("- Powered By VentureRush Tech", 14, doc.internal.pageSize.height - 10);
 
         doc.save(`SouthWave_${scope}_Report_${rangeLabelFile}.pdf`);
     }
