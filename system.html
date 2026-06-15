@@ -969,6 +969,17 @@
     </div>
 </div>
 
+<!-- WhatsApp Message Type Picker -->
+<div class="form-overlay" id="wa-picker-overlay" style="z-index: 400;">
+    <div class="form-content" style="max-width: 400px; text-align: center;">
+        <h3 style="margin-bottom:20px; color:#00d2ff;">Select WhatsApp Message</h3>
+        <p style="margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">All rental timers for this order have ended. Which message would you like to send?</p>
+        <button id="wa-remind-btn" style="background:#00d2ff; margin-bottom: 10px;">Remind Customer</button>
+        <button id="wa-thanks-btn" style="background:#25d366; margin-bottom: 10px;">Thank You Message</button>
+        <button class="btn-danger" onclick="document.getElementById('wa-picker-overlay').style.display='none'" style="margin-top:10px;">Cancel</button>
+    </div>
+</div>
+
 <!-- Discount Picker Modal -->
 <div class="form-overlay" id="discount-picker-overlay" style="z-index: 300;">
     <div class="form-content" style="max-width: 500px;">
@@ -3348,6 +3359,34 @@
 
         const start = new Date(s.startTime).getTime();
         const names = (s.orderItemName || '').split(', ');
+        const durs = (s.orderItemRentalDuration || '').split(', ');
+        
+        let allEnded = true;
+        names.forEach((name, i) => {
+            const durationMin = parseInt(durs[i]) || 0;
+            const endTimeMs = start + (durationMin * 60000);
+            if (endTimeMs - Date.now() > 0) allEnded = false;
+        });
+
+        if (allEnded) {
+            const overlay = document.getElementById('wa-picker-overlay');
+            overlay.style.display = 'flex';
+            document.getElementById('wa-remind-btn').onclick = () => {
+                overlay.style.display = 'none';
+                executeReminderWhatsApp(s);
+            };
+            document.getElementById('wa-thanks-btn').onclick = () => {
+                overlay.style.display = 'none';
+                sendThankYouWhatsApp(s);
+            };
+        } else {
+            executeReminderWhatsApp(s);
+        }
+    }
+
+    function executeReminderWhatsApp(s) {
+        const start = new Date(s.startTime).getTime();
+        const names = (s.orderItemName || '').split(', ');
         const qtys = (s.orderItemQuantity || '').split(', ');
         const durs = (s.orderItemRentalDuration || '').split(', ');
         
@@ -3368,6 +3407,21 @@
                         `just want to remind you about the timer of the item:\n\n` +
                         `${tableText}\n` +
                         `Thank you!\n` +
+                        `_*- Powered By VentureRush Tech*_`;
+
+        window.open(`https://wa.me/${s.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    function sendThankYouWhatsApp(s) {
+        const message = `Hi ${s.customerName}!\n` +
+                        `Thank you so much for choosing South Wave for your watersports adventure! We hope you had an amazing time on the water with us.\n\n` +
+                        `If you’d like to share your experience, it would mean the world to us:\n\n` +
+                        `⭐ Leave a Google review here: https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc\n\n` +
+                        `📸 Tag us on TikTok @mkyachts\n` +
+                        `we’d love to see your best moments!\n\n` +
+                        `🌐 Visit Our Website: https://southwavejb.com\n\n` +
+                        `Hope to see you again soon for another adventure! 🤙\n` +
+                        `From South Wave Team\n\n` +
                         `_*- Powered By VentureRush Tech*_`;
 
         window.open(`https://wa.me/${s.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
