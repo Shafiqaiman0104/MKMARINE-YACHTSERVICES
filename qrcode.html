@@ -29,6 +29,14 @@
         <div class="order-id" id="display-order-id"></div>
         <p style="font-size: 0.85rem; color: #666;">Please present this QR code to the security guard at the marina entrance gate / staff at the watersports area for processing.</p>
     </div>
+
+    <div id="thank-you-container" style="display: none; text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px; border: 1px solid #eee; color: #333; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;">
+        <!-- Populated by JS -->
+    </div>
+
+    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.75rem; color: #888;">
+        <b><i>Powered By VentureRush Tech</i></b>
+    </div>
 </div>
 
 <script>
@@ -50,12 +58,44 @@
             
             if (record) {
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('qr-container').style.display = 'block';
-                document.getElementById('display-order-id').innerText = orderId;
-                
-                // Generate the actual QR code for scanning
-                const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(orderId)}`;
-                document.getElementById('qrcode').innerHTML = `<img src="${qrApiUrl}" alt="Order QR" style="width: 200px; height: 200px; display: block;">`;
+
+                let allEnded = false;
+                if (record.startTime) {
+                    const startMs = new Date(record.startTime).getTime();
+                    const durs = (record.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0);
+                    
+                    // Check if every single item in the order has finished its duration
+                    allEnded = durs.every(durationMin => {
+                        const endTimeMs = startMs + (durationMin * 60000);
+                        return Date.now() > endTimeMs;
+                    });
+                }
+
+                if (allEnded) {
+                    // Hide QR and show Thank You message
+                    document.getElementById('qr-container').style.display = 'none';
+                    const thankYouBox = document.getElementById('thank-you-container');
+                    thankYouBox.style.display = 'block';
+                    
+                    thankYouBox.innerHTML = 
+                        `Thank you so much for choosing South Wave for your watersports adventure! We hope you had an amazing time on the water with us.\n\n` +
+                        `If you’d like to share your experience, it would mean the world to us:\n\n` +
+                        `⭐ Leave a Google review here: <a href="https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc" target="_blank" style="color: #ff6600; text-decoration: underline; word-break: break-all;">https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc</a>\n\n` +
+                        `📸 Tag us on TikTok @mkyachts\n` +
+                        `we’d love to see your best moments!\n\n` +
+                        `🌐 Visit Our Website: <a href="https://southwavejb.com" target="_blank" style="color: #ff6600; text-decoration: underline;">https://southwavejb.com</a>\n\n` +
+                        `Hope to see you again soon for another adventure! 🤙\n` +
+                        `From South Wave Team`;
+                } else {
+                    // Show QR Code as normal
+                    document.getElementById('qr-container').style.display = 'block';
+                    document.getElementById('thank-you-container').style.display = 'none';
+                    document.getElementById('display-order-id').innerText = orderId;
+                    
+                    // Generate the actual QR code for scanning
+                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(orderId)}`;
+                    document.getElementById('qrcode').innerHTML = `<img src="${qrApiUrl}" alt="Order QR" style="width: 200px; height: 200px; display: block;">`;
+                }
             } else {
                 handleInvalid();
             }
