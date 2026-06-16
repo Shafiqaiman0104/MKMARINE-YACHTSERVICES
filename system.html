@@ -1326,6 +1326,10 @@
         commands.push(...encoder.encode("SOUTH WAVE\n\n"));
         commands.push(0x1B, 0x45, 0x00, 0x1D, 0x21, 0x00); // Reset bold and size
         
+        commands.push(...encoder.encode("Order ID QR\n"));
+        commands.push(...generateQrCode(data.orderId));
+        commands.push(0x0A, 0x0A);
+
         commands.push(0x1B, 0x61, 0x00); // Left
         commands.push(...encoder.encode(`Order ID : ${data.orderId}\n`));
         commands.push(...encoder.encode(`Date : ${data.orderDate}\n`));
@@ -1373,8 +1377,6 @@
         commands.push(0x1B, 0x61, 0x01); // Center QR Codes
         commands.push(...encoder.encode("Waiver Form QR\n"));
         commands.push(...generateQrCode(`https://southwavejb.com/waiver.html?orderId=${data.orderId}`));
-        commands.push(0x0A, ...encoder.encode("Order Id QR\n"));
-        commands.push(...generateQrCode(data.orderId));
         commands.push(0x0A, ...encoder.encode("Timer QR\n"));
         commands.push(...generateQrCode(`https://southwavejb.com/timer.html?orderId=${data.orderId}`));
         commands.push(0x0A, ...encoder.encode("--------------------------------\n"));
