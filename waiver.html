@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px 0; }
+        body { min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; background: #f0f2f5; padding: 20px 0; }
         .container { width: 95%; max-width: 500px; padding: 30px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); color: #1a1a1b; text-align: center; }
         h2 { margin-bottom: 20px; font-weight: 700; letter-spacing: 2px; color: #001f3f; }
         h3 { color: #ff6600; margin-bottom: 5px; font-weight: 600; }
@@ -25,6 +25,7 @@
         .agree-container { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; text-align: left; cursor: pointer; }
         .agree-container input { width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0; }
         .agree-container label { margin: 0; font-size: 0.9rem; color: #1c1e21; cursor: pointer; font-weight: bold; }
+        #participant-list { margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -38,7 +39,7 @@
        <b> WAIVER/RELEASE OF LIABILITY AND ASSUMPTION OF RISK FOR SOUTH WAVE, WATERSPORTS ACTIVITIES </b> <br><br> I / We, the undersigned, hereby release and discharge MK MARINE & YACHT SERVICES, LOYALTY MARINE SDN. BHD., Pinetree Marina Resort Puteri Harbour and UEM Sunrise Berhad or its Managers, Employees, Officers, Agents, and Operators jointly and separately from any action, claims, demand, cost in respect to loss, injury, or death arising from the rental watersports equipment and activities managed by SOUTH WAVE, Watersports Adventure, including negligence which may have been or may be sustained by the undersigned in any way relating to or arising out of the activities or the use of the equipment. The undersigned desires and agrees to assume all risk. <br><br> I / We also fully agree, understand, and acknowledge the following: <br><br> 1. Warrant and certify that our physical condition is excellent and mental state is sufficiently stable to enable us to participate safely in these activities. <br><br> 2. Understand and agree to follow all safety rules and procedures. <br><br> I/We have read the Waiver/Release of Liability, Assumption of Risk, fully understand its items, understand that I have given up substantial rights by signing it, and aware of its legal consequences, and have signed it freely and voluntarily without any inducement.
     </div>
     
-    <div id="participant-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 20px; padding-right: 5px;">
+    <div id="participant-list">
         <div class="participant-entry">
             <label>Name</label>
             <input type="text" name="p_name" placeholder="Enter Full Name">
@@ -144,8 +145,6 @@
             <input type="text" name="p_nric" placeholder="Enter NRIC or Passport No">
         `;
         list.appendChild(div);
-        // Scroll to bottom
-        list.scrollTop = list.scrollHeight;
     }
 
     async function submitWaiverForm() {
