@@ -1210,7 +1210,7 @@
             img.crossOrigin = "Anonymous";
             img.src = url;
             img.onload = () => {
-                const width = 160; // Standard logo width for 58mm
+                const width = 128; // Reduced width for faster Bluetooth transmission
                 const height = Math.floor(img.height * (width / img.width));
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
