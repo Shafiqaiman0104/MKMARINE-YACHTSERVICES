@@ -1120,8 +1120,9 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 15px;">
+        <div style="display: flex; gap: 10px;">
             <button onclick="closeOrderPlacedPopup()" style="background: #666; flex: 1;">Close</button>
+            <button onclick="printCurrentBookingReceipt()" style="background: #00d2ff; flex: 1;">Print</button>
             <button onclick="sendWhatsApp()" style="background: #25d366; flex: 2; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <i class="fab fa-whatsapp"></i> Send to WhatsApp
             </button>
@@ -1198,6 +1199,154 @@
     let currentReportDateFilter = 'Today';
     let lastFilteredReportData = [];
     let currentExportFormat = '';
+
+    // Global Bluetooth variables
+    let printerDevice = null;
+    let printerCharacteristic = null;
+
+    async function printOrderReceiptById(id) {
+        const s = currentSales.find(item => item.id === id);
+        if (!s) return;
+        
+        const data = {
+            orderId: s.orderId,
+            orderDate: new Date(s.orderDate).toLocaleString(),
+            customerName: s.customerName,
+            totalPax: s.totalPax,
+            orderBy: s.orderBy,
+            items: (s.orderItemName || '').split(', ').map((name, i) => ({
+                itemName: name,
+                quantity: (s.orderItemQuantity || '').split(', ')[i],
+                duration: (s.orderItemRentalDuration || '').split(', ')[i],
+                price: (s.orderItemPrice || '').split(', ')[i]
+            })),
+            subtotal: (s.orderItemPrice || '').split(', ').reduce((sum, p) => sum + (parseFloat(p) || 0), 0).toFixed(2),
+            discount: s.discount || 'RM0.00',
+            totalPrice: s.totalPrice,
+            totalReceived: s.totalReceived,
+            paymentMethod: s.paymentMethod,
+            paidAmount: s.paidAmount
+        };
+        
+        await printReceipt(data);
+    }
+
+    async function printCurrentBookingReceipt() {
+        if (!currentBooking) return;
+        
+        const data = {
+            orderId: currentBooking.orderId,
+            orderDate: currentBooking.orderDate,
+            customerName: currentBooking.customerName,
+            totalPax: currentBooking.totalPax,
+            orderBy: localStorage.getItem('mk_staffname') || 'Unknown',
+            items: currentBooking.items,
+            subtotal: currentBooking.subtotal,
+            discount: currentBooking.discount || 'RM0.00',
+            totalPrice: currentBooking.totalPrice,
+            totalReceived: currentBooking.totalReceived,
+            paymentMethod: currentBooking.paymentMethod,
+            paidAmount: currentBooking.paidAmount
+        };
+        
+        await printReceipt(data);
+    }
+
+    async function printReceipt(data) {
+        if (!navigator.bluetooth) {
+            alert("Web Bluetooth is not supported in this browser. Please use a supported browser (e.g., Chrome/Edge).");
+            return;
+        }
+
+        if (!printerCharacteristic || !printerDevice || !printerDevice.gatt.connected) {
+            try {
+                printerDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+                });
+                const server = await printerDevice.gatt.connect();
+                const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+                printerCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+                alert("Printer connected! Printing receipt...");
+            } catch (err) {
+                console.error("Bluetooth connection error:", err);
+                return;
+            }
+        }
+
+        const encoder = new TextEncoder();
+        let commands = [];
+        commands.push(0x1B, 0x40); // Init
+        commands.push(0x1B, 0x61, 0x01); // Center
+        commands.push(0x1B, 0x45, 0x01); // Bold
+        commands.push(...encoder.encode("SOUTH WAVE\n\n"));
+        commands.push(0x1B, 0x45, 0x00);
+        
+        commands.push(0x1B, 0x61, 0x00); // Left
+        commands.push(...encoder.encode(`Order ID : ${data.orderId}\n`));
+        commands.push(...encoder.encode(`Date : ${data.orderDate}\n`));
+        commands.push(...encoder.encode(`Customer Name : ${data.customerName}\n`));
+        commands.push(...encoder.encode(`Total Pax : ${data.totalPax}\n`));
+        commands.push(...encoder.encode(`Order By : ${data.orderBy}\n`));
+        commands.push(...encoder.encode("--------------------------------\n"));
+        commands.push(...encoder.encode("Items\n"));
+        
+        data.items.forEach(it => {
+            let line = `${it.itemName} x ${it.quantity} ${it.duration}m`;
+            let price = `RM${it.price}`;
+            let spaces = Math.max(1, 32 - line.length - price.length);
+            commands.push(...encoder.encode(line + " ".repeat(spaces) + price + "\n"));
+        });
+        
+        commands.push(...encoder.encode("--------------------------------\n"));
+        commands.push(...encoder.encode(`Sub Total : ${data.subtotal}\n`));
+        commands.push(...encoder.encode(`Discount : ${data.discount}\n`));
+        commands.push(...encoder.encode(`Grand Total : ${data.totalPrice}\n`));
+        commands.push(...encoder.encode("--------------------------------\n"));
+        commands.push(...encoder.encode(`Received : ${data.totalReceived}\n`));
+        commands.push(...encoder.encode("Payment Method : \n"));
+
+        const methods = (data.paymentMethod || '').split(', ');
+        const amounts = (data.paidAmount || '').split(', ');
+        let cashVal = 0, onlineVal = 0, cardVal = 0;
+        methods.forEach((m, i) => {
+            const val = parseFloat(amounts[i]) || 0;
+            if (m === 'Cash') cashVal += val;
+            else if (m === 'Online Transfer') onlineVal += val;
+            else if (m === 'Card') cardVal += val;
+        });
+        commands.push(...encoder.encode(`Cash : ${cashVal.toFixed(2)}\n`));
+        commands.push(...encoder.encode(`Online Transfer : ${onlineVal.toFixed(2)}\n`));
+        commands.push(...encoder.encode(`Card : ${cardVal.toFixed(2)}\n`));
+        
+        const totalReceivedSum = (data.totalReceived || '').split(', ').reduce((sum, e) => {
+            const lastSpace = e.lastIndexOf(' ');
+            return sum + (parseFloat(e.substring(lastSpace + 1)) || 0);
+        }, 0);
+        commands.push(...encoder.encode(`Change : ${(totalReceivedSum - parseFloat(data.totalPrice)).toFixed(2)}\n`));
+        commands.push(...encoder.encode("--------------------------------\n"));
+
+        commands.push(0x1B, 0x61, 0x01); // Center QR Codes
+        commands.push(...encoder.encode("Waiver Form QR\n"));
+        commands.push(...generateQrCode(`https://southwavejb.com/waiver.html?orderId=${data.orderId}`));
+        commands.push(0x0A, ...encoder.encode("Order Id QR\n"));
+        commands.push(...generateQrCode(data.orderId));
+        commands.push(0x0A, ...encoder.encode("Timer QR\n"));
+        commands.push(...generateQrCode(`https://southwavejb.com/timer.html?orderId=${data.orderId}`));
+        commands.push(0x0A, ...encoder.encode("--------------------------------\n"));
+        commands.push(0x1B, 0x45, 0x01); // Bold footer
+        commands.push(...encoder.encode("Powered By VentureRush Tech\n"));
+        commands.push(0x1B, 0x45, 0x00, 0x0A, 0x0A, 0x0A, 0x0A, 0x1D, 0x56, 0x41, 0x00); // Cut
+
+        const dataToSend = new Uint8Array(commands);
+        for (let i = 0; i < dataToSend.length; i += 20) await printerCharacteristic.writeValue(dataToSend.slice(i, i + 20));
+    }
+
+    function generateQrCode(text) {
+        const data = new TextEncoder().encode(text);
+        const pL = (data.length + 3) & 0xFF, pH = ((data.length + 3) >> 8) & 0xFF;
+        return [0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x03, 0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30, 0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30, ...data, 0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30];
+    }
 
     // Checkout Modal Logic
     let receivedStr = "0";
@@ -1906,6 +2055,7 @@
                 <td>${s.servedBy || '-'}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn-small" onclick="sendSalesWhatsApp('${s.id}')" style="background:#25d366;">WhatsApp</button>
+                    <button class="btn-small" onclick="printOrderReceiptById('${s.id}')" style="background:#00d2ff;">Print</button>
                     <button class="btn-small" onclick="openModal('salesView', '${s.id}')">View</button>
                     <button class="btn-small" onclick="openModal('sales', '${s.id}')">Edit</button>
                     <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_SALES_DATA', '${s.id}', loadSales)">Del</button>
