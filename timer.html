@@ -45,6 +45,14 @@
             <tbody id="timer-body"></tbody>
         </table>
     </div>
+
+    <div id="thank-you-container" style="display: none; text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px; border: 1px solid #eee; color: #333; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; margin-top: 20px;">
+        <!-- Populated by JS -->
+    </div>
+
+    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.75rem; color: #888;">
+        <b><i>Powered By VentureRush Tech</i></b>
+    </div>
 </div>
 
 <script>
@@ -101,12 +109,15 @@
 
         const body = document.getElementById('timer-body');
         let html = '';
+        let allEnded = true;
 
         names.forEach((name, i) => {
             const durationMin = parseInt(durs[i]) || 0;
             const endTimeMs = startMs + (durationMin * 60000);
             const endStr = new Date(endTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
             const diff = endTimeMs - Date.now();
+
+            if (diff > 0) allEnded = false;
 
             let timerDisplay = '';
             let timerClass = 'timer-val';
@@ -123,6 +134,24 @@
             html += `<tr><td style="text-align: left;">${name}</td><td style="text-align: center;">${qtys[i]}</td><td style="text-align: center;">${durationMin}m</td><td style="text-align: center;">${startStr}</td><td style="text-align: center;">${endStr}</td><td style="text-align: center;" class="${timerClass}">${timerDisplay}</td></tr>`;
         });
         body.innerHTML = html;
+
+        const thankYouBox = document.getElementById('thank-you-container');
+        if (allEnded) {
+            if (thankYouBox.style.display !== 'block') {
+                thankYouBox.style.display = 'block';
+                thankYouBox.innerHTML = 
+                    `Thank you so much for choosing South Wave for your watersports adventure! We hope you had an amazing time on the water with us.\n\n` +
+                    `If you’d like to share your experience, it would mean the world to us:\n\n` +
+                    `⭐ Leave a Google review here: <a href="https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc" target="_blank" style="color: #ff6600; text-decoration: underline; word-break: break-all;">https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc</a>\n\n` +
+                    `📸 Tag us on TikTok @mkyachts\n` +
+                    `we’d love to see your best moments!\n\n` +
+                    `🌐 Visit Our Website: <a href="https://southwavejb.com" target="_blank" style="color: #ff6600; text-decoration: underline;">https://southwavejb.com</a>\n\n` +
+                    `Hope to see you again soon for another adventure! 🤙\n` +
+                    `From South Wave Team`;
+            }
+        } else {
+            thankYouBox.style.display = 'none';
+        }
     }
 </script>
 </body>
