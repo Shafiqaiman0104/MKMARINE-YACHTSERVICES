@@ -55,6 +55,10 @@
     </div>
 
     <button id="waiver-submit-btn" onclick="submitWaiverForm()">Submit Waiver & Agree</button>
+
+    <div id="waiver-footer" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.75rem; color: #888;">
+        <b><i>Powered By VentureRush Tech</i></b>
+    </div>
 </div>
 
 <script>
@@ -79,6 +83,22 @@
         try {
             const record = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFirstListItem(`orderId="${orderId}"`);
             
+            let allEnded = false;
+            if (record.startTime) {
+                const startMs = new Date(record.startTime).getTime();
+                const durs = (record.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0);
+                
+                allEnded = durs.every(durationMin => {
+                    const endTimeMs = startMs + (durationMin * 60000);
+                    return Date.now() > endTimeMs;
+                });
+            }
+
+            if (allEnded) {
+                showThankYouUI();
+                return;
+            }
+
             if (record.participantDetailsStatus === 'Agree') {
                 const firstName = record.participantDetails ? record.participantDetails.split(' ')[0] : 'Customer';
                 showSuccessUI(firstName, orderId);
@@ -175,6 +195,26 @@
         }
     }
 
+    function showThankYouUI() {
+        document.getElementById('waiver-form-content').innerHTML = `
+            <h2>SOUTH WAVE</h2>
+            <img src="/img/logoBlue.png" alt="Logo" style="width: 120px; margin-bottom: 20px;">
+            <div id="thank-you-container" style="text-align: left; background: #f8f9fa; padding: 25px; border-radius: 12px; border: 1px solid #eee; color: #333; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;">
+Thank you so much for choosing South Wave for your watersports adventure! We hope you had an amazing time on the water with us.\n\n` +
+`If you’d like to share your experience, it would mean the world to us:\n\n` +
+`⭐ Leave a Google review here: <a href="https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc" target="_blank" style="color: #ff6600; text-decoration: underline; word-break: break-all;">https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc</a>\n\n` +
+`📸 Tag us on TikTok @mkyachts\n` +
+`we’d love to see your best moments!\n\n` +
+`🌐 Visit Our Website: <a href="https://southwavejb.com" target="_blank" style="color: #ff6600; text-decoration: underline;">https://southwavejb.com</a>\n\n` +
+`Hope to see you again soon for another adventure! 🤙\n` +
+`From South Wave Team
+            </div>
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.75rem; color: #888;">
+                <b><i>Powered By VentureRush Tech</i></b>
+            </div>
+        `;
+    }
+
     function showSuccessUI(name, id) {
         document.getElementById('waiver-form-content').innerHTML = `
             <h2 style="color: #001f3f;">SOUTH WAVE</h2>
@@ -184,6 +224,9 @@
             </div>
             <p style="margin-bottom: 20px; color: #444;">Thank you, <strong>${name}</strong> and team.</p>
             <p style="font-size: 0.9rem; color: #777;">You have successfully agreed to the waiver terms for Order ${id}. You may close this page.</p>
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.75rem; color: #888;">
+                <b><i>Powered By VentureRush Tech</i></b>
+            </div>
         `;
     }
 </script>
