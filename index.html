@@ -1717,6 +1717,19 @@
     </div>
   </div>
 
+  <!-- Contact Success Modal -->
+  <div class="modal-overlay" id="contactSuccessModal">
+    <div class="modal-content" style="max-width: 450px; text-align: center; padding: 3rem 2rem;">
+      <div style="font-size: 5rem; color: #25d366; margin-bottom: 1.5rem;">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <p style="font-size: 1.1rem; color: #123059; font-weight: 600; margin-bottom: 2rem; line-height: 1.5;">
+        ✨ Thank you! Your message has been sent successfully. We will contact you soon!
+      </p>
+      <button class="btn-submit-booking" id="closeContactSuccess" style="background: #123059; width: auto; padding: 0.8rem 3rem;">Close</button>
+    </div>
+  </div>
+
   <script>
     (function() {
       // --- SPLASH SCREEN HANDLER ---
@@ -2349,6 +2362,53 @@
       // Auto-start center video after splash
       setTimeout(updateVideoGallery, 4500);
 
+      // --- CONTACT FORM AJAX SUBMISSION ---
+      const contactForm = document.getElementById('contactForm');
+      if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const formData = new FormData(contactForm);
+          const object = Object.fromEntries(formData);
+          const json = JSON.stringify(object);
+          const submitBtn = contactForm.querySelector('button');
+          const originalText = submitBtn.innerHTML;
+
+          // Visual feedback
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+          fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: json
+          })
+          .then(async (response) => {
+            if (response.status == 200) {
+              document.getElementById('contactSuccessModal').classList.add('active');
+              document.body.style.overflow = 'hidden'; // Lock scroll while modal is open
+            } else {
+              const res = await response.json();
+              alert(res.message || "Oops! Submission failed. Please try again.");
+            }
+          })
+          .catch(() => alert("Network error. Please check your internet connection."))
+          .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          });
+        });
+
+        // Handle closing the contact success popup and resetting the form
+        document.getElementById('closeContactSuccess').addEventListener('click', () => {
+          document.getElementById('contactSuccessModal').classList.remove('active');
+          document.body.style.overflow = ''; // Unlock scroll
+          contactForm.reset();
+        });
+      }
     })();
   </script>
 </body>
