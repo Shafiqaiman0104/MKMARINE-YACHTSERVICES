@@ -1234,6 +1234,35 @@
       cursor: pointer;
       text-transform: uppercase;
     }
+    .booking-btn-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .btn-close-booking {
+      flex: 1;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    .btn-resend-booking {
+      flex: 1;
+      background: #25d366;
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
 
     /* Mobile Optimizations for Booking Modal */
     @media (max-width: 768px) {
@@ -1521,9 +1550,11 @@
         <p style="font-size: 0.8rem; font-style: italic; margin: 0.5rem 0 1.5rem; opacity: 0.9; line-height: 1.4; color: #cfe2fb; text-align: right;">
           * Note: This Grand Total is an estimate. Final pricing may vary due to discounts, seasonal rates, or manual adjustments. Our team will verify and confirm the final total with you via WhatsApp.
         </p>
-        <button class="btn-submit-booking" onclick="submitBookingToWA()">
-          <i class="fab fa-whatsapp"></i> Confirm & Book via WhatsApp
-        </button>
+        <div id="bookingActionArea">
+          <button class="btn-submit-booking" onclick="submitBookingToWA()">
+            <i class="fab fa-whatsapp"></i> Confirm & Book via WhatsApp
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1733,9 +1764,28 @@
         renderModalItems();
       };
 
-      document.getElementById('closeBooking').onclick = () => {
+      window.closeBookingModal = function() {
         bookingModal.classList.remove('active');
         document.body.style.overflow = '';
+      };
+
+      document.getElementById('closeBooking').onclick = closeBookingModal;
+
+      window.resetBookingForm = function() {
+        document.getElementById('bookDateTime').value = '';
+        document.getElementById('bookName').value = '';
+        document.getElementById('bookPhone').value = '';
+        document.getElementById('paxAdult').value = '1';
+        document.getElementById('paxKids').value = '0';
+        document.getElementById('paxToddler').value = '0';
+        cart = [];
+        updateCartUI();
+        if (tempBookingDetail) tempBookingDetail.style.display = 'none';
+      };
+
+      window.closeAndResetBooking = function() {
+        resetBookingForm();
+        closeBookingModal();
       };
 
       function renderModalItems() {
@@ -1823,6 +1873,13 @@
             </li>
           `}).join('');
           document.getElementById('cartGrandTotal').innerText = `Grand Total : RM ${grandTotal}`;
+
+          // Reset action area to show the primary booking button if cart is modified
+          document.getElementById('bookingActionArea').innerHTML = `
+            <button class="btn-submit-booking" onclick="submitBookingToWA()">
+              <i class="fab fa-whatsapp"></i> Confirm & Book via WhatsApp
+            </button>
+          `;
         } else {
           cartSection.style.display = 'none';
         }
@@ -1879,6 +1936,14 @@
 
         const waUrl = `https://wa.me/60197088144?text=${message}`;
         window.open(waUrl, '_blank');
+
+        // After opening WhatsApp, show Close and Resend buttons side-by-side
+        document.getElementById('bookingActionArea').innerHTML = `
+          <div class="booking-btn-row">
+            <button class="btn-close-booking" onclick="closeAndResetBooking()">Close</button>
+            <button class="btn-resend-booking" onclick="submitBookingToWA()">Resend Message</button>
+          </div>
+        `;
       };
 
       // Store observer references to disconnect when re-rendering
