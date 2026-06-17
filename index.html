@@ -1401,7 +1401,7 @@
   </section>
 
   <!-- WhatsApp Floating Button -->
-  <a href="https://wa.me/60197088144?text=Hi%20South%20Wave!!%0A-Via%20Website" class="whatsapp-float" target="_blank" aria-label="WhatsApp Us">
+  <a href="https://wa.me/60197088144?text=Hi%20South%20Wave!!%0A*_Sent%20via%20South%20Wave%20Website_*" class="whatsapp-float" target="_blank" aria-label="WhatsApp Us">
     <i class="fab fa-whatsapp"></i>
     <span class="whatsapp-badge">1</span>
   </a>
@@ -1517,6 +1517,10 @@
           <i class="fas fa-shopping-cart"></i> Your Selection
         </h3>
         <ul class="cart-list" id="cartList"></ul>
+        <div id="cartGrandTotal" style="text-align: right; font-size: 1.4rem; font-weight: 800; margin-top: 1rem; color: #ff751f;"></div>
+        <p style="font-size: 0.8rem; font-style: italic; margin: 0.5rem 0 1.5rem; opacity: 0.9; line-height: 1.4; color: #cfe2fb; text-align: right;">
+          * Note: This Grand Total is an estimate. Final pricing may vary due to discounts, seasonal rates, or manual adjustments. Our team will verify and confirm the final total with you via WhatsApp.
+        </p>
         <button class="btn-submit-booking" onclick="submitBookingToWA()">
           <i class="fab fa-whatsapp"></i> Confirm & Book via WhatsApp
         </button>
@@ -1809,12 +1813,16 @@
       function updateCartUI() {
         if (cart.length > 0) {
           cartSection.style.display = 'block';
-          cartList.innerHTML = cart.map((item, i) => `
+          let grandTotal = 0;
+          cartList.innerHTML = cart.map((item, i) => {
+            grandTotal += item.total;
+            return `
             <li>
               <span>${item.name} (x${item.qty}) | ${item.dur} | <b>RM ${item.total}</b></span>
               <i class="fas fa-trash" style="cursor:pointer; color:#ff4d4d;" onclick="removeFromCart(${i})"></i>
             </li>
-          `).join('');
+          `}).join('');
+          document.getElementById('cartGrandTotal').innerText = `Grand Total : RM ${grandTotal}`;
         } else {
           cartSection.style.display = 'none';
         }
@@ -1837,25 +1845,37 @@
         if (adult + kids + toddler === 0) return alert("Please enter at least 1 pax.");
         if (cart.length === 0) return alert("Please add at least one item to your booking.");
 
-        let grandTotal = 0;
-        let itemsText = cart.map(i => {
-          grandTotal += i.total;
-          return `- ${i.name} [Qty: ${i.qty}, Dur: ${i.dur}, Total: RM ${i.total}]`;
-        }).join('%0A');
+        // Format Date: YYYY-MM-DDTHH:mm to DD/MM/YYYY hh:mmAM/PM
+        const [dPart, tPart] = date.split('T');
+        const [y, m, d] = dPart.split('-');
+        let [hh, mm] = tPart.split(':');
+        let period = "AM";
+        let h = parseInt(hh);
+        if (h >= 12) {
+          period = "PM";
+          if (h > 12) h -= 12;
+        } else if (h === 0) {
+          h = 12;
+        }
+        const displayH = h < 10 ? "0" + h : h;
+        const formattedDate = `${d}/${m}/${y} ${displayH}:${mm}${period}`;
+
+        const itemsText = cart.map(i => `- ${i.name} (x${i.qty}) ${i.dur}`).join('%0A');
         
-        const message = `*NEW BOOKING REQUEST*%0A` +
+        const message = `Hi South Wave!,%0A` +
+                        `I would like to request booking.%0A` +
                         `----------------------------%0A` +
-                        `*Date/Time:* ${date}%0A` +
-                        `*Name:* ${name}%0A` +
-                        `*Phone:* ${phone}%0A%0A` +
-                        `*Participants:*%0A` +
+                        `Date %26 Time: ${formattedDate}%0A` +
+                        `Name: ${name}%0A` +
+                        `Phone: ${phone}%0A%0A` +
+                        `Participants:%0A` +
                         `- Adults: ${adult}%0A` +
                         `- Kids: ${kids}%0A` +
-                        `- Toddlers: ${toddler}%0A%0A` +
-                        `*Items:*%0A${itemsText}%0A` +
-                        `*ESTIMATED TOTAL: RM ${grandTotal}*%0A` +
+                        `- Toddlers: ${toddler}%0A` +
+                        `---------------------------%0A%0A` +
+                        `Items:%0A${itemsText}%0A%0A` +
                         `----------------------------%0A` +
-                        `_Sent via South Wave Website_`;
+                        `*_Sent via South Wave Website_*`;
 
         const waUrl = `https://wa.me/60197088144?text=${message}`;
         window.open(waUrl, '_blank');
