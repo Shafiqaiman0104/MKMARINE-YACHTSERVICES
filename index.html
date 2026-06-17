@@ -1596,10 +1596,11 @@
   <section id="contact" class="contact-section">
     <h2 class="section-title">Contact</h2>
     <div class="contact-wrapper">
-      <form class="contact-form" id="contactForm" onsubmit="handleContactSubmit(event)">
-        <input type="text" placeholder="Your Name" required>
-        <input type="email" placeholder="Email Address" required>
-        <textarea rows="5" placeholder="Your message..."></textarea>
+      <form action="https://api.web3forms.com/submit" method="POST" class="contact-form" id="contactForm">
+        <input type="hidden" name="access_key" value="43b08815-cf9d-40be-b2c7-5fc435db68af">
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Email Address" required>
+        <textarea name="message" rows="5" placeholder="Your message..." required></textarea>
         <button type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
       </form>
       <div class="contact-details">
@@ -2219,20 +2220,6 @@
           renderServices(this.getAttribute('data-filter'));
         });
       });
-
-      window.handleContactSubmit = function(event) {
-        event.preventDefault();
-        const form = event.target;
-        const name = form.querySelector('input[type="text"]').value.trim();
-        const email = form.querySelector('input[type="email"]').value.trim();
-        const message = form.querySelector('textarea').value.trim();
-        if (name && email && message) {
-          alert(`✉️ Message sent! (simulation)\nFrom: ${name} (${email})`);
-          form.reset();
-        } else {
-          alert('Please fill all fields.');
-        }
-      };
 
       // Hamburger & Sidebar logic
       const hamburgerBtn = document.getElementById('hamburgerBtn');
