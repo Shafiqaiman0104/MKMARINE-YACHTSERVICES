@@ -1011,6 +1011,280 @@
         margin-top: -50px;
       }
     }
+
+    /* ---------- BOOKING MODAL ---------- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10002;
+      padding: 1rem;
+      backdrop-filter: blur(5px);
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: #fff;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      border-radius: 24px;
+      overflow-y: auto;
+      position: relative;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    }
+    .modal-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: #123059;
+    }
+    .booking-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .booking-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .booking-field label { font-weight: 700; color: #123059; font-size: 0.9rem; }
+    .booking-field input {
+      padding: 0.8rem;
+      border: 1px solid #c2d9f0;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+    .modal-item-selection {
+      margin-top: 2rem;
+      border-top: 2px solid #f0f7ff;
+      padding-top: 1.5rem;
+    }
+    .modal-services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .modal-service-item {
+      background: white;
+      border: 1px solid #123059;
+      border-radius: 15px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .modal-service-item:hover {
+      background: #eef6ff;
+      border-color: #ff751f;
+      transform: translateY(-3px);
+    }
+    .modal-service-item img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
+      pointer-events: none;
+      filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.3));
+    }
+    .modal-service-item h4 { font-size: 0.9rem; margin-bottom: 0.2rem; color: #123059; }
+    .modal-service-item .item-desc { font-size: 0.75rem; color: #2a6eab; font-weight: 600; margin-bottom: 0.3rem; }
+    .modal-service-item .item-price { font-size: 0.85rem; color: #ff751f; font-weight: 700; }
+
+    /* ---------- TEMP BOOKING DETAIL ---------- */
+    .temp-booking-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #f0f7ff;
+      border: 2px solid #ff751f;
+      border-radius: 20px;
+      display: none;
+      animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .temp-booking-section h3 { color: #123059; margin-bottom: 1rem; font-size: 1.2rem; }
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+    .control-label { font-weight: 700; color: #123059; flex: 1; }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: transparent;
+      padding: 0;
+      border: none;
+    }
+    .btn-ctrl {
+      background: #123059;
+      color: white;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-ctrl:hover { background: #ff751f; }
+    .display-val { 
+      font-weight: 800; 
+      min-width: 65px; 
+      text-align: center; 
+      color: #123059;
+      background: white;
+      border: 1px solid #c2d9f0;
+      border-radius: 10px;
+      padding: 0.4rem;
+      display: inline-block;
+    }
+    
+    .control-group input {
+      border: 1px solid #c2d9f0 !important;
+      padding: 0.4rem !important;
+      background: white !important;
+      width: 65px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #123059;
+      box-shadow: none !important;
+      -moz-appearance: textfield;
+    }
+    .control-group input::-webkit-outer-spin-button,
+    .control-group input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .pax-container {
+      background: #f8fbff;
+      border: 1px solid #e1edff;
+      border-radius: 20px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .pax-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+    .pax-row:last-child { margin-bottom: 0; }
+    .pax-row label { font-weight: 700; color: #123059; font-size: 0.95rem; }
+    
+    .total-price-tag {
+      text-align: right;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ff751f;
+      margin-bottom: 1rem;
+    }
+
+    .btn-add-to-cart {
+      width: 100%;
+      background: #ff751f;
+      color: white;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .cart-summary {
+      margin-top: 2rem;
+      background: #123059;
+      color: white;
+      padding: 1.5rem;
+      border-radius: 15px;
+    }
+    .cart-list { list-style: none; margin-bottom: 1rem; }
+    .cart-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.9rem;
+    }
+    .btn-submit-booking {
+      width: 100%;
+      background: #25d366;
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    /* Mobile Optimizations for Booking Modal */
+    @media (max-width: 768px) {
+      .modal-content {
+        padding: 1.5rem 1rem;
+        border-radius: 20px;
+      }
+      .modal-close {
+        top: 1rem;
+        right: 1rem;
+      }
+      .booking-form-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+
+      .booking-field input {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+      }
+      .modal-services-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+      }
+      .modal-service-item {
+        padding: 0.5rem 0.2rem;
+      }
+      .modal-service-item img {
+        width: 100%;
+        height: 100px;
+      }
+      .modal-service-item h4 { font-size: 0.65rem; }
+      .modal-service-item .item-desc,
+      .modal-service-item .item-price { font-size: 0.6rem; }
+      .temp-booking-section {
+        padding: 1rem;
+        border-radius: 15px;
+      }
+      .temp-booking-section h3 { font-size: 1rem; }
+      .btn-ctrl {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8rem;
+      }
+      .display-val { min-width: 65px; font-size: 0.9rem; }
+      .total-price-tag { font-size: 1rem; }
+      .btn-submit-booking {
+        font-size: 0.95rem;
+        padding: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body class="no-scroll">
@@ -1062,7 +1336,7 @@
       <img src="img/logoWhite.png" alt="South Wave Logo" class="home-logo-white">
       <img src="img/logoNameWhite.png" alt="South Wave" class="home-logo-name-white">
       <p class="home-subtitle">Watersport Adventure | <span class="orange-text">Puteri Harbour</span></p>
-      <button class="btn-book-transparent" onclick="alert('📅 Booking opens soon! 🌊')">Book Now</button>
+      <button class="btn-book-transparent" onclick="openBookingModal()">Book Now</button>
     </div>
   </section>
 
@@ -1167,6 +1441,88 @@
       <p style="font-size:0.9rem; font-style: italic; font-weight: 700; margin: 0;">Powered By VentureRush Tech</p>
     </div>
   </footer>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal-content">
+      <span class="modal-close" id="closeBooking">&times;</span>
+      <h2 style="color:#123059; margin-bottom: 1.5rem; text-align: center;">Book Your Adventure</h2>
+      
+      <div class="booking-form-grid">
+        <div class="booking-field"><label>Date & Time</label><input type="datetime-local" id="bookDateTime" required></div>
+        <div class="booking-field"><label>Name</label><input type="text" id="bookName" placeholder="Full Name" required></div>
+        <div class="booking-field"><label>Phone</label><input type="tel" id="bookPhone" placeholder="Mobile Number" required></div>
+      </div>
+
+      <div class="pax-container">
+        <h3 style="color:#123059; font-size: 1.1rem; margin-bottom: 1rem; border-bottom: 2px solid #f0f7ff; padding-bottom: 0.5rem;">Total Pax:</h3>
+        <div class="pax-row">
+          <label>Adults (13y+)</label>
+          <div class="control-group">
+            <button class="btn-ctrl" onclick="adjustPax('paxAdult', 1)">+</button>
+            <input type="number" id="paxAdult" value="1" min="0" readonly>
+            <button class="btn-ctrl" onclick="adjustPax('paxAdult', -1)">-</button>
+          </div>
+        </div>
+        <div class="pax-row">
+          <label>Kids (4-12y)</label>
+          <div class="control-group">
+            <button class="btn-ctrl" onclick="adjustPax('paxKids', 1)">+</button>
+            <input type="number" id="paxKids" value="0" min="0" readonly>
+            <button class="btn-ctrl" onclick="adjustPax('paxKids', -1)">-</button>
+          </div>
+        </div>
+        <div class="pax-row">
+          <label>Toddler (&lt;3y)</label>
+          <div class="control-group">
+            <button class="btn-ctrl" onclick="adjustPax('paxToddler', 1)">+</button>
+            <input type="number" id="paxToddler" value="0" min="0" readonly>
+            <button class="btn-ctrl" onclick="adjustPax('paxToddler', -1)">-</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-item-selection">
+        <h3 style="color:#123059; font-size: 1.1rem; margin-bottom: 0.5rem;">Select Item:</h3>
+        <div class="modal-services-grid" id="modalItemsGrid">
+          <!-- Items injected via JS -->
+        </div>
+      </div>
+
+      <!-- Item Customization Before Cart -->
+      <div class="temp-booking-section" id="tempBookingDetail">
+        <h3 id="tempItemName">Booking: </h3>
+        <div class="control-row">
+          <span class="control-label">Quantity</span>
+          <div class="control-group">
+            <button class="btn-ctrl" onclick="adjustQty(1)">+</button>
+            <span class="display-val" id="tempQty">1</span>
+            <button class="btn-ctrl" onclick="adjustQty(-1)">-</button>
+          </div>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Duration</span>
+          <div class="control-group">
+            <button class="btn-ctrl" onclick="adjustDuration(1)">+</button>
+            <span class="display-val" id="tempDur">60m</span>
+            <button class="btn-ctrl" onclick="adjustDuration(-1)">-</button>
+          </div>
+        </div>
+        <div class="total-price-tag" id="tempTotalPrice">Total Price: RM 0</div>
+        <button class="btn-add-to-cart" onclick="addToCartFromDetail()">Add to cart</button>
+      </div>
+
+      <div class="cart-summary" id="cartSection" style="display:none;">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem;">
+          <i class="fas fa-shopping-cart"></i> Your Selection
+        </h3>
+        <ul class="cart-list" id="cartList"></ul>
+        <button class="btn-submit-booking" onclick="submitBookingToWA()">
+          <i class="fab fa-whatsapp"></i> Confirm & Book via WhatsApp
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function() {
@@ -1353,6 +1709,158 @@
       const servicesContainer = document.getElementById('servicesContainer');
       const filterButtons = document.querySelectorAll('.filter-btn');
 
+      // --- BOOKING LOGIC ---
+      const bookingModal = document.getElementById('bookingModal');
+      const modalItemsGrid = document.getElementById('modalItemsGrid');
+      const tempBookingDetail = document.getElementById('tempBookingDetail');
+      const cartSection = document.getElementById('cartSection');
+      const cartList = document.getElementById('cartList');
+      let cart = []; let tempItem = null;
+
+      window.adjustPax = function(id, val) {
+        const el = document.getElementById(id);
+        const cur = parseInt(el.value) || 0;
+        el.value = Math.max(0, cur + val);
+      };
+
+      window.openBookingModal = function() {
+        bookingModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        renderModalItems();
+      };
+
+      document.getElementById('closeBooking').onclick = () => {
+        bookingModal.classList.remove('active');
+        document.body.style.overflow = '';
+      };
+
+      function renderModalItems() {
+        modalItemsGrid.innerHTML = servicesData.map((s, idx) => {
+          const pricePart = s.price;
+          const durPart = s.duration;
+          return `
+          <div class="modal-service-item" onclick="selectItemForBooking(${idx})">
+            <img src="${s.img}" alt="${s.name}">
+            <h4>${s.name}</h4>
+            <p class="item-desc">${s.seater}</p>
+            <div class="item-price">${pricePart} / ${durPart}</div>
+          </div>
+          `;
+        }).join('');
+      }
+
+      window.selectItemForBooking = function(idx) {
+        const item = servicesData[idx];
+        const basePrice = parseFloat(item.price.replace(/[^\d.]/g, ''));
+        const baseDuration = parseInt(item.duration.replace(/[^\d]/g, ''));
+
+        tempItem = {
+          ...item,
+          basePrice,
+          baseDuration,
+          currentQty: 1,
+          currentDuration: baseDuration
+        };
+
+        updateDetailUI();
+        tempBookingDetail.style.display = 'block';
+        tempBookingDetail.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+
+      function updateDetailUI() {
+        if (!tempItem) return;
+        document.getElementById('tempItemName').innerText = `Booking: ${tempItem.name}`;
+        document.getElementById('tempQty').innerText = tempItem.currentQty;
+        document.getElementById('tempDur').innerText = `${tempItem.currentDuration}m`;
+        
+        const total = tempItem.basePrice * tempItem.currentQty * (tempItem.currentDuration / tempItem.baseDuration);
+        document.getElementById('tempTotalPrice').innerText = `Total Price: RM ${total.toFixed(0)}`;
+      }
+
+      window.adjustQty = function(val) {
+        if (!tempItem) return;
+        tempItem.currentQty = Math.max(1, tempItem.currentQty + val);
+        updateDetailUI();
+      };
+
+      window.adjustDuration = function(val) {
+        if (!tempItem) return;
+        const newDur = tempItem.currentDuration + (val * tempItem.baseDuration);
+        tempItem.currentDuration = Math.max(tempItem.baseDuration, newDur);
+        updateDetailUI();
+      };
+
+      window.addToCartFromDetail = function() {
+        if (!tempItem) return;
+        const total = tempItem.basePrice * tempItem.currentQty * (tempItem.currentDuration / tempItem.baseDuration);
+        
+        cart.push({
+          name: tempItem.name,
+          qty: tempItem.currentQty,
+          dur: `${tempItem.currentDuration}m`,
+          total: total
+        });
+
+        tempBookingDetail.style.display = 'none';
+        tempItem = null;
+        updateCartUI();
+      };
+
+      function updateCartUI() {
+        if (cart.length > 0) {
+          cartSection.style.display = 'block';
+          cartList.innerHTML = cart.map((item, i) => `
+            <li>
+              <span>${item.name} (x${item.qty}) | ${item.dur} | <b>RM ${item.total}</b></span>
+              <i class="fas fa-trash" style="cursor:pointer; color:#ff4d4d;" onclick="removeFromCart(${i})"></i>
+            </li>
+          `).join('');
+        } else {
+          cartSection.style.display = 'none';
+        }
+      }
+
+      window.removeFromCart = function(i) {
+        cart.splice(i, 1);
+        updateCartUI();
+      };
+
+      window.submitBookingToWA = function() {
+        const date = document.getElementById('bookDateTime').value;
+        const name = document.getElementById('bookName').value;
+        const phone = document.getElementById('bookPhone').value;
+        const adult = parseInt(document.getElementById('paxAdult').value) || 0;
+        const kids = parseInt(document.getElementById('paxKids').value) || 0;
+        const toddler = parseInt(document.getElementById('paxToddler').value) || 0;
+
+        if (!date || !name || !phone) return alert("Please fill in Date, Name, and Phone.");
+        if (adult + kids + toddler === 0) return alert("Please enter at least 1 pax.");
+        if (cart.length === 0) return alert("Please add at least one item to your booking.");
+
+        let grandTotal = 0;
+        let itemsText = cart.map(i => {
+          grandTotal += i.total;
+          return `- ${i.name} [Qty: ${i.qty}, Dur: ${i.dur}, Total: RM ${i.total}]`;
+        }).join('%0A');
+        
+        const message = `*NEW BOOKING REQUEST*%0A` +
+                        `----------------------------%0A` +
+                        `*Date/Time:* ${date}%0A` +
+                        `*Name:* ${name}%0A` +
+                        `*Phone:* ${phone}%0A%0A` +
+                        `*Participants:*%0A` +
+                        `- Adults: ${adult}%0A` +
+                        `- Kids: ${kids}%0A` +
+                        `- Toddlers: ${toddler}%0A%0A` +
+                        `*Items:*%0A${itemsText}%0A` +
+                        `*ESTIMATED TOTAL: RM ${grandTotal}*%0A` +
+                        `----------------------------%0A` +
+                        `_Sent via South Wave Website_`;
+
+        const waUrl = `https://wa.me/60197088144?text=${message}`;
+        window.open(waUrl, '_blank');
+      };
+
       // Store observer references to disconnect when re-rendering
       let imageObservers = [];
 
@@ -1436,7 +1944,7 @@
                 <span class="price-sep">/</span>
                 <span class="duration-val">${service.duration}</span>
               </div>
-              <button class="btn-book-service" onclick="alert('🌊 Book ${service.name} now!')">Book Now</button>
+              <button class="btn-book-service" onclick="openBookingModal()">Book Now</button>
             </div>
           </div>
         `).join('');
