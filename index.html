@@ -989,6 +989,44 @@
       transform: scale(1.1);
     }
 
+    /* ---------- PARALLAX BANNER ---------- */
+    .parallax-banner {
+      height: 300px;
+      background: url('img/banner.png') center/cover no-repeat;
+      background-attachment: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding-left: 15%;
+      position: relative;
+      z-index: 10;
+    }
+    .banner-title {
+      color: #ffb226;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+      text-align: left;
+    }
+    .btn-banner-outline {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+      font-weight: 700;
+      font-size: 1.4rem;
+      padding: 0.9rem 2.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+    .btn-banner-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     @media (max-width: 768px) {
       .video-card { width: 140px; height: 260px; }
       .video-card.active { width: 200px; height: 360px; }
@@ -997,6 +1035,23 @@
 
     /* ========== RESPONSIVE / MOBILE ========== */
     @media (max-width: 768px) {
+      .parallax-banner {
+        height: 200px;
+        padding-left: 10%;
+        justify-content: flex-start;
+        background-attachment: fixed;
+        background-position: center;
+        background-size: cover;
+      }
+      .banner-title {
+        font-size: 1.4rem;
+        margin-bottom: 0.6rem;
+      }
+      .btn-banner-outline {
+        font-size: 1.1rem;
+        padding: 0.8rem 2.2rem;
+      }
+
       .top-nav {
         padding: 0.8rem 1.5rem;
       }
@@ -1585,6 +1640,14 @@
       </div>
     </div>
   </section>
+
+  <!-- Parallax Banner -->
+  <div class="parallax-banner">
+    <div class="parallax-content">
+      <h2 class="banner-title">Ready for adventure?</h2>
+      <button class="btn-banner-outline" onclick="openBookingModal()">Count me in!</button>
+    </div>
+  </div>
 
   <!-- WhatsApp Floating Button -->
   <a href="https://wa.me/60197088144?text=Hi%20South%20Wave!!%0A*_Sent%20via%20South%20Wave%20Website_*" class="whatsapp-float" target="_blank" aria-label="WhatsApp Us">
