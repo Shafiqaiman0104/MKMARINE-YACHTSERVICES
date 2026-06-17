@@ -862,6 +862,82 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
+    /* ---------- VIDEO CAROUSEL ---------- */
+    .video-gallery-container {
+      margin-top: 4rem;
+      padding-bottom: 2rem;
+      text-align: center;
+    }
+    .video-carousel-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      perspective: 1200px;
+      padding: 2rem 0;
+      overflow: hidden;
+    }
+    .video-card {
+      position: relative;
+      width: 240px;
+      height: 420px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      transition: all 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+      opacity: 0.4;
+      transform: scale(0.8) rotateY(25deg);
+      cursor: pointer;
+      background: #000;
+    }
+    .video-card.active {
+      opacity: 1;
+      transform: scale(1.15) rotateY(0deg);
+      z-index: 10;
+      box-shadow: 0 25px 50px rgba(18,48,89,0.4);
+      width: 300px;
+      height: 520px;
+    }
+    .video-card.next-preview {
+      transform: scale(0.8) rotateY(-25deg);
+    }
+    .video-card video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .video-nav-btns {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .v-nav-btn {
+      background: #123059;
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .v-nav-btn:hover {
+      background: #ff751f;
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 768px) {
+      .video-card { width: 140px; height: 260px; }
+      .video-card.active { width: 200px; height: 360px; }
+      .video-carousel-wrapper { gap: 0.2rem; }
+    }
+
     /* ========== RESPONSIVE / MOBILE ========== */
     @media (max-width: 768px) {
       .top-nav {
@@ -1428,6 +1504,28 @@
       <div class="gallery-item"><img src="img/g10.jpeg" alt="watersport 10"></div>
       <div class="gallery-item"><img src="img/g11.png" alt="watersport 11"></div>
       <div class="gallery-item"><img src="img/g12.jpeg" alt="watersport 12"></div>
+    </div>
+
+    <!-- 3D Video Gallery Section -->
+    <div class="video-gallery-container">
+      <h3 class="section-title" style="font-size: 1.8rem; margin-bottom: 0;">Experience the Action</h3>
+      <div class="video-carousel-wrapper" id="videoCarousel">
+        <div class="video-card" data-v-idx="0">
+          <video src="img/v1.mp4" loop muted playsinline></video>
+        </div>
+        <div class="video-card active" data-v-idx="1">
+          <video src="img/v2.mp4" loop muted playsinline></video>
+        </div>
+        <div class="video-card next-preview" data-v-idx="2">
+          <video src="img/v3.mp4" loop muted playsinline></video>
+        </div>
+      </div>
+      <div class="video-nav-btns">
+        <button class="v-nav-btn" id="vPrev"><i class="fas fa-chevron-left"></i></button>
+        <button class="v-nav-btn" id="vPlayPause" title="Play/Pause"><i class="fas fa-pause"></i></button>
+        <button class="v-nav-btn" id="vMute" title="Toggle Sound"><i class="fas fa-volume-mute"></i></button>
+        <button class="v-nav-btn" id="vNext"><i class="fas fa-chevron-right"></i></button>
+      </div>
     </div>
   </section>
 
@@ -2134,6 +2232,79 @@
           }
         });
       });
+
+      // --- VIDEO CAROUSEL LOGIC ---
+      const vCards = document.querySelectorAll('.video-card');
+      const vPrev = document.getElementById('vPrev');
+      const vNext = document.getElementById('vNext');
+      const vPlayPause = document.getElementById('vPlayPause');
+      const vMute = document.getElementById('vMute');
+      let vActiveIndex = 1; // Start with the center one (v2.mp4)
+      let isMuted = true;
+      let isPaused = false;
+
+      function updateVideoGallery() {
+        vCards.forEach((card, i) => {
+          const video = card.querySelector('video');
+          card.classList.remove('active', 'next-preview');
+          video.pause();
+          video.muted = true; // Keep inactive ones silent
+
+          if (i === vActiveIndex) {
+            card.classList.add('active');
+            video.muted = isMuted;
+            if (!isPaused) video.play().catch(() => {}); // Respect global pause state
+          } else {
+            // Add rotation class for the "right" side card
+            if (i === (vActiveIndex + 1) % 3) {
+              card.classList.add('next-preview');
+            }
+            video.currentTime = 0; // Reset sides to start
+          }
+        });
+      }
+
+      vPrev.addEventListener('click', () => {
+        vActiveIndex = (vActiveIndex - 1 + 3) % 3;
+        updateVideoGallery();
+      });
+
+      vNext.addEventListener('click', () => {
+        vActiveIndex = (vActiveIndex + 1) % 3;
+        updateVideoGallery();
+      });
+
+      vPlayPause.addEventListener('click', () => {
+        isPaused = !isPaused;
+        const icon = vPlayPause.querySelector('i');
+        icon.className = isPaused ? 'fas fa-play' : 'fas fa-pause';
+        
+        const activeVideo = vCards[vActiveIndex].querySelector('video');
+        if (activeVideo) {
+          if (isPaused) activeVideo.pause();
+          else activeVideo.play().catch(() => {});
+        }
+      });
+
+      vMute.addEventListener('click', () => {
+        isMuted = !isMuted;
+        const icon = vMute.querySelector('i');
+        icon.className = isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+        
+        const activeVideo = vCards[vActiveIndex].querySelector('video');
+        if (activeVideo) activeVideo.muted = isMuted;
+      });
+
+      vCards.forEach((card, i) => {
+        card.addEventListener('click', () => {
+          vActiveIndex = i;
+          updateVideoGallery();
+        });
+      });
+
+      // Auto-start center video after splash
+      setTimeout(updateVideoGallery, 4500);
+
     })();
   </script>
 </body>
