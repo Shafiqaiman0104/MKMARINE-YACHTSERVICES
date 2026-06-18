@@ -468,7 +468,7 @@
     .about-icon {
       font-size: 2.2rem;
       color: #ff751f;
-      background: #e6f0ff;
+      background: #ffffff;
       width: 60px;
       height: 60px;
       display: flex;
@@ -1758,6 +1758,7 @@
       <!-- Item Customization Before Cart -->
       <div class="temp-booking-section" id="tempBookingDetail">
         <h3 id="tempItemName">Booking: </h3>
+        <p id="tempItemStock" style="font-size: 0.9rem; color: #2a6eab; font-weight: 700; margin-bottom: 0.8rem;"></p>
         <div class="control-row">
           <span class="control-label">Quantity</span>
           <div class="control-group">
@@ -1980,15 +1981,15 @@
       }
 
       const servicesData = [
-        { category: 'kayak', name: 'Single Kayak', price: 'RM 30', seater: '1 seater', duration: '60m', img: 'img/singleKayak.png' },
-        { category: 'kayak', name: 'Double Kayak', price: 'RM 50', seater: '2 seater', duration: '60m', img: 'img/doubleKayak.png' },
-        { category: 'paddleboat', name: 'Paddle Boat Swan', price: 'RM 70', seater: '4 seater', duration: '30m', img: 'img/paddleboatSwan.png' },
-        { category: 'electricboat', name: 'Electric Chinese Boat', price: 'RM 120', seater: '4 seater', duration: '30m', img: 'img/electricChineseBoat.png' },
-        { category: 'electricboat', name: 'Electric Swan Boat', price: 'RM 150', seater: '5 seater', duration: '30m', img: 'img/electricSwanBoat.png' },
-        { category: 'electricboat', name: 'Electric Car Boat', price: 'RM 150', seater: '5 seater', duration: '30m', img: 'img/electricCarBoat.png' },
-        { category: 'electricboat', name: 'Electric Duck Boat', price: 'RM 150', seater: '5 seater', duration: '30m', img: 'img/electricDuckBoat.png' },
-        { category: 'electricboat', name: 'Electric Bumper Car', price: 'RM 60', seater: '2 seater', duration: '30m', img: 'img/electricBumperCar.png' },
-        { category: 'jetboat', name: 'Electric Jet Boat', price: 'RM 50', seater: '1 seater', duration: '15m', img: 'img/jetboat.png' }
+        { category: 'kayak', name: 'Single Kayak', price: 'RM 30', seater: '1 seater', duration: '60m', img: 'img/singleKayak.png', stock: 7 },
+        { category: 'kayak', name: 'Double Kayak', price: 'RM 50', seater: '2 seater', duration: '60m', img: 'img/doubleKayak.png', stock: 3 },
+        { category: 'paddleboat', name: 'Paddle Boat Swan', price: 'RM 70', seater: '4 seater', duration: '30m', img: 'img/paddleboatSwan.png', stock: 1 },
+        { category: 'electricboat', name: 'Electric Chinese Boat', price: 'RM 120', seater: '4 seater', duration: '30m', img: 'img/electricChineseBoat.png', stock: 1 },
+        { category: 'electricboat', name: 'Electric Swan Boat', price: 'RM 150', seater: '5 seater', duration: '30m', img: 'img/electricSwanBoat.png', stock: 1 },
+        { category: 'electricboat', name: 'Electric Car Boat', price: 'RM 150', seater: '5 seater', duration: '30m', img: 'img/electricCarBoat.png', stock: 1 },
+        { category: 'electricboat', name: 'Electric Duck Boat', price: 'RM 150', seater: '5 seater', duration: '30m', img: 'img/electricDuckBoat.png', stock: 1 },
+        { category: 'electricboat', name: 'Electric Bumper Car', price: 'RM 60', seater: '2 seater', duration: '30m', img: 'img/electricBumperCar.png', stock: 2 },
+        { category: 'jetboat', name: 'Electric Jet Boat', price: 'RM 50', seater: '1 seater', duration: '15m', img: 'img/jetboat.png', stock: 4 }
       ];
 
       const servicesContainer = document.getElementById('servicesContainer');
@@ -2074,6 +2075,7 @@
       function updateDetailUI() {
         if (!tempItem) return;
         document.getElementById('tempItemName').innerText = `Booking: ${tempItem.name}`;
+        document.getElementById('tempItemStock').innerText = `Available Stock: ${tempItem.stock} unit(s)`;
         document.getElementById('tempQty').innerText = tempItem.currentQty;
         document.getElementById('tempDur').innerText = `${tempItem.currentDuration}m`;
         
@@ -2083,7 +2085,10 @@
 
       window.adjustQty = function(val) {
         if (!tempItem) return;
-        tempItem.currentQty = Math.max(1, tempItem.currentQty + val);
+        const nextQty = tempItem.currentQty + val;
+        if (nextQty >= 1 && nextQty <= tempItem.stock) {
+          tempItem.currentQty = nextQty;
+        }
         updateDetailUI();
       };
 
