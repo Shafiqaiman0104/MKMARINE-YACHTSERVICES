@@ -750,6 +750,19 @@
             <canvas id="reportOccupancyChart" style="max-height: 150px; width: 100%;"></canvas>
         </div>
 
+        <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+            <h4 style="margin-bottom: 15px; color: #00d2ff;">Profit Payment Methods Summary</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Payment Method</th>
+                        <th style="text-align: right;">Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="report-payment-body"></tbody>
+            </table>
+        </div>
+
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
                 <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
                 <table id="report-top-items-table">
@@ -2954,6 +2967,15 @@
             document.getElementById('report-nett-profit').innerText = `RM${(tProfit - tRefund).toFixed(2)}`;
             document.getElementById('report-total-discount').innerText = `RM${tDiscount.toFixed(2)}`;
             document.getElementById('report-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
+
+            // Render Payment Summary
+            const payments = Object.entries(paymentMap).sort((a, b) => b[1] - a[1]);
+            document.getElementById('report-payment-body').innerHTML = payments.map(p => `
+                <tr>
+                    <td>${p[0]}</td>
+                    <td style="text-align:right; font-weight:bold; color:#25d366;">RM${p[1].toFixed(2)}</td>
+                </tr>
+            `).join('');
 
             const ranking = Object.entries(itemMap).sort((a, b) => b[1] - a[1]);
             document.getElementById('report-top-items-body').innerHTML = ranking.map(r => `
