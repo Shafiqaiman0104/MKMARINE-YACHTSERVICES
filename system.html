@@ -342,10 +342,6 @@
                     <div class="pay-value" id="dash-total-order">0</div>
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 20px;">
-                    <div class="pay-label">TOTAL ITEM</div>
-                    <div class="pay-value" id="dash-total-item">0</div>
-                </div>
-                <div class="pay-box" style="text-align: center; padding: 20px;">
                     <div class="pay-label">TOTAL PAX</div>
                     <div id="dash-total-pax" style="font-size: 0.8rem; margin-top: 5px; color: #00d2ff; font-weight: bold;">Adult: 0 | Kid: 0 | Tod: 0</div>
                 </div>
@@ -356,10 +352,6 @@
                 <div class="pay-box" style="text-align: center; padding: 20px;">
                     <div class="pay-label">TOTAL DISCOUNT</div>
                     <div class="pay-value" id="dash-total-discount">RM0.00</div>
-                </div>
-                <div class="pay-box" style="text-align: center; padding: 20px;">
-                    <div class="pay-label">TOTAL PROFIT</div>
-                    <div class="pay-value" id="dash-total-profit">RM0.00</div>
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 20px;">
                     <div class="pay-label">TOTAL REFUND</div>
@@ -3349,8 +3341,9 @@
 
             filtered.forEach(s => {
                 const profit = parseFloat(s.totalPaidAmount) || 0;
+                const refund = parseFloat(s.refundAmount) || 0;
                 totalProfit += profit;
-                totalRefund += (parseFloat(s.refundAmount) || 0);
+                totalRefund += refund;
                 totalItems += parseInt(s.totalItems) || 0;
 
                 // Calculate Sale Sum (Subtotal) from orderItemPrice
@@ -3366,6 +3359,9 @@
                 }, 0);
                 totalDiscount += discountSum;
                 
+                // Nett Profit = Sales - Discount - Refund
+                const nettVal = saleSum - discountSum - refund;
+
                 // Pax breakdown & Sum for Chart
                 let orderPaxSum = 0;
                 (s.totalPax || "").split(", ").forEach(p => {
@@ -3388,14 +3384,14 @@
                 // Hourly profit
                 const oDate = new Date(s.orderDate);
                 const hour = oDate.getHours();
-                hourlyProfit[hour] += profit;
+                hourlyProfit[hour] += nettVal;
                 hourlySales[hour] += saleSum;
                 hourlyDiscount[hour] += discountSum;
                 hourlyPax[hour] += orderPaxSum;
 
                 // Daily profit for "All" or multi-day custom
                 const dateKey = oDate.toLocaleDateString('en-CA');
-                dailyProfitMap[dateKey] = (dailyProfitMap[dateKey] || 0) + profit;
+                dailyProfitMap[dateKey] = (dailyProfitMap[dateKey] || 0) + nettVal;
                 dailySalesMap[dateKey] = (dailySalesMap[dateKey] || 0) + saleSum;
                 dailyDiscountMap[dateKey] = (dailyDiscountMap[dateKey] || 0) + discountSum;
                 dailyPaxMap[dateKey] = (dailyPaxMap[dateKey] || 0) + orderPaxSum;
@@ -3413,12 +3409,10 @@
             });
 
             document.getElementById('dash-total-order').innerText = filtered.length;
-            document.getElementById('dash-total-profit').innerText = `RM${totalProfit.toFixed(2)}`;
             document.getElementById('dash-total-refund').innerText = `RM${totalRefund.toFixed(2)}`;
             document.getElementById('dash-nett-profit').innerText = `RM${(totalProfit - totalRefund).toFixed(2)}`;
             document.getElementById('dash-total-sales').innerText = `RM${totalSales.toFixed(2)}`;
             document.getElementById('dash-total-discount').innerText = `RM${totalDiscount.toFixed(2)}`;
-            document.getElementById('dash-total-item').innerText = totalItems;
             document.getElementById('dash-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
 
             // Render Payment Summary
@@ -3493,7 +3487,7 @@
                         tension: 0.4
                     },
                     {
-                        label: 'Profit (RM)',
+                        label: 'Nett Profit (RM)',
                         data: profitData,
                         borderColor: '#00d2ff',
                         backgroundColor: 'rgba(0, 210, 255, 0.1)',
