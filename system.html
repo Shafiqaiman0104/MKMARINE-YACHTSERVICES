@@ -3415,10 +3415,49 @@
                 });
             });
 
-            // Calculate Occupancy
+            // Calculate Occupancy Aggregation
+            let occChartMode = 'hourly';
+            if (currentDashDateFilter === 'All') {
+                occChartMode = 'monthly';
+            } else if (currentDashDateFilter === 'Custom') {
+                const fromInput = document.getElementById('dash-date-from').value;
+                const toInput = document.getElementById('dash-date-to').value;
+                if (fromInput && toInput) {
+                    const fromDate = new Date(fromInput); fromDate.setHours(0,0,0,0);
+                    const toDate = new Date(toInput); toDate.setHours(0,0,0,0);
+                    const diffDays = Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays >= 1) occChartMode = 'daily';
+                }
+            }
+
             const totalCapacity = currentItems.reduce((sum, it) => sum + (parseInt(it.itemQuantity) || 0), 0);
-            const occupancyRate = totalCapacity > 0 ? (totalItems / totalCapacity) * 100 : 0;
-            renderOccupancyChart(occupancyRate);
+            let occMap = {};
+
+            if (occChartMode === 'hourly') {
+                for (let i = 0; i < 24; i++) occMap[i] = 0;
+                filtered.forEach(s => { const h = new Date(s.orderDate).getHours(); occMap[h] += (parseInt(s.totalItems) || 0); });
+            } else if (occChartMode === 'daily') {
+                filtered.forEach(s => { const d = new Date(s.orderDate).toLocaleDateString('en-CA'); occMap[d] = (occMap[d] || 0) + (parseInt(s.totalItems) || 0); });
+            } else if (occChartMode === 'monthly') {
+                filtered.forEach(s => { 
+                    const d = new Date(s.orderDate); 
+                    const m = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+                    occMap[m] = (occMap[m] || 0) + (parseInt(s.totalItems) || 0);
+                });
+            }
+
+            const occKeys = occChartMode === 'hourly' ? Array.from({length: 24}, (_, i) => i) : Object.keys(occMap).sort();
+            const displayLabels = occKeys.map(k => {
+                if (occChartMode === 'hourly') return `${k}:00`;
+                if (occChartMode === 'daily') return new Date(k).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                if (occChartMode === 'monthly') {
+                    const [y, m] = k.split('-');
+                    return new Date(y, m - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+                }
+                return k;
+            });
+            const occDataArray = occKeys.map(k => totalCapacity > 0 ? parseFloat(((occMap[k] / totalCapacity) * 100).toFixed(2)) : 0);
+            renderOccupancyChart(displayLabels, occDataArray);
 
             document.getElementById('dash-total-order').innerText = filtered.length;
             document.getElementById('dash-total-refund').innerText = `RM${totalRefund.toFixed(2)}`;
@@ -3542,31 +3581,35 @@
         });
     }
 
-    function renderOccupancyChart(rate) {
+    function renderOccupancyChart(labels, dataArray) {
         const ctx = document.getElementById('occupancyChart').getContext('2d');
         if (occChart) occChart.destroy();
 
         occChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Occupancy Rate'],
+                labels: labels,
                 datasets: [{
                     label: 'Occupancy %',
-                    data: [rate.toFixed(2)],
-                    backgroundColor: rate > 80 ? 'rgba(255, 75, 27, 0.6)' : 'rgba(0, 210, 255, 0.6)',
-                    borderColor: rate > 80 ? '#ff4b2b' : '#00d2ff',
+                    data: dataArray,
+                    backgroundColor: dataArray.map(v => v > 80 ? 'rgba(255, 75, 27, 0.6)' : 'rgba(0, 210, 255, 0.6)'),
+                    borderColor: dataArray.map(v => v > 80 ? '#ff4b2b' : '#00d2ff'),
                     borderWidth: 1
                 }]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { beginAtZero: true, max: Math.max(100, Math.ceil(rate / 10) * 10), ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                    y: { ticks: { color: '#fff' }, grid: { display: false } }
+                    x: { ticks: { color: '#fff', font: { size: 10 } }, grid: { display: false } },
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        ticks: { color: '#fff', callback: value => value + '%' }, 
+                        grid: { color: 'rgba(255,255,255,0.1)' } 
+                    }
                 },
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `Occupancy: ${ctx.parsed.y}%` } } }
             }
         });
     }
