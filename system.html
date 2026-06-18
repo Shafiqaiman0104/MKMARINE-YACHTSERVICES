@@ -740,6 +740,16 @@
                  <div id="report-total-pax" style="font-size: 0.9rem; color: #00d2ff; font-weight: bold; text-align: center;">Adult: 0 | Kid: 0 | Tod: 0</div>
             </div>
 
+        <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+            <h4 style="margin-bottom: 15px; color: #00d2ff;">Business Performance Trend (RM & Pax)</h4>
+            <canvas id="reportProfitChart" style="max-height: 300px; width: 100%;"></canvas>
+        </div>
+
+        <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+            <h4 style="margin-bottom: 15px; color: #00d2ff;">Item Occupancy Rate (%)</h4>
+            <canvas id="reportOccupancyChart" style="max-height: 150px; width: 100%;"></canvas>
+        </div>
+
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
                 <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
                 <table id="report-top-items-table">
@@ -1150,6 +1160,8 @@
     let orderTableTimerInterval = null;
     let myChart = null;
     let occChart = null;
+    let reportMyChart = null;
+    let reportOccChart = null;
     let currentDashDateFilter = 'Today';
     let currentReportDateFilter = 'Today';
     let lastFilteredReportData = [];
@@ -2799,6 +2811,7 @@
 
     async function loadReportData() {
         try {
+        if (currentItems.length === 0) currentItems = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
             const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: 'orderDate' });
             const now = new Date();
             const todayStr = now.toLocaleDateString('en-CA');
@@ -2823,6 +2836,16 @@
             let paymentMap = { 'Cash': 0, 'Online Transfer': 0, 'Card': 0 };
             let itemMap = {};
 
+        let hourlyProfit = new Array(24).fill(0);
+        let hourlySales = new Array(24).fill(0);
+        let hourlyDiscount = new Array(24).fill(0);
+        let hourlyPax = new Array(24).fill(0);
+
+        let dailyProfitMap = {};
+        let dailySalesMap = {};
+        let dailyDiscountMap = {};
+        let dailyPaxMap = {};
+
             const body = document.getElementById('report-body');
             body.innerHTML = filtered.map(s => {
                 const profit = parseFloat(s.totalPaidAmount) || 0;
@@ -2840,12 +2863,29 @@
                 }, 0);
                 tDiscount += discountSum;
 
+            const nettVal = saleSum - discountSum - (parseFloat(s.refundAmount) || 0);
+
+            let orderPaxSum = 0;
                 (s.totalPax || "").split(", ").forEach(p => {
                     const val = parseInt(p.trim().substring(1)) || 0;
+                orderPaxSum += val;
                     if (p.startsWith('A')) adults += val;
                     else if (p.startsWith('K')) kids += val;
                     else if (p.startsWith('T')) toddlers += val;
                 });
+
+            const oDate = new Date(s.orderDate);
+            const hour = oDate.getHours();
+            hourlyProfit[hour] += nettVal;
+            hourlySales[hour] += saleSum;
+            hourlyDiscount[hour] += discountSum;
+            hourlyPax[hour] += orderPaxSum;
+
+            const dateKey = oDate.toLocaleDateString('en-CA');
+            dailyProfitMap[dateKey] = (dailyProfitMap[dateKey] || 0) + nettVal;
+            dailySalesMap[dateKey] = (dailySalesMap[dateKey] || 0) + saleSum;
+            dailyDiscountMap[dateKey] = (dailyDiscountMap[dateKey] || 0) + discountSum;
+            dailyPaxMap[dateKey] = (dailyPaxMap[dateKey] || 0) + orderPaxSum;
 
                 const pMethods = (s.paymentMethod || "").split(", ");
                 const pAmounts = (s.paidAmount || "").split(", ");
@@ -2922,6 +2962,61 @@
                     <td style="text-align:center; font-weight:bold; color:#00d2ff;">${r[1]}</td>
                 </tr>
             `).join('');
+
+        let occChartMode = 'hourly';
+        if (currentReportDateFilter === 'All') {
+            occChartMode = 'monthly';
+        } else if (currentReportDateFilter === 'Custom') {
+            const fromInput = document.getElementById('report-date-from').value;
+            const toInput = document.getElementById('report-date-to').value;
+            if (fromInput && toInput) {
+                const fromDate = new Date(fromInput); fromDate.setHours(0,0,0,0);
+                const toDate = new Date(toInput); toDate.setHours(0,0,0,0);
+                const diffDays = Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24));
+                if (diffDays >= 1) occChartMode = 'daily';
+            }
+        }
+
+        const totalCapacity = currentItems.reduce((sum, it) => sum + (parseInt(it.itemQuantity) || 0), 0);
+        let occMap = {};
+
+        if (occChartMode === 'hourly') {
+            for (let i = 0; i < 24; i++) occMap[i] = 0;
+            filtered.forEach(s => { const h = new Date(s.orderDate).getHours(); occMap[h] += (parseInt(s.totalItems) || 0); });
+        } else if (occChartMode === 'daily') {
+            filtered.forEach(s => { const d = new Date(s.orderDate).toLocaleDateString('en-CA'); occMap[d] = (occMap[d] || 0) + (parseInt(s.totalItems) || 0); });
+        } else if (occChartMode === 'monthly') {
+            filtered.forEach(s => { 
+                const d = new Date(s.orderDate); 
+                const m = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+                occMap[m] = (occMap[m] || 0) + (parseInt(s.totalItems) || 0);
+            });
+        }
+
+        const occKeys = occChartMode === 'hourly' ? Array.from({length: 24}, (_, i) => i) : Object.keys(occMap).sort();
+        const displayLabels = occKeys.map(k => {
+            if (occChartMode === 'hourly') return `${k}:00`;
+            if (occChartMode === 'daily') return new Date(k).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+            if (occChartMode === 'monthly') {
+                const [y, m] = k.split('-');
+                return new Date(y, m - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+            }
+            return k;
+        });
+        const occDataArray = occKeys.map(k => totalCapacity > 0 ? parseFloat(((occMap[k] / totalCapacity) * 100).toFixed(2)) : 0);
+        renderReportOccupancyChart(displayLabels, occDataArray);
+
+        let chartLabels = [];
+        let chartProfit = [];
+        let chartSales = [];
+        let chartDiscount = [];
+        let chartPax = [];
+        if (currentReportDateFilter === 'All' || (currentReportDateFilter === 'Custom' && (new Date(document.getElementById('report-date-to').value) - new Date(document.getElementById('report-date-from').value)) / (1000 * 60 * 60 * 24) > 1)) {
+            chartLabels = Object.keys(dailyProfitMap).sort(); chartProfit = chartLabels.map(k => dailyProfitMap[k]); chartSales = chartLabels.map(k => dailySalesMap[k]); chartDiscount = chartLabels.map(k => dailyDiscountMap[k]); chartPax = chartLabels.map(k => dailyPaxMap[k]);
+        } else {
+            chartLabels = Array.from({length: 24}, (_, i) => `${i}:00`); chartProfit = hourlyProfit; chartSales = hourlySales; chartDiscount = hourlyDiscount; chartPax = hourlyPax;
+        }
+        renderReportProfitChart(chartLabels, chartProfit, chartSales, chartDiscount, chartPax);
 
         } catch (e) { console.error("Report Load Error", e); }
     }
@@ -3593,6 +3688,74 @@
             }
         });
     }
+
+function renderReportProfitChart(labels, profitData, salesData, discountData, paxData) {
+    const ctx = document.getElementById('reportProfitChart').getContext('2d');
+    if (reportMyChart) reportMyChart.destroy();
+    reportMyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Sales (RM)',
+                    data: salesData,
+                    borderColor: '#25d366',
+                    backgroundColor: 'rgba(37, 211, 102, 0.1)',
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Nett Profit (RM)',
+                    data: profitData,
+                    borderColor: '#00d2ff',
+                    backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Discount (RM)',
+                    data: discountData,
+                    borderColor: '#ff4b2b',
+                    backgroundColor: 'rgba(255, 75, 43, 0.1)',
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Total Pax',
+                    data: paxData,
+                    borderColor: '#f1c40f',
+                    backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                    fill: false,
+                    tension: 0.4,
+                    borderDash: [5, 5]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
+                x: { grid: { display: false }, ticks: { color: '#fff' } }
+            },
+            plugins: { legend: { display: true, labels: { color: '#fff', boxWidth: 12, font: { size: 10 } } } }
+        }
+    });
+}
+
+function renderReportOccupancyChart(labels, dataArray) {
+    const ctx = document.getElementById('reportOccupancyChart').getContext('2d');
+    if (reportOccChart) reportOccChart.destroy();
+    reportOccChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{ label: 'Occupancy %', data: dataArray, backgroundColor: dataArray.map(v => v > 80 ? 'rgba(255, 75, 27, 0.6)' : 'rgba(0, 210, 255, 0.6)'), borderColor: dataArray.map(v => v > 80 ? '#ff4b2b' : '#00d2ff'), borderWidth: 1 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#fff', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: '#fff', callback: value => value + '%' }, grid: { color: 'rgba(255,255,255,0.1)' } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `Occupancy: ${ctx.parsed.y}%` } } } }
+    });
+}
 
     function removeFromCart(index) {
         cart.splice(index, 1);
