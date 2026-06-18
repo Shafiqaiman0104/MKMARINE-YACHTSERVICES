@@ -510,12 +510,17 @@
                 <h3>Sales History</h3>
             </div>
             <div style="margin-top: 15px;">
-                <div style="margin-bottom: 15px; width: 200px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 200px;">
                     <select id="sales-date-select" onchange="filterSalesDate(this.value)">
                         <option value="Today">Today</option>
                         <option value="All">All</option>
                         <option value="Custom">Custom Date</option>
                     </select>
+                </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <input type="text" id="sales-search" placeholder="Search Order ID, Name, Phone..." onkeyup="renderSales()">
+                    </div>
                 </div>
                 <div id="sales-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
                     <input type="date" id="sales-date-from" onchange="renderSales()" style="width: auto;">
@@ -572,12 +577,17 @@
             </div>
             
             <div style="margin-top: 15px;">
-                <div style="margin-bottom: 15px; width: 200px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 200px;">
                     <select id="order-date-select" onchange="filterOrderDate(this.value)">
                         <option value="Today">Today</option>
                         <option value="All">All</option>
                         <option value="Custom">Custom Date</option>
                     </select>
+                </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <input type="text" id="order-search" placeholder="Search Order ID, Name, Phone..." onkeyup="renderOrders()">
+                    </div>
                 </div>
                 
                 <div id="order-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
@@ -695,12 +705,17 @@
             </div>
 
             <div style="margin-top: 15px;">
-                <div style="margin-bottom: 15px; width: 200px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 15px;">
+                    <div style="width: 200px;">
                     <select id="report-date-select" onchange="filterReportDate(this.value)">
                         <option value="Today">Today</option>
                         <option value="All">All</option>
                         <option value="Custom">Custom Date</option>
                     </select>
+                </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <input type="text" id="report-search" placeholder="Search Order ID, Name, Phone..." onkeyup="loadReportData()">
+                    </div>
                 </div>
                 <div id="report-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
                     <input type="date" id="report-date-from" onchange="loadReportData()" style="width: auto;">
@@ -2015,6 +2030,7 @@
         const body = document.getElementById('sales-body');
         const now = new Date();
         const todayStr = now.toLocaleDateString('en-CA');
+        const search = (document.getElementById('sales-search')?.value || '').toLowerCase();
 
         const filtered = currentSales.filter(s => {
             const orderDate = new Date(s.orderDate);
@@ -2043,6 +2059,11 @@
                 return isWaiverAgree && isOrderCompleted && isCustArrive;
             }
             return true; // All Status
+        }).filter(s => {
+            if (!search) return true;
+            return (s.orderId || '').toLowerCase().includes(search) || 
+                   (s.customerName || '').toLowerCase().includes(search) || 
+                   (s.customerPhone || '').toLowerCase().includes(search);
         });
 
         // Apply sorting based on the active sales status tab
@@ -2126,6 +2147,7 @@
         const thead = document.querySelector('#order-table thead');
         const now = new Date();
         const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const search = (document.getElementById('order-search')?.value || '').toLowerCase();
         
         const filtered = currentSales.filter(s => {
             // Date Filter Logic
@@ -2160,6 +2182,11 @@
                 return !!s.startTime;
             }
             return true; // All
+        }).filter(s => {
+            if (!search) return true;
+            return (s.orderId || '').toLowerCase().includes(search) || 
+                   (s.customerName || '').toLowerCase().includes(search) || 
+                   (s.customerPhone || '').toLowerCase().includes(search);
         });
 
         // Apply sorting based on the active status tab
@@ -2828,6 +2855,7 @@
             const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: 'orderDate' });
             const now = new Date();
             const todayStr = now.toLocaleDateString('en-CA');
+        const search = (document.getElementById('report-search')?.value || '').toLowerCase();
 
             const filtered = sales.filter(s => {
                 const orderDate = new Date(s.orderDate);
@@ -2839,7 +2867,12 @@
                     if (from && to) return (orderDateStr >= from && orderDateStr <= to);
                 }
                 return true;
-            });
+        }).filter(s => {
+            if (!search) return true;
+            return (s.orderId || '').toLowerCase().includes(search) || 
+                   (s.customerName || '').toLowerCase().includes(search) || 
+                   (s.customerPhone || '').toLowerCase().includes(search);
+        });
 
             lastFilteredReportData = filtered;
             const stackData = (str) => (str || '').split(', ').join('<br>');
