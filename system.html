@@ -369,6 +369,11 @@
             </div>
 
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+                <h4 style="margin-bottom: 15px; color: #00d2ff;">Item Occupancy Rate (%)</h4>
+                <canvas id="occupancyChart" style="max-height: 150px; width: 100%;"></canvas>
+            </div>
+
+            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
                 <h4 style="margin-bottom: 15px; color: #00d2ff;">Profit Payment Methods Summary</h4>
                 <table>
                     <thead>
@@ -1160,6 +1165,7 @@
     let currentDateFilter = 'Today';
     let orderTableTimerInterval = null;
     let myChart = null;
+    let occChart = null;
     let currentDashDateFilter = 'Today';
     let currentReportDateFilter = 'Today';
     let lastFilteredReportData = [];
@@ -3304,6 +3310,7 @@
     async function loadDashboardData() {
         try {
             const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({ sort: '-created' });
+            if (currentItems.length === 0) currentItems = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
             const now = new Date();
             const todayStr = now.toLocaleDateString('en-CA');
 
@@ -3407,6 +3414,11 @@
                     }
                 });
             });
+
+            // Calculate Occupancy
+            const totalCapacity = currentItems.reduce((sum, it) => sum + (parseInt(it.itemQuantity) || 0), 0);
+            const occupancyRate = totalCapacity > 0 ? (totalItems / totalCapacity) * 100 : 0;
+            renderOccupancyChart(occupancyRate);
 
             document.getElementById('dash-total-order').innerText = filtered.length;
             document.getElementById('dash-total-refund').innerText = `RM${totalRefund.toFixed(2)}`;
@@ -3526,6 +3538,35 @@
                         labels: { color: '#fff', boxWidth: 12, font: { size: 10 } }
                     }
                 }
+            }
+        });
+    }
+
+    function renderOccupancyChart(rate) {
+        const ctx = document.getElementById('occupancyChart').getContext('2d');
+        if (occChart) occChart.destroy();
+
+        occChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Occupancy Rate'],
+                datasets: [{
+                    label: 'Occupancy %',
+                    data: [rate.toFixed(2)],
+                    backgroundColor: rate > 80 ? 'rgba(255, 75, 27, 0.6)' : 'rgba(0, 210, 255, 0.6)',
+                    borderColor: rate > 80 ? '#ff4b2b' : '#00d2ff',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { beginAtZero: true, max: Math.max(100, Math.ceil(rate / 10) * 10), ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    y: { ticks: { color: '#fff' }, grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
             }
         });
     }
