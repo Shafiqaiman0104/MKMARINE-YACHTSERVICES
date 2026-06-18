@@ -45,6 +45,7 @@
             position: relative;
             transition: width 0.5s ease;
             overflow-y: auto;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -113,6 +114,13 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left; }
         th, td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         th { color: #00d2ff; font-weight: 500; }
+
+        /* Table Container - Scoped horizontal scroll */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
         /* Dashboard Sections */
         .section { display: none; text-align: left; }
@@ -264,11 +272,6 @@
             .tabs { 
                 overflow-x: auto;
                 justify-content: flex-start;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .table-container {
-                overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }
 
