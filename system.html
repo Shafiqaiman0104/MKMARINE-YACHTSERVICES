@@ -723,10 +723,6 @@
                     <div class="pay-value" id="report-total-sales" style="font-size: 1rem;">RM0.00</div>
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 15px;">
-                    <div class="pay-label">TOTAL PROFIT</div>
-                    <div class="pay-value" id="report-total-profit" style="font-size: 1rem;">RM0.00</div>
-                </div>
-                <div class="pay-box" style="text-align: center; padding: 15px;">
                     <div class="pay-label">TOTAL REFUND</div>
                     <div class="pay-value" id="report-total-refund" style="font-size: 1rem; color: #ff4b2b;">RM0.00</div>
                 </div>
@@ -737,18 +733,6 @@
                 <div class="pay-box" style="text-align: center; padding: 15px;">
                     <div class="pay-label">TOTAL DISCOUNT</div>
                     <div class="pay-value" id="report-total-discount" style="font-size: 1rem;">RM0.00</div>
-                </div>
-                <div class="pay-box" style="text-align: center; padding: 15px;">
-                    <div class="pay-label">CASH</div>
-                    <div class="pay-value" id="report-total-cash" style="font-size: 1rem; color: #25d366;">RM0.00</div>
-                </div>
-                <div class="pay-box" style="text-align: center; padding: 15px;">
-                    <div class="pay-label">ONLINE</div>
-                    <div class="pay-value" id="report-total-online" style="font-size: 1rem; color: #25d366;">RM0.00</div>
-                </div>
-                <div class="pay-box" style="text-align: center; padding: 15px;">
-                    <div class="pay-label">CARD</div>
-                    <div class="pay-value" id="report-total-card" style="font-size: 1rem; color: #25d366;">RM0.00</div>
                 </div>
             </div>
             
@@ -2926,13 +2910,9 @@
             document.getElementById('report-total-order').innerText = filtered.length;
             document.getElementById('report-total-item').innerText = tItems;
             document.getElementById('report-total-sales').innerText = `RM${tSales.toFixed(2)}`;
-            document.getElementById('report-total-profit').innerText = `RM${tProfit.toFixed(2)}`;
             document.getElementById('report-total-refund').innerText = `RM${tRefund.toFixed(2)}`;
             document.getElementById('report-nett-profit').innerText = `RM${(tProfit - tRefund).toFixed(2)}`;
             document.getElementById('report-total-discount').innerText = `RM${tDiscount.toFixed(2)}`;
-            document.getElementById('report-total-cash').innerText = `RM${paymentMap['Cash'].toFixed(2)}`;
-            document.getElementById('report-total-online').innerText = `RM${paymentMap['Online Transfer'].toFixed(2)}`;
-            document.getElementById('report-total-card').innerText = `RM${paymentMap['Card'].toFixed(2)}`;
             document.getElementById('report-total-pax').innerText = `Adult: ${adults} | Kid: ${kids} | Tod: ${toddlers}`;
 
             const ranking = Object.entries(itemMap).sort((a, b) => b[1] - a[1]);
