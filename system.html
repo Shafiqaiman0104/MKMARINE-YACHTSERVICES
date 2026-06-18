@@ -1078,34 +1078,6 @@
         <div id="op-qrcode" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;"></div>
         <div id="op-order-id" style="font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;">Order ID : SW-</div>
 
-        <div style="margin-bottom: 25px;">
-            <div style="color: white; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">Waiver Form</div>
-            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-                <div style="display: flex; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 2px; width: 120px; border: 1px solid rgba(255,255,255,0.2);">
-                    <button id="waiver-toggle-link" onclick="toggleWaiverDisplay('link')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: #00d2ff; color: white;">Link</button>
-                    <button id="waiver-toggle-qr" onclick="toggleWaiverDisplay('qr')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: transparent; color: white;">QR</button>
-                </div>
-            </div>
-            <div style="background: white; padding: 15px; border-radius: 12px; min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 320px;">
-                <a id="op-waiver-url" href="#" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.8rem; word-break: break-all;"></a>
-                <div id="op-waiver-qr" style="display: none;"></div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 25px;">
-            <div style="color: white; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">Rental Timer</div>
-            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-                <div style="display: flex; background: rgba(255,255,255,0.1); border-radius: 20px; padding: 2px; width: 120px; border: 1px solid rgba(255,255,255,0.2);">
-                    <button id="timer-toggle-link" onclick="toggleTimerDisplay('link')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: #00d2ff; color: white;">Link</button>
-                    <button id="timer-toggle-qr" onclick="toggleTimerDisplay('qr')" style="flex: 1; border: none; border-radius: 18px; padding: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.3s; margin: 0; background: transparent; color: white;">QR</button>
-                </div>
-            </div>
-            <div style="background: white; padding: 15px; border-radius: 12px; min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 320px;">
-                <a id="op-timer-url" href="#" target="_blank" style="color: #007bff; text-decoration: underline; font-size: 0.8rem; word-break: break-all;"></a>
-                <div id="op-timer-qr" style="display: none;"></div>
-            </div>
-        </div>
-
         <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;">
                 <span>Total Amount</span>
@@ -3846,19 +3818,6 @@
         document.getElementById('op-qrcode').innerHTML = `<img src="${qrImgApi}" alt="QR Code" style="width: 180px; height: 180px;">`;
         document.getElementById('op-order-id').innerText = "Order ID : " + orderId;
         
-        const waiverUrl = `https://southwavejb.com/waiver.html?orderId=${orderId}`;
-        currentWaiverUrl = waiverUrl;
-        document.getElementById('op-waiver-url').innerText = waiverUrl;
-        document.getElementById('op-waiver-url').href = waiverUrl;
-
-        toggleWaiverDisplay('link');
-
-        const timerUrl = `https://southwavejb.com/timer.html?orderId=${orderId}`;
-        currentTimerUrl = timerUrl;
-        document.getElementById('op-timer-url').innerText = timerUrl;
-        document.getElementById('op-timer-url').href = timerUrl;
-        toggleTimerDisplay('link');
-
         const total = parseFloat(currentBooking.totalPrice);
         const received = currentBooking.totalReceivedSum;
         const change = Math.max(0, received - total);
@@ -3889,50 +3848,6 @@
         
         // Original behavior: hide the old result container if it exists
         document.getElementById('qr-result-container').style.display = 'none';
-    }
-
-    function toggleWaiverDisplay(mode) {
-        const linkBtn = document.getElementById('waiver-toggle-link');
-        const qrBtn = document.getElementById('waiver-toggle-qr');
-        const linkEl = document.getElementById('op-waiver-url');
-        const qrEl = document.getElementById('op-waiver-qr');
-
-        if (mode === 'link') {
-            linkBtn.style.background = '#00d2ff';
-            qrBtn.style.background = 'transparent';
-            linkEl.style.display = 'block';
-            qrEl.style.display = 'none';
-        } else {
-            linkBtn.style.background = 'transparent';
-            qrBtn.style.background = '#00d2ff';
-            linkEl.style.display = 'none';
-            qrEl.style.display = 'block';
-            
-            const qrSize = 150;
-            qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(currentWaiverUrl)}" alt="Waiver QR" style="display:block;">`;
-        }
-    }
-
-    function toggleTimerDisplay(mode) {
-        const linkBtn = document.getElementById('timer-toggle-link');
-        const qrBtn = document.getElementById('timer-toggle-qr');
-        const linkEl = document.getElementById('op-timer-url');
-        const qrEl = document.getElementById('op-timer-qr');
-
-        if (mode === 'link') {
-            linkBtn.style.background = '#00d2ff';
-            qrBtn.style.background = 'transparent';
-            linkEl.style.display = 'block';
-            qrEl.style.display = 'none';
-        } else {
-            linkBtn.style.background = 'transparent';
-            qrBtn.style.background = '#00d2ff';
-            linkEl.style.display = 'none';
-            qrEl.style.display = 'block';
-            
-            const qrSize = 150;
-            qrEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(currentTimerUrl)}" alt="Timer QR" style="display:block;">`;
-        }
     }
 
     function closeOrderPlacedPopup() {
