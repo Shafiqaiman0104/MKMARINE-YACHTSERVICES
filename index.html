@@ -1636,13 +1636,13 @@
       <h3 class="section-title" style="font-size: 1.8rem; margin-bottom: 0;">Experience the Action</h3>
       <div class="video-carousel-wrapper" id="videoCarousel">
         <div class="video-card" data-v-idx="0">
-          <video src="img/v1.mp4" loop muted playsinline></video>
+          <video src="img/v1.mp4" loop muted playsinline preload="none"></video>
         </div>
         <div class="video-card active" data-v-idx="1">
-          <video src="img/v2.mp4" loop muted playsinline></video>
+          <video src="img/v2.mp4" loop muted playsinline preload="none"></video>
         </div>
         <div class="video-card next-preview" data-v-idx="2">
-          <video src="img/v3.mp4" loop muted playsinline></video>
+          <video src="img/v3.mp4" loop muted playsinline preload="none"></video>
         </div>
       </div>
       <div class="video-nav-btns">
@@ -1813,13 +1813,16 @@
   <script>
     (function() {
       // --- SPLASH SCREEN HANDLER ---
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          const splash = document.getElementById('splash-screen');
+      // Start the timer immediately when the script executes (bottom of body)
+      // to ensure the splash screen hides after 4 seconds, regardless of how long
+      // large assets (videos, 3D GLB model, high-res images) take to download.
+      setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
           splash.classList.add('hidden');
-          document.body.classList.remove('no-scroll');
-        }, 4000); // 4 seconds duration to let all logo animations finish
-      });
+        }
+        document.body.classList.remove('no-scroll');
+      }, 4000); // 4 seconds duration to let all logo animations finish
 
       // --- 3D PADDLE MODEL LOGIC ---
       let duckModel, duckRenderer, duckScene, duckCamera;
