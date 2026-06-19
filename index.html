@@ -312,13 +312,26 @@
       position: relative;
       width: 100%;
       height: 100vh;
-      background: url('img/home.png') center/cover no-repeat;
-      background-attachment: fixed;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
       z-index: 1;
+      overflow: hidden;
+      clip-path: inset(0);
+      -webkit-clip-path: inset(0);
+    }
+
+    .home-section::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('img/home.png') center/cover no-repeat;
+      z-index: -1;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
     }
 
     /* Floating Duck 3D Container */
@@ -1001,14 +1014,28 @@
     /* ---------- PARALLAX BANNER ---------- */
     .parallax-banner {
       height: 300px;
-      background: url('img/banner.png') center/cover no-repeat;
-      background-attachment: fixed;
       display: flex;
       align-items: center;
       justify-content: flex-start;
       padding-left: 15%;
       position: relative;
       z-index: 10;
+      overflow: hidden;
+      clip-path: inset(0);
+      -webkit-clip-path: inset(0);
+    }
+
+    .parallax-banner::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('img/banner.png') center/cover no-repeat;
+      z-index: -1;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
     }
     .banner-title {
       color: #ffb226;
@@ -1048,9 +1075,6 @@
         height: 200px;
         padding-left: 10%;
         justify-content: flex-start;
-        background-attachment: fixed;
-        background-position: center;
-        background-size: cover;
       }
       .banner-title {
         font-size: 1.4rem;
