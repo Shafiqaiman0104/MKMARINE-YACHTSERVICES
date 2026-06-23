@@ -480,6 +480,47 @@
             color: var(--primary-color) !important;
             border-bottom: none !important;
         }
+
+        /* Settings Switches and Controls */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .switch .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--input-border);
+            transition: .3s;
+            border-radius: 34px;
+        }
+        .switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .switch input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        .switch input:focus + .slider {
+            box-shadow: 0 0 1px var(--primary-color);
+        }
+        .switch input:checked + .slider:before {
+            transform: translateX(24px);
+        }
     </style>
 </head>
 <body>
@@ -532,6 +573,8 @@
                     <button class="tab-btn dropdown-item" onclick="switchTab('report')">Report</button>
                 </div>
             </div>
+
+            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
 
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
         </div>
@@ -1151,6 +1194,52 @@
                     </thead>
                     <tbody id="items-body"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="section">
+            <div class="header-actions">
+                <h3>Settings</h3>
+            </div>
+            
+            <div class="settings-container" style="margin-top: 20px; display: flex; flex-direction: column; gap: 25px; max-width: 600px;">
+                <!-- Screen Display Settings Block -->
+                <div class="settings-card" style="background: var(--box-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+                    <h4 style="margin-bottom: 20px; color: var(--primary-color); display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-desktop"></i> Screen Display
+                    </h4>
+                    
+                    <!-- Fullscreen Toggle -->
+                    <div class="setting-row" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid var(--input-border); margin-bottom: 15px;">
+                        <div>
+                            <div style="font-weight: 500; margin-bottom: 4px;">Fullscreen Mode</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Toggle display to fullscreen mode</div>
+                        </div>
+                        <div>
+                            <label class="switch">
+                                <input type="checkbox" id="fullscreen-toggle" onchange="toggleFullscreen(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Zoom Controller -->
+                    <div class="setting-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-weight: 500; margin-bottom: 4px;">Page Zoom</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Adjust the zoom level of the interface</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="stepper-input" style="width: auto;">
+                                <button type="button" onclick="adjustZoom(-10)" style="width: 40px; height: 36px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-minus"></i></button>
+                                <span id="zoom-percentage-display" style="display: inline-block; min-width: 60px; text-align: center; font-weight: bold; color: var(--primary-color);">100%</span>
+                                <button type="button" onclick="adjustZoom(10)" style="width: 40px; height: 36px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <button type="button" onclick="resetZoom()" class="btn-small" style="margin: 0; height: 36px; padding: 0 12px; background: rgba(0,0,0,0.1); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 8px;">Reset</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -6071,6 +6160,70 @@ function renderReportOccupancyChart(labels, dataArray) {
 
     function closeModal() { document.getElementById('form-overlay').style.display = 'none'; }
 
+    // Fullscreen and Zoom settings logic
+    let currentZoom = 100;
+
+    function toggleFullscreen(enable) {
+        if (enable) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.mozRequestFullScreen) {
+                document.documentElement.mozRequestFullScreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    function handleFullscreenChange() {
+        const isFullscreen = document.fullscreenElement || 
+                             document.webkitFullscreenElement || 
+                             document.mozFullScreenElement || 
+                             document.msFullscreenElement;
+        const toggle = document.getElementById('fullscreen-toggle');
+        if (toggle) {
+            toggle.checked = !!isFullscreen;
+        }
+    }
+
+    function adjustZoom(amount) {
+        currentZoom += amount;
+        if (currentZoom < 50) currentZoom = 50;
+        if (currentZoom > 200) currentZoom = 200;
+        applyZoom();
+    }
+
+    function resetZoom() {
+        currentZoom = 100;
+        applyZoom();
+    }
+
+    function applyZoom() {
+        const display = document.getElementById('zoom-percentage-display');
+        if (display) {
+            display.innerText = `${currentZoom}%`;
+        }
+        document.body.style.zoom = `${currentZoom}%`;
+        localStorage.setItem('sw_app_zoom', currentZoom);
+    }
+
     function toggleTheme() {
         const isDark = document.body.classList.toggle('dark-mode');
         localStorage.setItem('theme', isDark ? 'dark' : 'day');
@@ -6108,6 +6261,15 @@ function renderReportOccupancyChart(labels, dataArray) {
             document.body.classList.remove('dark-mode');
         }
         updateThemeToggleButton();
+
+        // Initialize zoom settings
+        const savedZoom = localStorage.getItem('sw_app_zoom');
+        if (savedZoom) {
+            currentZoom = parseInt(savedZoom, 10);
+        } else {
+            currentZoom = 100;
+        }
+        applyZoom();
 
         const savedUser = localStorage.getItem('mk_username');
         const savedPass = localStorage.getItem('mk_password');
