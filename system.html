@@ -379,7 +379,35 @@
             </div>
 
             <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Item Occupancy Rate (%)</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                    <h4 style="color: #00d2ff; margin: 0;">Item Occupancy Rate (%)</h4>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Days/Week:</label>
+                            <select id="dash-op-days" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                                <option value="7">Everyday</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Hours/Day:</label>
+                            <select id="dash-op-hours-type" onchange="toggleDashOpHours(this.value)" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                                <option value="24">24hrs</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        <div id="dash-op-hours-custom-inputs" style="display: none; align-items: center; gap: 5px;">
+                            <input type="time" id="dash-op-hours-start" value="09:00" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <span>to</span>
+                            <input type="time" id="dash-op-hours-end" value="18:00" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
                 <canvas id="occupancyChart" style="max-height: 150px; width: 100%;"></canvas>
             </div>
 
@@ -766,7 +794,35 @@
         </div>
 
         <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-            <h4 style="margin-bottom: 15px; color: #00d2ff;">Item Occupancy Rate (%)</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+                <h4 style="color: #00d2ff; margin: 0;">Item Occupancy Rate (%)</h4>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Days/Week:</label>
+                        <select id="report-op-days" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <option value="7">Everyday</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Hours/Day:</label>
+                        <select id="report-op-hours-type" onchange="toggleReportOpHours(this.value)" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <option value="24">24hrs</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div id="report-op-hours-custom-inputs" style="display: none; align-items: center; gap: 5px;">
+                        <input type="time" id="report-op-hours-start" value="09:00" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                        <span>to</span>
+                        <input type="time" id="report-op-hours-end" value="18:00" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
             <canvas id="reportOccupancyChart" style="max-height: 150px; width: 100%;"></canvas>
         </div>
 
@@ -3041,23 +3097,68 @@
             }
         }
 
+        const opDays = parseInt(document.getElementById('report-op-days')?.value) || 7;
+        const opHoursType = document.getElementById('report-op-hours-type')?.value || '24';
+        let opStartHour = 0;
+        let opEndHour = 24;
+        let hoursPerDay = 24;
+
+        if (opHoursType === 'custom') {
+            const startStr = document.getElementById('report-op-hours-start')?.value || '09:00';
+            const endStr = document.getElementById('report-op-hours-end')?.value || '18:00';
+            const [sH, sM] = startStr.split(':').map(Number);
+            const [eH, eM] = endStr.split(':').map(Number);
+            opStartHour = sH + sM / 60;
+            opEndHour = eH + eM / 60;
+            if (opEndHour > opStartHour) {
+                hoursPerDay = opEndHour - opStartHour;
+            } else {
+                hoursPerDay = (24 - opStartHour) + opEndHour;
+            }
+        }
+
         const totalCapacity = currentItems.reduce((sum, it) => sum + (parseInt(it.itemQuantity) || 0), 0);
         let occMap = {};
 
+        const opHoursList = (opHoursType === 'custom') ? getOperatingHours(opStartHour, opEndHour) : Array.from({length: 24}, (_, i) => i);
+
         if (occChartMode === 'hourly') {
-            for (let i = 0; i < 24; i++) occMap[i] = 0;
-            filtered.forEach(s => { const h = new Date(s.orderDate).getHours(); occMap[h] += (parseInt(s.totalItems) || 0); });
+            opHoursList.forEach(h => { occMap[h] = 0; });
         } else if (occChartMode === 'daily') {
-            filtered.forEach(s => { const d = new Date(s.orderDate).toLocaleDateString('en-CA'); occMap[d] = (occMap[d] || 0) + (parseInt(s.totalItems) || 0); });
-        } else if (occChartMode === 'monthly') {
-            filtered.forEach(s => { 
-                const d = new Date(s.orderDate); 
-                const m = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-                occMap[m] = (occMap[m] || 0) + (parseInt(s.totalItems) || 0);
-            });
+            // Pre-populate daily date keys in the selected range with 0
+            if (currentReportDateFilter === 'Custom') {
+                const fromInput = document.getElementById('report-date-from').value;
+                const toInput = document.getElementById('report-date-to').value;
+                if (fromInput && toInput) {
+                    const start = new Date(fromInput);
+                    const end = new Date(toInput);
+                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                        const dateStr = d.toLocaleDateString('en-CA');
+                        occMap[dateStr] = 0;
+                    }
+                }
+            }
         }
 
-        const occKeys = occChartMode === 'hourly' ? Array.from({length: 24}, (_, i) => i) : Object.keys(occMap).sort();
+        filtered.forEach(s => {
+            const orderTotalItems = parseInt(s.totalItems) || 0;
+
+            if (occChartMode === 'hourly') {
+                const h = new Date(s.orderDate).getHours();
+                if (occMap.hasOwnProperty(h)) {
+                    occMap[h] += orderTotalItems;
+                }
+            } else if (occChartMode === 'daily') {
+                const d = new Date(s.orderDate).toLocaleDateString('en-CA');
+                occMap[d] = (occMap[d] || 0) + orderTotalItems;
+            } else if (occChartMode === 'monthly') {
+                const d = new Date(s.orderDate);
+                const m = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+                occMap[m] = (occMap[m] || 0) + orderTotalItems;
+            }
+        });
+
+        const occKeys = occChartMode === 'hourly' ? opHoursList : Object.keys(occMap).sort();
         const displayLabels = occKeys.map(k => {
             if (occChartMode === 'hourly') return `${k}:00`;
             if (occChartMode === 'daily') return new Date(k).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
@@ -3067,7 +3168,18 @@
             }
             return k;
         });
-        const occDataArray = occKeys.map(k => totalCapacity > 0 ? parseFloat(((occMap[k] / totalCapacity) * 100).toFixed(2)) : 0);
+        const occDataArray = occKeys.map(k => {
+            if (totalCapacity <= 0) return 0;
+            let cap = totalCapacity;
+            if (occChartMode === 'daily') {
+                cap = totalCapacity * hoursPerDay;
+            } else if (occChartMode === 'monthly') {
+                const [year, month] = k.split('-').map(Number);
+                const daysInMonth = new Date(year, month, 0).getDate();
+                cap = totalCapacity * hoursPerDay * daysInMonth * (opDays / 7);
+            }
+            return parseFloat(((occMap[k] / cap) * 100).toFixed(2));
+        });
         renderReportOccupancyChart(displayLabels, occDataArray);
 
         let chartLabels = [];
@@ -3569,23 +3681,68 @@
                 }
             }
 
+            const opDays = parseInt(document.getElementById('dash-op-days')?.value) || 7;
+            const opHoursType = document.getElementById('dash-op-hours-type')?.value || '24';
+            let opStartHour = 0;
+            let opEndHour = 24;
+            let hoursPerDay = 24;
+
+            if (opHoursType === 'custom') {
+                const startStr = document.getElementById('dash-op-hours-start')?.value || '09:00';
+                const endStr = document.getElementById('dash-op-hours-end')?.value || '18:00';
+                const [sH, sM] = startStr.split(':').map(Number);
+                const [eH, eM] = endStr.split(':').map(Number);
+                opStartHour = sH + sM / 60;
+                opEndHour = eH + eM / 60;
+                if (opEndHour > opStartHour) {
+                    hoursPerDay = opEndHour - opStartHour;
+                } else {
+                    hoursPerDay = (24 - opStartHour) + opEndHour;
+                }
+            }
+
             const totalCapacity = currentItems.reduce((sum, it) => sum + (parseInt(it.itemQuantity) || 0), 0);
             let occMap = {};
 
+            const opHoursList = (opHoursType === 'custom') ? getOperatingHours(opStartHour, opEndHour) : Array.from({length: 24}, (_, i) => i);
+
             if (occChartMode === 'hourly') {
-                for (let i = 0; i < 24; i++) occMap[i] = 0;
-                filtered.forEach(s => { const h = new Date(s.orderDate).getHours(); occMap[h] += (parseInt(s.totalItems) || 0); });
+                opHoursList.forEach(h => { occMap[h] = 0; });
             } else if (occChartMode === 'daily') {
-                filtered.forEach(s => { const d = new Date(s.orderDate).toLocaleDateString('en-CA'); occMap[d] = (occMap[d] || 0) + (parseInt(s.totalItems) || 0); });
-            } else if (occChartMode === 'monthly') {
-                filtered.forEach(s => { 
-                    const d = new Date(s.orderDate); 
-                    const m = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-                    occMap[m] = (occMap[m] || 0) + (parseInt(s.totalItems) || 0);
-                });
+                // Pre-populate daily date keys in the selected range with 0
+                if (currentDashDateFilter === 'Custom') {
+                    const fromInput = document.getElementById('dash-date-from').value;
+                    const toInput = document.getElementById('dash-date-to').value;
+                    if (fromInput && toInput) {
+                        const start = new Date(fromInput);
+                        const end = new Date(toInput);
+                        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                            const dateStr = d.toLocaleDateString('en-CA');
+                            occMap[dateStr] = 0;
+                        }
+                    }
+                }
             }
 
-            const occKeys = occChartMode === 'hourly' ? Array.from({length: 24}, (_, i) => i) : Object.keys(occMap).sort();
+            filtered.forEach(s => {
+                const orderTotalItems = parseInt(s.totalItems) || 0;
+
+                if (occChartMode === 'hourly') {
+                    const h = new Date(s.orderDate).getHours();
+                    if (occMap.hasOwnProperty(h)) {
+                        occMap[h] += orderTotalItems;
+                    }
+                } else if (occChartMode === 'daily') {
+                    const d = new Date(s.orderDate).toLocaleDateString('en-CA');
+                    occMap[d] = (occMap[d] || 0) + orderTotalItems;
+                } else if (occChartMode === 'monthly') {
+                    const d = new Date(s.orderDate);
+                    const m = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+                    occMap[m] = (occMap[m] || 0) + orderTotalItems;
+                }
+            });
+
+            const occKeys = occChartMode === 'hourly' ? opHoursList : Object.keys(occMap).sort();
             const displayLabels = occKeys.map(k => {
                 if (occChartMode === 'hourly') return `${k}:00`;
                 if (occChartMode === 'daily') return new Date(k).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
@@ -3595,7 +3752,18 @@
                 }
                 return k;
             });
-            const occDataArray = occKeys.map(k => totalCapacity > 0 ? parseFloat(((occMap[k] / totalCapacity) * 100).toFixed(2)) : 0);
+            const occDataArray = occKeys.map(k => {
+                if (totalCapacity <= 0) return 0;
+                let cap = totalCapacity;
+                if (occChartMode === 'daily') {
+                    cap = totalCapacity * hoursPerDay;
+                } else if (occChartMode === 'monthly') {
+                    const [year, month] = k.split('-').map(Number);
+                    const daysInMonth = new Date(year, month, 0).getDate();
+                    cap = totalCapacity * hoursPerDay * daysInMonth * (opDays / 7);
+                }
+                return parseFloat(((occMap[k] / cap) * 100).toFixed(2));
+            });
             renderOccupancyChart(displayLabels, occDataArray);
 
             document.getElementById('dash-total-order').innerText = filtered.length;
@@ -3718,6 +3886,31 @@
                 }
             }
         });
+    }
+
+    function toggleDashOpHours(val) {
+        const customInputs = document.getElementById('dash-op-hours-custom-inputs');
+        if (customInputs) customInputs.style.display = (val === 'custom') ? 'flex' : 'none';
+        loadDashboardData();
+    }
+
+    function toggleReportOpHours(val) {
+        const customInputs = document.getElementById('report-op-hours-custom-inputs');
+        if (customInputs) customInputs.style.display = (val === 'custom') ? 'flex' : 'none';
+        loadReportData();
+    }
+
+    function getOperatingHours(start, end) {
+        const hours = [];
+        const startH = Math.floor(start);
+        const endH = Math.ceil(end);
+        if (startH < endH) {
+            for (let i = startH; i < endH; i++) hours.push(i);
+        } else {
+            for (let i = startH; i < 24; i++) hours.push(i);
+            for (let i = 0; i < endH; i++) hours.push(i);
+        }
+        return hours;
     }
 
     function renderOccupancyChart(labels, dataArray) {
