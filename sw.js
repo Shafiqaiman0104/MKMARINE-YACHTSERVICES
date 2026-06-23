@@ -4,7 +4,7 @@ const CACHE_NAME = 'southwave-system-cache-v1';
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/favicon.ico',
-  '/img/logoBlueNT.png',
+  '/img/logoBlue.png',
   '/img/logoBluePrinter.png',
   '/img/logoWithNameBlue.png',
   '/img/logoWhite.png'
