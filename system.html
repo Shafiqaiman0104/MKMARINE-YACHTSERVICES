@@ -14,6 +14,84 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            /* Day Mode (Default) variables */
+            --bg-gradient: linear-gradient(45deg, #e0eafc, #cfdef3);
+            --container-bg: rgba(255, 255, 255, 0.92);
+            --container-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+            --text-color: #2d3748;
+            --text-muted: rgba(45, 55, 72, 0.8);
+            --text-btn-muted: rgba(45, 55, 72, 0.6);
+            --primary-color: #0066cc;
+            --primary-hover: #0052a3;
+            --input-bg: rgba(0, 0, 0, 0.03);
+            --input-border: rgba(0, 0, 0, 0.15);
+            --input-text: #1a202c;
+            --input-focus-bg: rgba(0, 0, 0, 0.05);
+            --select-option-bg: #ffffff;
+            --select-option-text: #1a202c;
+            --table-border: rgba(0, 0, 0, 0.12);
+            --table-cart-border: rgba(0, 0, 0, 0.08);
+            --table-header-color: #0052a3;
+            --overlay-bg: rgba(0, 0, 0, 0.55);
+            --modal-bg: #ffffff;
+            --modal-border: #0066cc;
+            --modal-text: #1a202c;
+            --item-card-bg: rgba(0, 0, 0, 0.02);
+            --item-card-border: rgba(0, 0, 0, 0.1);
+            --item-card-hover-bg: rgba(0, 0, 0, 0.06);
+            --item-card-selected-bg: rgba(0, 102, 204, 0.08);
+            --booking-details-bg: rgba(0, 0, 0, 0.03);
+            --booking-details-border: rgba(0, 102, 204, 0.25);
+            --mix-fields-bg: rgba(0, 0, 0, 0.01);
+            --stepper-btn-bg: rgba(0, 0, 0, 0.08);
+            --box-bg: rgba(0, 0, 0, 0.03);
+            --keypad-btn-bg: rgba(0, 0, 0, 0.05);
+            --keypad-btn-border: rgba(0, 0, 0, 0.12);
+            --keypad-btn-text: #1a202c;
+            --toggle-btn-active-color: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+        }
+
+        body.dark-mode {
+            /* Dark Mode overrides */
+            --bg-gradient: linear-gradient(45deg, #0f2027, #203a43, #2c5364);
+            --container-bg: rgba(255, 255, 255, 0.1);
+            --container-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            --text-color: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.8);
+            --text-btn-muted: rgba(255, 255, 255, 0.6);
+            --primary-color: #00d2ff;
+            --primary-hover: #3a7bd5;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(255, 255, 255, 0.2);
+            --input-text: #ffffff;
+            --input-focus-bg: rgba(255, 255, 255, 0.1);
+            --select-option-bg: #203a43;
+            --select-option-text: #ffffff;
+            --table-border: rgba(255, 255, 255, 0.1);
+            --table-cart-border: rgba(255, 255, 255, 0.05);
+            --table-header-color: #00d2ff;
+            --overlay-bg: rgba(0, 0, 0, 0.75);
+            --modal-bg: rgba(20, 30, 48, 0.95);
+            --modal-border: #00d2ff;
+            --modal-text: #ffffff;
+            --item-card-bg: rgba(255, 255, 255, 0.05);
+            --item-card-border: rgba(255, 255, 255, 0.1);
+            --item-card-hover-bg: rgba(255, 255, 255, 0.1);
+            --item-card-selected-bg: rgba(0, 210, 255, 0.1);
+            --booking-details-bg: rgba(0, 0, 0, 0.2);
+            --booking-details-border: rgba(0, 210, 255, 0.3);
+            --mix-fields-bg: rgba(255, 255, 255, 0.03);
+            --stepper-btn-bg: rgba(255, 255, 255, 0.1);
+            --box-bg: rgba(255, 255, 255, 0.05);
+            --keypad-btn-bg: rgba(255, 255, 255, 0.1);
+            --keypad-btn-border: rgba(255, 255, 255, 0.2);
+            --keypad-btn-text: #ffffff;
+            --toggle-btn-active-color: #141e30;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -26,24 +104,52 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(45deg, #0f2027, #203a43, #2c5364);
+            background: var(--bg-gradient);
             overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .theme-toggle-btn {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            z-index: 1000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--container-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-toggle-btn:hover {
+            transform: scale(1.08);
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         .container {
             width: 100%;
             height: 100vh;
             padding: 40px;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--container-bg);
             border-radius: 0;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--container-shadow);
             backdrop-filter: blur(12.5px);
             -webkit-backdrop-filter: blur(12.5px);
             border: none;
-            color: white;
+            color: var(--text-color);
             text-align: center;
             position: relative;
-            transition: width 0.5s ease;
+            transition: width 0.5s ease, background 0.3s ease, color 0.3s ease;
             overflow-y: auto;
             overflow-x: hidden;
             display: flex;
@@ -64,29 +170,29 @@
         #login-form { width: 100%; max-width: 400px; margin: 0 auto; }
 
         .input-group { margin-bottom: 20px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: rgba(255, 255, 255, 0.8); }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted); }
 
         input, select, textarea {
             width: 100%;
             padding: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: 8px;
             outline: none;
-            color: white;
+            color: var(--input-text);
             transition: 0.3s;
         }
         
         textarea { min-height: 80px; resize: vertical; }
         
-        select option { background: #203a43; color: white; }
+        select option { background: var(--select-option-bg); color: var(--select-option-text); }
 
-        input:focus, select:focus, textarea:focus { background: rgba(255, 255, 255, 0.1); border-color: #00d2ff; }
+        input:focus, select:focus, textarea:focus { background: var(--input-focus-bg); border-color: var(--primary-color); }
 
         button {
             width: 100%;
             padding: 12px;
-            background: #00d2ff;
+            background: var(--primary-color);
             border: none;
             border-radius: 8px;
             color: white;
@@ -96,24 +202,24 @@
             margin-top: 10px;
         }
 
-        button:hover { background: #3a7bd5; transform: translateY(-2px); }
+        button:hover { background: var(--primary-hover); transform: translateY(-2px); }
         .btn-danger { background: #ff4b2b; margin-left: 5px; }
         .btn-danger:hover { background: #ff416c; }
         .btn-small { padding: 5px 10px; font-size: 0.8rem; width: auto; }
 
         /* Tabs */
-        .tabs { display: none; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+        .tabs { display: none; margin-bottom: 20px; border-bottom: 1px solid var(--input-border); }
         .tab-btn {
-            background: none; border: none; color: rgba(255, 255, 255, 0.6);
+            background: none; border: none; color: var(--text-btn-muted);
             padding: 10px 20px; cursor: pointer; transition: 0.3s; width: auto;
             white-space: nowrap;
         }
-        .tab-btn.active { color: #00d2ff; border-bottom: 2px solid #00d2ff; }
+        .tab-btn.active { color: var(--primary-color); border-bottom: 2px solid var(--primary-color); }
 
         /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left; }
-        th, td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        th { color: #00d2ff; font-weight: 500; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--table-border); }
+        th { color: var(--table-header-color); font-weight: 500; }
 
         /* Table Container - Scoped horizontal scroll */
         .table-container {
@@ -130,13 +236,14 @@
         /* Form Modal-like */
         .form-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100;
+            background: var(--overlay-bg); justify-content: center; align-items: center; z-index: 100;
         }
         .form-content { 
-            background: rgba(20, 30, 48, 0.95); padding: 30px; border-radius: 12px; 
-            width: 90%; max-width: 450px; border: 1px solid #00d2ff;
+            background: var(--modal-bg); padding: 30px; border-radius: 12px; 
+            width: 90%; max-width: 450px; border: 1px solid var(--modal-border);
             max-height: 95vh; overflow-y: auto;
-            color: white;
+            color: var(--modal-text);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .full-width { grid-column: span 2; }
@@ -144,22 +251,22 @@
         /* Booking Specific */
         .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
         .item-card { 
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: var(--item-card-bg); border: 1px solid var(--item-card-border); 
             border-radius: 10px; padding: 10px; cursor: pointer; transition: 0.3s; text-align: center;
         }
-        .item-card:hover { border-color: #00d2ff; background: rgba(255, 255, 255, 0.1); }
-        .item-card.selected { border-color: #00d2ff; background: rgba(0, 210, 255, 0.1); box-shadow: 0 0 10px rgba(0, 210, 255, 0.3); }
+        .item-card:hover { border-color: var(--primary-color); background: var(--item-card-hover-bg); }
+        .item-card.selected { border-color: var(--primary-color); background: var(--item-card-selected-bg); box-shadow: 0 0 10px rgba(0, 102, 204, 0.3); }
         .item-card img { width: 100%; height: 100px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
         
-        .booking-details { background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid rgba(0, 210, 255, 0.3); }
+        .booking-details { background: var(--booking-details-bg); padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--booking-details-border); }
         
-        .payment-info { margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); text-align: left; }
-        .mix-fields { display: none; margin-top: 10px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px dashed rgba(0, 210, 255, 0.3); }
+        .payment-info { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--input-border); text-align: left; }
+        .mix-fields { display: none; margin-top: 10px; background: var(--mix-fields-bg); padding: 15px; border-radius: 8px; border: 1px dashed var(--booking-details-border); }
 
-        .cart-section { margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; display: none; }
+        .cart-section { margin-top: 30px; border-top: 1px solid var(--input-border); padding-top: 20px; display: none; }
         .cart-table { width: 100%; font-size: 0.9rem; }
-        .cart-table th { border-bottom: 1px solid rgba(0, 210, 255, 0.3); padding: 8px; }
-        .cart-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .cart-table th { border-bottom: 1px solid var(--booking-details-border); padding: 8px; }
+        .cart-table td { padding: 8px; border-bottom: 1px solid var(--table-cart-border); }
 
         #qr-result-container { 
             display: none; flex-direction: column; align-items: center; gap: 15px; 
@@ -172,7 +279,7 @@
             height: 45px;
             object-fit: cover;
             border-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid var(--input-border);
         }
 
         #result {
@@ -190,8 +297,8 @@
         .stepper-input {
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: 8px;
             overflow: hidden;
         }
@@ -200,14 +307,14 @@
             height: 44px;
             margin: 0;
             border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            background: var(--stepper-btn-bg);
+            color: var(--text-color);
             font-size: 1.2rem;
             cursor: pointer;
             border-radius: 0;
             flex-shrink: 0;
         }
-        .stepper-input button:hover { background: #00d2ff; transform: none; }
+        .stepper-input button:hover { background: var(--primary-color); color: white; transform: none; }
         .stepper-input input {
             border: none !important;
             text-align: center;
@@ -222,35 +329,37 @@
         /* Checkout Modal */
         .checkout-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 200;
+            background: var(--overlay-bg); justify-content: center; align-items: center; z-index: 200;
         }
         .checkout-container {
-            background: #141e30; width: 95%; max-width: 1100px; height: 90vh; 
-            border-radius: 16px; border: 1px solid #00d2ff; display: flex; flex-direction: column;
+            background: var(--modal-bg); width: 95%; max-width: 1100px; height: 90vh; 
+            border-radius: 16px; border: 1px solid var(--modal-border); display: flex; flex-direction: column;
             overflow-y: auto;
+            color: var(--modal-text);
+            transition: background 0.3s ease, color 0.3s ease;
         }
-        .checkout-header { padding: 20px; border-bottom: 1px solid rgba(0, 210, 255, 0.3); display: flex; justify-content: space-between; align-items: center; }
+        .checkout-header { padding: 20px; border-bottom: 1px solid var(--booking-details-border); display: flex; justify-content: space-between; align-items: center; }
         .checkout-body { flex: 1; display: flex; overflow: visible; }
-        .checkout-left { width: 40%; padding: 20px; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+        .checkout-left { width: 40%; padding: 20px; border-right: 1px solid var(--input-border); overflow-y: auto; }
         .checkout-right { width: 60%; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
         
         .payment-summary-vertical { display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; }
-        .pay-box { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .pay-box { background: var(--box-bg); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--input-border); }
         .pay-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
         /* Payment Toggle Buttons */
-        .payment-toggle-group { display: flex; width: 100%; background: rgba(255, 255, 255, 0.05); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .payment-toggle-group { display: flex; width: 100%; background: var(--input-bg); border-radius: 8px; overflow: hidden; border: 1px solid var(--input-border); }
         .payment-toggle-btn {
             flex: 1; background: transparent; border: none;
-            color: rgba(255, 255, 255, 0.7); padding: 10px 2px; cursor: pointer;
+            color: var(--text-btn-muted); padding: 10px 2px; cursor: pointer;
             font-size: 0.8rem; display: flex; flex-direction: row; align-items: center;
             justify-content: center; transition: all 0.2s ease;
         }
-        .payment-toggle-btn.active { background: #00d2ff; color: #141e30; font-weight: bold; }
+        .payment-toggle-btn.active { background: var(--primary-color); color: var(--toggle-btn-active-color); font-weight: bold; }
         .payment-toggle-btn i { font-size: 0.9rem; margin-right: 8px; }
 
-        .pay-label { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
-        .pay-value { font-size: 1.1rem; font-weight: bold; color: #00d2ff; }
+        .pay-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .pay-value { font-size: 1.1rem; font-weight: bold; color: var(--primary-color); }
         .change-value { color: #25d366; }
 
         .keypad-container { display: flex; gap: 15px; flex: 1; align-items: flex-start; }
@@ -258,10 +367,15 @@
         .numpad-section { display: flex; flex-direction: column; gap: 5px; flex: 3; }
         .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         
-        .keypad-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; min-height: 45px; margin-top: 0; }
+        .keypad-btn { background: var(--keypad-btn-bg); border: 1px solid var(--keypad-btn-border); color: var(--keypad-btn-text); border-radius: 8px; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; min-height: 45px; margin-top: 0; }
         .denom-grid .keypad-btn { min-height: 32px; font-size: 0.85rem; }
-        .keypad-btn:hover { background: #00d2ff; }
-        .keypad-btn.action { background: rgba(0, 210, 255, 0.2); }
+        .keypad-btn:hover { background: var(--primary-color); color: white; }
+        .keypad-btn.action { background: rgba(0, 102, 204, 0.15); }
+
+        /* Dynamic Edit Tables */
+        #items-edit-body tr, #payments-edit-body tr {
+            border-bottom: 1px solid var(--table-cart-border);
+        }
 
         /* Mobile Specific Adjustments */
         @media (max-width: 600px) {
@@ -277,11 +391,19 @@
 
             .item-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .item-card { padding: 5px; }
+            
+            .theme-toggle-btn {
+                top: 10px;
+                left: 10px;
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
         }
 
         @media (max-width: 900px) {
             .checkout-body { flex-direction: column; overflow: hidden; }
-            .checkout-left { width: 100%; height: 30%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
+            .checkout-left { width: 100%; height: 30%; border-right: none; border-bottom: 1px solid var(--input-border); overflow-y: auto; }
             .checkout-right { width: 100%; height: 70%; border-right: none; overflow-y: auto; }
         }
 
@@ -296,10 +418,10 @@
             position: absolute;
             top: 100%;
             left: 0;
-            background: rgba(20, 30, 48, 0.95);
-            border: 1px solid #00d2ff;
+            background: var(--modal-bg);
+            border: 1px solid var(--modal-border);
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px var(--shadow-color);
             z-index: 1000;
             min-width: 180px;
             flex-direction: column;
@@ -315,7 +437,7 @@
         .dropdown-item {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--text-muted);
             padding: 10px 15px;
             text-align: left;
             width: 100%;
@@ -327,22 +449,22 @@
         }
 
         .dropdown-item:hover {
-            background: rgba(0, 210, 255, 0.1);
-            color: #00d2ff;
+            background: rgba(0, 102, 204, 0.1);
+            color: var(--primary-color);
         }
 
         .dropdown-item.active {
-            background: rgba(0, 210, 255, 0.2);
-            color: #00d2ff;
+            background: rgba(0, 102, 204, 0.15);
+            color: var(--primary-color);
             font-weight: bold;
             border-bottom: none !important;
         }
 
         .mobile-dropdown-item {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            background: var(--input-bg) !important;
+            border: 1px solid var(--input-border) !important;
             border-radius: 8px !important;
-            color: white !important;
+            color: var(--text-color) !important;
             padding: 12px !important;
             width: 100% !important;
             text-align: center !important;
@@ -353,14 +475,18 @@
         }
 
         .mobile-dropdown-item:hover, .mobile-dropdown-item.active {
-            background: rgba(0, 210, 255, 0.1) !important;
-            border-color: #00d2ff !important;
-            color: #00d2ff !important;
+            background: rgba(0, 102, 204, 0.1) !important;
+            border-color: var(--primary-color) !important;
+            color: var(--primary-color) !important;
             border-bottom: none !important;
         }
     </style>
 </head>
 <body>
+
+<button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Day/Dark Mode">
+    <i class="fas fa-moon"></i>
+</button>
 
 <div class="container" id="main-container">
     <h2>SOUTH WAVE</h2>
@@ -385,7 +511,7 @@
             <div class="conn-bar" style="width: 5px; height: 11px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
             <div class="conn-bar" style="width: 5px; height: 15px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
         </div>
-        <div id="welcome-msg" style="margin-bottom: 15px; font-size: 1rem; color: #00d2ff; text-align: right; font-weight: 500;"></div>
+        <div id="welcome-msg" style="margin-bottom: 15px; font-size: 1rem; color: var(--primary-color); text-align: right; font-weight: 500;"></div>
         <div class="tabs" id="nav-tabs" style="display: flex;">
             <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab-btn active" onclick="switchTab('booking')">New Booking</button>
@@ -423,7 +549,7 @@
                         <option value="Custom">Custom Date</option>
                     </select>
                 </div>
-                <div id="dash-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                <div id="dash-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: var(--box-bg); padding: 10px; border-radius: 8px;">
                     <input type="date" id="dash-date-from" onchange="loadDashboardData()" style="width: auto;">
                     <span>to</span>
                     <input type="date" id="dash-date-to" onchange="loadDashboardData()" style="width: auto;">
@@ -437,7 +563,7 @@
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 20px;">
                     <div class="pay-label">TOTAL PAX</div>
-                    <div id="dash-total-pax" style="font-size: 0.8rem; margin-top: 5px; color: #00d2ff; font-weight: bold;">Adult: 0 | Kid: 0 | Tod: 0</div>
+                    <div id="dash-total-pax" style="font-size: 0.8rem; margin-top: 5px; color: var(--primary-color); font-weight: bold;">Adult: 0 | Kid: 0 | Tod: 0</div>
                 </div>
                 <div class="pay-box" style="text-align: center; padding: 20px;">
                     <div class="pay-label">TOTAL SALES</div>
@@ -457,18 +583,18 @@
                 </div>
             </div>
 
-            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Business Performance Trend (RM & Pax)</h4>
+            <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+                <h4 style="margin-bottom: 15px; color: var(--primary-color);">Business Performance Trend (RM & Pax)</h4>
                 <canvas id="profitChart" style="max-height: 300px; width: 100%;"></canvas>
             </div>
 
-            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+            <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
-                    <h4 style="color: #00d2ff; margin: 0;">Item Occupancy Rate (%)</h4>
+                    <h4 style="color: var(--primary-color); margin: 0;">Item Occupancy Rate (%)</h4>
                     <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                         <div style="display: flex; align-items: center; gap: 5px;">
                             <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Days/Week:</label>
-                            <select id="dash-op-days" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <select id="dash-op-days" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                                 <option value="7">Everyday</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -480,23 +606,23 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 5px;">
                             <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Hours/Day:</label>
-                            <select id="dash-op-hours-type" onchange="toggleDashOpHours(this.value)" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <select id="dash-op-hours-type" onchange="toggleDashOpHours(this.value)" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                                 <option value="24">24hrs</option>
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
                         <div id="dash-op-hours-custom-inputs" style="display: none; align-items: center; gap: 5px;">
-                            <input type="time" id="dash-op-hours-start" value="09:00" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <input type="time" id="dash-op-hours-start" value="09:00" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                             <span>to</span>
-                            <input type="time" id="dash-op-hours-end" value="18:00" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                            <input type="time" id="dash-op-hours-end" value="18:00" onchange="loadDashboardData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                         </div>
                     </div>
                 </div>
                 <canvas id="occupancyChart" style="max-height: 150px; width: 100%;"></canvas>
             </div>
 
-            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Profit Payment Methods Summary</h4>
+            <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+                <h4 style="margin-bottom: 15px; color: var(--primary-color);">Profit Payment Methods Summary</h4>
                 <table>
                     <thead>
                         <tr>
@@ -508,8 +634,8 @@
                 </table>
             </div>
 
-            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
+            <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+                <h4 style="margin-bottom: 15px; color: var(--primary-color);">Top Items Ranking</h4>
                 <table id="top-items-table">
                     <thead>
                         <tr>
@@ -572,7 +698,7 @@
             <div id="booking-item-grid" class="item-grid"></div>
 
             <div id="booking-config" class="booking-details" style="display: none;">
-                <h4 id="selected-item-title" style="color:#00d2ff; margin-bottom:15px;"></h4>
+                <h4 id="selected-item-title" style="color:var(--primary-color); margin-bottom:15px;"></h4>
                 <div class="form-grid">
                     <div class="input-group">
                         <label>Quantity</label>
@@ -591,8 +717,8 @@
                         </div>
                     </div>
                 </div>
-                <div style="margin-top: 15px; font-size: 1.2rem;">Total Price: <span id="total-price-display" style="color:#00d2ff; font-weight:bold;">0.00</span></div>
-                <button onclick="addToCart()" style="margin-top:20px; background:#00d2ff;">+ Add to List</button>
+                <div style="margin-top: 15px; font-size: 1.2rem;">Total Price: <span id="total-price-display" style="color:var(--primary-color); font-weight:bold;">0.00</span></div>
+                <button onclick="addToCart()" style="margin-top:20px; background:var(--primary-color);">+ Add to List</button>
             </div>
 
             <!-- Payment Section -->
@@ -610,7 +736,7 @@
                 </div>
                 
                 <div style="margin-top:15px; text-align:right; font-size:1.1rem;">
-                    Grand Total: <span id="grand-total" style="color:#00d2ff; font-weight:bold;">RM0.00</span>
+                    Grand Total: <span id="grand-total" style="color:var(--primary-color); font-weight:bold;">RM0.00</span>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button onclick="openCheckoutModal('BookingFirst')" style="background:#666;">Booking first</button>
@@ -644,13 +770,13 @@
                         <input type="text" id="sales-search" placeholder="Search Order ID, Name, Phone..." onkeyup="renderSales()">
                     </div>
                 </div>
-                <div id="sales-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                <div id="sales-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: var(--box-bg); padding: 10px; border-radius: 8px;">
                     <input type="date" id="sales-date-from" onchange="renderSales()" style="width: auto;">
                     <span>to</span>
                     <input type="date" id="sales-date-to" onchange="renderSales()" style="width: auto;">
                 </div>
 
-                <div class="tabs" style="display: flex; margin-bottom: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <div class="tabs" style="display: flex; margin-bottom: 0; border-top: 1px solid var(--input-border); padding-top: 10px;">
                     <button class="tab-btn active" id="sales-tab-pending" onclick="filterSalesTab('Pending')">Pending Status</button>
                     <button class="tab-btn" id="sales-tab-complete" onclick="filterSalesTab('Complete')">Complete Status</button>
                     <button class="tab-btn" id="sales-tab-all" onclick="filterSalesTab('All')">All Status</button>
@@ -682,7 +808,7 @@
             <div class="table-container" style="overflow-x: auto;">
                 <table id="discount-table" style="width: 100%; border-collapse: collapse; white-space: nowrap;">
                     <thead>
-                        <tr style="text-align: left; border-bottom: 2px solid rgba(0, 210, 255, 0.3);">
+                        <tr style="text-align: left; border-bottom: 2px solid var(--booking-details-border);">
                             <th style="padding: 10px;">Name</th><th style="padding: 10px;">Applies To</th><th style="padding: 10px;">Type</th><th style="padding: 10px;">Value</th><th style="padding: 10px;">Start</th><th style="padding: 10px;">End</th><th style="padding: 10px;">Status</th><th style="padding: 10px;">Actions</th>
                         </tr>
                     </thead>
@@ -695,7 +821,7 @@
         <div id="order-section" class="section">
             <div class="header-actions">
                 <h3>Orders Management</h3>
-                <button class="btn-small" onclick="openScanModal()" style="background:#00d2ff; width:auto; padding: 10px 20px;">Scan Order ID</button>
+                <button class="btn-small" onclick="openScanModal()" style="background:var(--primary-color); width:auto; padding: 10px 20px;">Scan Order ID</button>
             </div>
             
             <div style="margin-top: 15px;">
@@ -712,13 +838,13 @@
                     </div>
                 </div>
                 
-                <div id="order-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                <div id="order-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: var(--box-bg); padding: 10px; border-radius: 8px;">
                     <input type="date" id="order-date-from" onchange="renderOrders()" style="width: auto;">
                     <span>to</span>
                     <input type="date" id="order-date-to" onchange="renderOrders()" style="width: auto;">
                 </div>
 
-                <div class="tabs" style="display: flex; margin-bottom: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <div class="tabs" style="display: flex; margin-bottom: 0; border-top: 1px solid var(--input-border); padding-top: 10px;">
                     <button class="tab-btn active" id="order-tab-pending" onclick="filterOrderTab('Pending')">Pending Status</button>
                     <button class="tab-btn" id="order-tab-complete" onclick="filterOrderTab('Complete')">Complete Status</button>
                     <button class="tab-btn" id="order-tab-all" onclick="filterOrderTab('All')">All Status</button>
@@ -770,11 +896,11 @@
 
             <!-- Mix Mode Container -->
             <div id="avail-mix-container" style="display:none; margin-top:20px;">
-                <h4 style="color:#00d2ff; margin-bottom:10px;">Select Items to Check</h4>
+                <h4 style="color:var(--primary-color); margin-bottom:10px;">Select Items to Check</h4>
                 <div id="avail-item-grid" class="item-grid"></div>
 
                 <div id="avail-item-config" class="booking-details" style="display: none; border-style: dashed;">
-                    <h4 id="avail-selected-item-title" style="color:#00d2ff; margin-bottom:15px;"></h4>
+                    <h4 id="avail-selected-item-title" style="color:var(--primary-color); margin-bottom:15px;"></h4>
                     <div class="form-grid">
                         <div class="input-group">
                             <label>Quantity</label>
@@ -793,11 +919,11 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="addAvailToCart()" style="margin-top:20px; background:#00d2ff;">+ Add to Check List</button>
+                    <button onclick="addAvailToCart()" style="margin-top:20px; background:var(--primary-color);">+ Add to Check List</button>
                 </div>
 
                 <div id="avail-cart-display" style="margin-top:20px; display:none;">
-                    <h4 style="margin-bottom:10px; color:#00d2ff;">Check List Items:</h4>
+                    <h4 style="margin-bottom:10px; color:var(--primary-color);">Check List Items:</h4>
                     <div class="table-container">
                         <table class="cart-table">
                             <thead><tr><th>Item</th><th>Qty</th><th>Dur</th><th></th></tr></thead>
@@ -808,11 +934,11 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button onclick="checkAvailability()" style="background:#00d2ff; width:auto; padding: 12px 30px; margin-top:0;">Check Availability</button>
+                <button onclick="checkAvailability()" style="background:var(--primary-color); width:auto; padding: 12px 30px; margin-top:0;">Check Availability</button>
                 <button id="avail-whatsapp-btn" onclick="openAvailWhatsApp()" style="display:none; background:#25d366; width:auto; padding: 12px 30px; margin-top:0;">WhatsApp</button>
             </div>
 
-            <div id="avail-results" style="display:none; margin-top:30px; padding:20px; background:rgba(255,255,255,0.05); border-radius:12px; border:1px solid rgba(0, 210, 255, 0.3); line-height:1.8; font-family: monospace;">
+            <div id="avail-results" style="display:none; margin-top:30px; padding:20px; background:var(--box-bg); border-radius:12px; border:1px solid var(--booking-details-border); line-height:1.8; font-family: monospace;">
             </div>
         </div>
 
@@ -834,7 +960,7 @@
                         <option value="Custom">Custom Date</option>
                     </select>
                 </div>
-                <div id="report-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                <div id="report-custom-date-inputs" style="display: none; gap: 10px; align-items: center; margin-bottom: 15px; background: var(--box-bg); padding: 10px; border-radius: 8px;">
                     <input type="date" id="report-date-from" onchange="loadReportData()" style="width: auto;">
                     <span>to</span>
                     <input type="date" id="report-date-to" onchange="loadReportData()" style="width: auto;">
@@ -868,22 +994,22 @@
                 </div>
             </div>
             
-            <div style="margin-top: 15px; background: rgba(0, 210, 255, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.3);">
-                 <div id="report-total-pax" style="font-size: 0.9rem; color: #00d2ff; font-weight: bold; text-align: center;">Adult: 0 | Kid: 0 | Tod: 0</div>
+            <div style="margin-top: 15px; background: var(--item-card-selected-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--booking-details-border);">
+                 <div id="report-total-pax" style="font-size: 0.9rem; color: var(--primary-color); font-weight: bold; text-align: center;">Adult: 0 | Kid: 0 | Tod: 0</div>
             </div>
 
-        <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-            <h4 style="margin-bottom: 15px; color: #00d2ff;">Business Performance Trend (RM & Pax)</h4>
+        <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+            <h4 style="margin-bottom: 15px; color: var(--primary-color);">Business Performance Trend (RM & Pax)</h4>
             <canvas id="reportProfitChart" style="max-height: 300px; width: 100%;"></canvas>
         </div>
 
-        <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
+        <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
-                <h4 style="color: #00d2ff; margin: 0;">Item Occupancy Rate (%)</h4>
+                <h4 style="color: var(--primary-color); margin: 0;">Item Occupancy Rate (%)</h4>
                 <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 5px;">
                         <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Days/Week:</label>
-                        <select id="report-op-days" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                        <select id="report-op-days" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                             <option value="7">Everyday</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -895,23 +1021,23 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 5px;">
                         <label style="font-size: 0.8rem; margin: 0; white-space: nowrap;">Op Hours/Day:</label>
-                        <select id="report-op-hours-type" onchange="toggleReportOpHours(this.value)" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                        <select id="report-op-hours-type" onchange="toggleReportOpHours(this.value)" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                             <option value="24">24hrs</option>
                             <option value="custom">Custom</option>
                         </select>
                     </div>
                     <div id="report-op-hours-custom-inputs" style="display: none; align-items: center; gap: 5px;">
-                        <input type="time" id="report-op-hours-start" value="09:00" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                        <input type="time" id="report-op-hours-start" value="09:00" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                         <span>to</span>
-                        <input type="time" id="report-op-hours-end" value="18:00" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 4px;">
+                        <input type="time" id="report-op-hours-end" value="18:00" onchange="loadReportData()" style="width: auto; padding: 5px; font-size: 0.8rem; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text); border-radius: 4px;">
                     </div>
                 </div>
             </div>
             <canvas id="reportOccupancyChart" style="max-height: 150px; width: 100%;"></canvas>
         </div>
 
-        <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-            <h4 style="margin-bottom: 15px; color: #00d2ff;">Profit Payment Methods Summary</h4>
+        <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+            <h4 style="margin-bottom: 15px; color: var(--primary-color);">Profit Payment Methods Summary</h4>
             <table>
                 <thead>
                     <tr>
@@ -923,8 +1049,8 @@
             </table>
         </div>
 
-            <div style="margin-top: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.2);">
-                <h4 style="margin-bottom: 15px; color: #00d2ff;">Top Items Ranking</h4>
+            <div style="margin-top: 30px; background: var(--box-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--booking-details-border);">
+                <h4 style="margin-bottom: 15px; color: var(--primary-color);">Top Items Ranking</h4>
                 <table id="report-top-items-table">
                     <thead>
                         <tr>
@@ -1033,9 +1159,9 @@
 <!-- Export Selection Modal -->
 <div class="form-overlay" id="export-selection-overlay">
     <div class="form-content" style="max-width: 400px; text-align: center;">
-        <h3 style="margin-bottom:20px; color:#00d2ff;">Export Report</h3>
+        <h3 style="margin-bottom:20px; color:var(--primary-color);">Export Report</h3>
         <p style="margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">Select the type of report you want to generate.</p>
-        <button onclick="executeExport('Sales')" style="background:#00d2ff; margin-bottom: 10px;">Print Sales</button>
+        <button onclick="executeExport('Sales')" style="background:var(--primary-color); margin-bottom: 10px;">Print Sales</button>
         <button onclick="executeExport('Participant')" style="background:#25d366; margin-bottom: 10px;">Print Participant</button>
         <button class="btn-danger" onclick="document.getElementById('export-selection-overlay').style.display='none'" style="margin-top:10px;">Cancel</button>
     </div>
@@ -1044,9 +1170,9 @@
 <!-- Participant Export Type Modal -->
 <div class="form-overlay" id="participant-export-type-overlay">
     <div class="form-content" style="max-width: 400px; text-align: center;">
-        <h3 style="margin-bottom:20px; color:#00d2ff;">Participant Report Type</h3>
+        <h3 style="margin-bottom:20px; color:var(--primary-color);">Participant Report Type</h3>
         <p style="margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">Select the version of the participant report.</p>
-        <button onclick="executeFinalExport('Participant')" style="background:#00d2ff; margin-bottom: 10px;">Report</button>
+        <button onclick="executeFinalExport('Participant')" style="background:var(--primary-color); margin-bottom: 10px;">Report</button>
         <button onclick="executeFinalExport('Marina')" style="background:#25d366; margin-bottom: 10px;">Marina</button>
         <button class="btn-danger" onclick="document.getElementById('participant-export-type-overlay').style.display='none'" style="margin-top:10px;">Cancel</button>
     </div>
@@ -1056,18 +1182,18 @@
 <div class="checkout-overlay" id="checkout-overlay">
     <div class="checkout-container">
         <div class="checkout-header">
-            <h2 style="margin:0; color: white;">Payment Checkout</h2>
+            <h2 style="margin:0; color: var(--modal-text);">Payment Checkout</h2>
             <button class="btn-small btn-danger" onclick="closeCheckoutModal()" style="width:auto;">Close</button>
         </div>
         <div class="checkout-body">
-            <div class="checkout-left" style="color: white;">
+            <div class="checkout-left" style="color: var(--modal-text);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; color:#00d2ff;">Order Summary</h3>
-                    <i class="fas fa-tags" style="cursor:pointer; font-size: 1.1rem; color: #00d2ff;" onclick="openDiscountPicker()"></i>
+                    <h3 style="margin: 0; color:var(--primary-color);">Order Summary</h3>
+                    <i class="fas fa-tags" style="cursor:pointer; font-size: 1.1rem; color: var(--primary-color);" onclick="openDiscountPicker()"></i>
                 </div>
                 <div id="checkout-item-list"></div>
-                <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1); font-size:1.3rem; color: white;">
-                    Grand Total: <span id="checkout-grand-total" style="color:white; font-weight:bold;">RM0.00</span>
+                <div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--input-border); font-size:1.3rem; color: var(--modal-text);">
+                    Grand Total: <span id="checkout-grand-total" style="color:var(--modal-text); font-weight:bold;">RM0.00</span>
                 </div>
             </div>
             <div class="checkout-right">
@@ -1116,7 +1242,7 @@
                             </div>
                             <div id="co-mix-section" style="display: none; margin-top: 5px;">
                                 <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                                    <select id="co-mix-type-select" style="flex: 1; font-size: 0.8rem; padding: 6px; color: white;">
+                                    <select id="co-mix-type-select" style="flex: 1; font-size: 0.8rem; padding: 6px; color: var(--input-text);">
                                         <option value="Cash">Cash</option>
                                         <option value="Online Transfer">Online Transfer</option>
                                         <option value="Card">Card</option>
@@ -1146,7 +1272,7 @@
                             <button class="keypad-btn" onclick="pressNum(0)">0</button>
                             <button class="keypad-btn action" onclick="pressDot()">.</button>
                         </div>
-                        <button id="co-submit-btn" onclick="handleBookingSubmit()" style="padding:15px; font-size:1.1rem; background:#25d366; font-weight:bold; width:100%; border:none; border-radius:8px; color:white; cursor:pointer;">Confirm & Submit Booking</button>
+                        <button id="co-submit-btn" onclick="handleBookingSubmit()" style="padding:15px; font-size:1.1rem; background:#25d366; font-weight:bold; width:100%; border:none; border-radius:8px; color:var(--text-color); cursor:pointer;">Confirm & Submit Booking</button>
                     </div>
                 </div>
             </div>
@@ -1157,11 +1283,11 @@
 <!-- Live Timer Modal -->
 <div class="form-overlay" id="timer-overlay">
     <div class="form-content" style="max-width: 800px;">
-        <h3 style="margin-bottom:20px; color:#00d2ff;">Live Rental Timer</h3>
+        <h3 style="margin-bottom:20px; color:var(--primary-color);">Live Rental Timer</h3>
         <div class="table-container">
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr style="border-bottom: 2px solid rgba(0, 210, 255, 0.3);">
+                    <tr style="border-bottom: 2px solid var(--booking-details-border);">
                         <th style="text-align:left; padding:10px; white-space: nowrap;">Item</th>
                         <th style="text-align:center; padding:10px; white-space: nowrap;">Qty</th>
                         <th style="text-align:center; padding:10px; white-space: nowrap;">Duration</th>
@@ -1179,7 +1305,7 @@
 <!-- Generic CRUD Modal -->
 <div class="form-overlay" id="form-overlay">
     <div class="form-content">
-        <h3 id="modal-title" style="margin-bottom:20px; color:#00d2ff;">Add New</h3>
+        <h3 id="modal-title" style="margin-bottom:20px; color:var(--primary-color);">Add New</h3>
         <form id="crud-form" onsubmit="handleSave(event)">
             <input type="hidden" id="entry-id">
             <input type="hidden" id="entry-type">
@@ -1212,11 +1338,11 @@
 <!-- Scan Order Modal -->
 <div class="form-overlay" id="scan-overlay">
     <div class="form-content" style="max-width: 500px;">
-        <h3 id="scan-title" style="margin-bottom:20px; color:#00d2ff;">Process Order</h3>
+        <h3 id="scan-title" style="margin-bottom:20px; color:var(--primary-color);">Process Order</h3>
         
         <div id="scan-initial-actions">
             <button onclick="startScanner()" style="background:#25d366;">Scan QR Code</button>
-            <div style="margin: 15px 0; color: rgba(255,255,255,0.5); text-align: center;">— OR —</div>
+            <div style="margin: 15px 0; color: var(--text-muted); text-align: center;">— OR —</div>
             <div class="input-group">
                 <label>Enter Order ID</label>
                 <input type="text" id="manual-order-id" placeholder="e.g. SW-12345678">
@@ -1241,21 +1367,21 @@
 <div class="form-overlay" id="order-placed-overlay">
     <div class="form-content" style="max-width: 450px; text-align: center;">
         <i class="fas fa-check-circle" style="font-size: 4rem; color: #25d366; margin-bottom: 20px; display: block;"></i>
-        <h2 style="color: white; margin-bottom: 10px;">Order Place!!</h2>
+        <h2 style="color: var(--modal-text); margin-bottom: 10px;">Order Place!!</h2>
         
         <div id="op-qrcode" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;"></div>
         <div id="op-order-id" style="font-weight: bold; margin-bottom: 20px; font-size: 1.2rem;">Order ID : SW-</div>
 
-        <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="text-align: left; background: var(--box-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid var(--input-border);">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;">
                 <span>Total Amount</span>
                 <span id="op-total-amount" style="font-weight: bold;">RM0.00</span>
             </div>
-            <div style="margin-bottom: 10px; font-weight: bold; color: #00d2ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Amount Given</div>
+            <div style="margin-bottom: 10px; font-weight: bold; color: var(--primary-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Amount Given</div>
             <div id="op-amount-given-list" style="display: flex; flex-direction: column; gap: 8px;">
                 <!-- Breakdown will be filled by JS -->
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; font-size: 1.1rem;">
+            <div style="display: flex; justify-content: space-between; margin-top: 15px; border-top: 1px solid var(--input-border); padding-top: 15px; font-size: 1.1rem;">
                 <span>Change</span>
                 <span id="op-change-amount" style="color: #25d366; font-weight: bold;">RM0.00</span>
             </div>
@@ -1263,7 +1389,7 @@
 
         <div style="display: flex; gap: 10px;">
             <button onclick="closeOrderPlacedPopup()" style="background: #666; flex: 1;">Close</button>
-            <button onclick="printCurrentBookingReceipt()" style="background: #00d2ff; flex: 1;">Print</button>
+            <button onclick="printCurrentBookingReceipt()" style="background: var(--primary-color); flex: 1;">Print</button>
             <button onclick="sendWhatsApp()" style="background: #25d366; flex: 2; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <i class="fab fa-whatsapp"></i> Send to WhatsApp
             </button>
@@ -1274,9 +1400,9 @@
 <!-- WhatsApp Message Type Picker -->
 <div class="form-overlay" id="wa-picker-overlay" style="z-index: 400;">
     <div class="form-content" style="max-width: 400px; text-align: center;">
-        <h3 style="margin-bottom:20px; color:#00d2ff;">Select WhatsApp Message</h3>
+        <h3 style="margin-bottom:20px; color:var(--primary-color);">Select WhatsApp Message</h3>
         <p style="margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">All rental timers for this order have ended. Which message would you like to send?</p>
-        <button id="wa-remind-btn" style="background:#00d2ff; margin-bottom: 10px;">Remind Customer</button>
+        <button id="wa-remind-btn" style="background:var(--primary-color); margin-bottom: 10px;">Remind Customer</button>
         <button id="wa-thanks-btn" style="background:#25d366; margin-bottom: 10px;">Thank You Message</button>
         <button class="btn-danger" onclick="document.getElementById('wa-picker-overlay').style.display='none'" style="margin-top:10px;">Cancel</button>
     </div>
@@ -1285,7 +1411,7 @@
 <!-- Discount Picker Modal -->
 <div class="form-overlay" id="discount-picker-overlay" style="z-index: 300;">
     <div class="form-content" style="max-width: 500px;">
-        <h3 style="margin-bottom:20px; color:#00d2ff;">Available Discounts</h3>
+        <h3 style="margin-bottom:20px; color:var(--primary-color);">Available Discounts</h3>
         <div id="discount-picker-list" style="display: flex; flex-direction: column; gap: 10px;">
             <!-- Populated by JS -->
         </div>
@@ -1297,15 +1423,15 @@
 <div class="form-overlay" id="offline-overlay" style="z-index: 10000; display: none;">
     <div class="form-content" style="max-width: 320px; text-align: center; border-color: #ff4b2b;">
         <i class="fas fa-frown" style="font-size: 5rem; color: #ff4b2b; margin-bottom: 20px;"></i>
-        <h3 style="color: white; margin-bottom: 15px;">No connection please refresh.</h3>
-        <button onclick="location.reload()" style="background: #00d2ff; font-weight: bold;">Refresh</button>
+        <h3 style="color: var(--modal-text); margin-bottom: 15px;">No connection please refresh.</h3>
+        <button onclick="location.reload()" style="background: var(--primary-color); font-weight: bold;">Refresh</button>
     </div>
 </div>
 
 <!-- Mobile Management Overlay -->
 <div class="form-overlay" id="mobile-management-overlay" style="z-index: 2000; display: none;">
     <div class="form-content" style="max-width: 300px; text-align: center; padding: 20px;">
-        <h3 style="margin-bottom: 20px; color: #00d2ff;">Management</h3>
+        <h3 style="margin-bottom: 20px; color: var(--primary-color);">Management</h3>
         <div id="mobile-management-list" style="display: flex; flex-direction: column; gap: 10px;">
             <button class="tab-btn mobile-dropdown-item" onclick="switchTab('staff'); closeMobileManagement();">Staff Management</button>
             <button class="tab-btn mobile-dropdown-item" onclick="switchTab('role'); closeMobileManagement();">Role Management</button>
@@ -1724,9 +1850,9 @@
         const finalGrandTotal = Math.max(0, subtotal - totalDiscountAmount);
         currentDiscountDataForSubmit = discountBreakdown.map(db => `${db.name} RM${db.amount.toFixed(2)}`).join(', ');
 
-        let html = `<div style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">`;
+        let html = `<div style="margin-bottom:15px; border-bottom:1px solid var(--input-border); padding-bottom:10px;">`;
         cart.forEach(item => {
-            html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.85rem; color: rgba(255,255,255,0.8);">
+            html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.85rem; color: var(--text-muted);">
                 <span>${item.itemName} (x${item.quantity}) - ${item.duration}m</span>
                 <span>RM${parseFloat(item.price).toFixed(2)}</span>
             </div>`;
@@ -1738,7 +1864,7 @@
         discountBreakdown.forEach(db => {
             html += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem; color:#ff4b2b;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <button onclick="removeAppliedDiscount('${db.id}')" style="width:20px; height:20px; padding:0; margin:0; background:rgba(255,0,0,0.2); font-size:0.7rem; border-radius:50%; border:none; color:white; cursor:pointer;">×</button>
+                    <button onclick="removeAppliedDiscount('${db.id}')" style="width:20px; height:20px; padding:0; margin:0; background:rgba(255,0,0,0.2); font-size:0.7rem; border-radius:50%; border:none; color:var(--text-color); cursor:pointer;">×</button>
                     <span>Discount (${db.name})</span>
                 </div>
                 <span>-RM${db.amount.toFixed(2)}</span>
@@ -1788,9 +1914,9 @@
             const start = d.discountStart ? new Date(d.discountStart).toLocaleString() : 'N/A';
             const end = d.discountEnd ? new Date(d.discountEnd).toLocaleString() : 'N/A';
             return `
-                <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border:1px solid ${isApplied ? '#00d2ff' : 'rgba(255,255,255,0.1)'};">
+                <div style="background:var(--input-bg); padding:15px; border-radius:8px; border:1px solid ${isApplied ? 'var(--primary-color)' : 'var(--input-border)'};">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h4 style="color:#00d2ff;">${d.discountName}</h4>
+                        <h4 style="color:var(--primary-color);">${d.discountName}</h4>
                         <button onclick="toggleDiscountSelection('${d.id}')" style="width:auto; margin:0; background:${isApplied ? '#ff4b2b' : '#25d366'}; padding:5px 15px;">
                             ${isApplied ? 'Remove' : 'Apply'}
                         </button>
@@ -1862,7 +1988,7 @@
             
             const list = document.getElementById('co-mix-list');
             list.innerHTML = mixPayments.map((p, i) => `
-                <div class="pay-row" style="background: ${activeMixIndex === i ? 'rgba(0,210,255,0.2)' : 'rgba(255,255,255,0.05)'}; padding: 8px; border-radius: 6px; cursor: pointer; border: 1px solid ${activeMixIndex === i ? '#00d2ff' : 'transparent'}; color: white;" onclick="selectMixPaymentRow(${i})">
+                <div class="pay-row" style="background: ${activeMixIndex === i ? 'var(--item-card-selected-bg)' : 'var(--box-bg)'}; padding: 8px; border-radius: 6px; cursor: pointer; border: 1px solid ${activeMixIndex === i ? 'var(--primary-color)' : 'transparent'}; color: var(--modal-text);" onclick="selectMixPaymentRow(${i})">
                     <span style="font-size: 0.8rem;">${p.method}</span>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-weight: bold;">RM${parseFloat(p.amount).toFixed(2)}</span>
@@ -2161,7 +2287,7 @@
             const isMulti = d.discountType && d.discountType.includes(',');
 
             return `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <tr style="border-bottom: 1px solid var(--table-cart-border);">
                 <td style="padding: 10px;">${d.discountName}</td>
                 <td style="padding: 10px;"><small>${applies}</small></td>
                 <td style="padding: 10px;">${isMulti ? 'Multi' : d.discountType}</td>
@@ -2205,7 +2331,7 @@
     function addDiscountItemRow(data = null, isFixed = false) {
         const tbody = document.getElementById('discount-items-body');
         const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.style.borderBottom = '1px solid var(--table-cart-border)';
         
         const itemOptions = currentItems.map(i => 
             `<option value="${i.id}" ${data && data.id === i.id ? 'selected' : ''}>${i.itemName}</option>`
@@ -2219,17 +2345,17 @@
         tr.innerHTML = `
             <td style="padding: 2px;">
                 ${isFixed ? `<span>${data.name}</span><input type="hidden" name="d_item_id" value="${data.id}">` : `
-                <select name="d_item_id" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                <select name="d_item_id" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; width:100%;">
                     <option value="">-- Select --</option>
                     ${itemOptions}
                 </select>`}
             </td>
             <td style="padding: 2px;">
-                <select name="d_type" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                <select name="d_type" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; width:100%;">
                     ${typeOptions}
                 </select>
             </td>
-            <td style="padding: 2px;"><input type="text" name="d_value" value="${(data && data.value) || ''}" placeholder="Value" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="text" name="d_value" value="${(data && data.value) || ''}" placeholder="Value" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; width:100%;"></td>
             <td style="padding: 2px; text-align:center;">
                 ${isFixed ? '' : '<button type="button" onclick="this.closest(\'tr\').remove()" class="btn-small btn-danger" style="margin:0;">×</button>'}
             </td>
@@ -2323,7 +2449,7 @@
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
                 <td style="font-size:0.8rem;">${s.totalPax || '-'}</td>
                 <td>${itemsHtml}</td>
-                <td style="font-weight:bold; color:#00d2ff;">RM${s.totalPrice}</td>
+                <td style="font-weight:bold; color:var(--primary-color);">RM${s.totalPrice}</td>
                 <td style="font-weight:bold; color:#25d366;">RM${s.totalPaidAmount}</td>
                 <td style="font-size: 0.85rem;">${paymentBy}</td>
                 <td><small>${s.orderRemark || '-'}</small></td>
@@ -2334,7 +2460,7 @@
                 <td>${s.servedBy || '-'}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn-small" onclick="sendSalesWhatsApp('${s.id}')" style="background:#25d366;">WhatsApp</button>
-                    <button class="btn-small" onclick="printOrderReceiptById('${s.id}')" style="background:#00d2ff;">Print</button>
+                    <button class="btn-small" onclick="printOrderReceiptById('${s.id}')" style="background:var(--primary-color);">Print</button>
                     <button class="btn-small" onclick="openModal('salesView', '${s.id}')">View</button>
                     <button class="btn-small" onclick="openModal('sales', '${s.id}')">Edit</button>
                     <button class="btn-small btn-danger" onclick="deleteEntry('MKMARINE_WATERSPORT_SALES_DATA', '${s.id}', loadSales)">Del</button>
@@ -2450,7 +2576,7 @@
             timerDisplay.style.display = 'block';
 
             if (filtered.length === 0) {
-                timerDisplay.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5; color:white;">No active timers found for the selected date.</div>';
+                timerDisplay.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5; color:var(--text-color);">No active timers found for the selected date.</div>';
                 return;
             }
 
@@ -2468,7 +2594,7 @@
                     const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
                     
                     return `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding:10px; white-space: nowrap;">${name}</td>
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${qtys[i]}</td>
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${durationMin}m</td>
@@ -2479,20 +2605,20 @@
                 }).join('');
 
                 return `
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: white;">
+                    <div style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <div>
-                                <div style="color: #00d2ff; font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
+                                <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
                                 <div style="font-size: 0.85rem; opacity: 0.8;">${new Date(s.orderDate).toLocaleString()}</div>
                             </div>
                             <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
                                 <i class="fab fa-whatsapp"></i> WhatsApp
                             </button>
                         </div>
-                        <div class="table-container" data-scroll-id="${s.id}" style="background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
+                        <div class="table-container" data-scroll-id="${s.id}" style="background: var(--booking-details-bg); border-radius: 8px; border: 1px solid var(--table-cart-border); overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
-                                    <tr style="border-bottom: 2px solid rgba(0, 210, 255, 0.2);">
+                                    <tr style="border-bottom: 2px solid var(--table-border);">
                                         <th style="text-align:left; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Item</th>
                                         <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Qty</th>
                                         <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Duration</th>
@@ -2553,7 +2679,7 @@
                     ${!s.startTime ? 
                         `<button class="btn-small" onclick="startOrder('${s.id}')" style="background:#25d366;">Start</button>` : 
                         `
-                        <button class="btn-small" onclick="openTimerModal('${s.id}')" style="background:#00d2ff;">View Timer</button>
+                        <button class="btn-small" onclick="openTimerModal('${s.id}')" style="background:var(--primary-color);">View Timer</button>
                         <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366;">Whatsapp</button>
                         `
                     }
@@ -2569,8 +2695,8 @@
             <div class="item-card" id="card-${i.id}" onclick="selectBookingItem('${i.id}')">
                 ${i.itemImage ? `<img src="${pb.files.getUrl(i, i.itemImage)}">` : '<div style="height:100px; background:#333; border-radius:6px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">No Img</div>'}
                 <div style="font-weight:bold; font-size:0.9rem;">${i.itemName}</div>
-                <div style="font-size:0.75rem; color:rgba(255,255,255,0.6); margin-bottom:5px;">${i.itemDesc ?? ''}</div>
-                <div style="color:#00d2ff; font-size:0.8rem;">RM${i.itemPrice} / ${i.itemRentalDuration}m</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px;">${i.itemDesc ?? ''}</div>
+                <div style="color:var(--primary-color); font-size:0.8rem;">RM${i.itemPrice} / ${i.itemRentalDuration}m</div>
             </div>
         `).join('');
     }
@@ -2598,17 +2724,17 @@
             else if (p.startsWith('T')) t = val;
         });
         return `
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white; margin-top:5px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: var(--text-color); margin-top:5px;">
                 <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                    <tr style="border-bottom: 1px solid var(--table-border);">
                         <th style="text-align:left; padding: 4px;">Categories</th>
                         <th style="text-align:center; padding: 4px;">Pax</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">Adults</td><td style="text-align:center; padding: 4px;">${a}</td></tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">Kids</td><td style="text-align:center; padding: 4px;">${k}</td></tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">Toddler</td><td style="text-align:center; padding: 4px;">${t}</td></tr>
+                    <tr style="border-bottom: 1px solid var(--table-cart-border);"><td style="padding: 4px;">Adults</td><td style="text-align:center; padding: 4px;">${a}</td></tr>
+                    <tr style="border-bottom: 1px solid var(--table-cart-border);"><td style="padding: 4px;">Kids</td><td style="text-align:center; padding: 4px;">${k}</td></tr>
+                    <tr style="border-bottom: 1px solid var(--table-cart-border);"><td style="padding: 4px;">Toddler</td><td style="text-align:center; padding: 4px;">${t}</td></tr>
                 </tbody>
             </table>
         `;
@@ -2686,7 +2812,7 @@
                 <div class="item-card" id="avail-card-${i.id}" onclick="selectAvailItem('${i.id}')">
                     ${i.itemImage ? `<img src="${pb.files.getUrl(i, i.itemImage)}">` : '<div style="height:100px; background:#333; border-radius:6px; display:flex; align-items:center; justify-content:center; margin-bottom:8px;">No Img</div>'}
                     <div style="font-weight:bold; font-size:0.9rem;">${i.itemName}</div>
-                    <div style="color:#00d2ff; font-size:0.8rem;">Stock: ${i.itemQuantity}</div>
+                    <div style="color:var(--primary-color); font-size:0.8rem;">Stock: ${i.itemQuantity}</div>
                 </div>
             `).join('');
         } catch (err) {
@@ -2800,13 +2926,13 @@
                 filter: 'orderStatus != "Cancelled"'
             });
 
-            let summaryHtml = `<div style="margin-bottom:15px; font-weight:bold; color:#00d2ff;">DATE : ${reqStart.toLocaleDateString('en-GB')}</div>`;
+            let summaryHtml = `<div style="margin-bottom:15px; font-weight:bold; color:var(--primary-color);">DATE : ${reqStart.toLocaleDateString('en-GB')}</div>`;
             
             const reqStartMs = reqStart.getTime();
             let globalMaxEndMs = reqStartMs;
             if (mode === 'all') {
                 const globalDur = parseInt(document.getElementById('avail-duration').value) || 0;
-                summaryHtml += `<div style="margin-bottom:15px; font-weight:bold; color:#00d2ff;">DURATION : ${globalDur} mins</div>`;
+                summaryHtml += `<div style="margin-bottom:15px; font-weight:bold; color:var(--primary-color);">DURATION : ${globalDur} mins</div>`;
                 lastAvailCheck.duration = globalDur;
                 globalMaxEndMs = reqStartMs + globalDur * 60000;
             }
@@ -2926,7 +3052,7 @@
                 });
 
                 if (hasItems) {
-                    summaryHtml += `<div style="margin-top:10px; font-weight:bold; color:#00d2ff;">TIME : ${timeStr}</div>` + segSummary;
+                    summaryHtml += `<div style="margin-top:10px; font-weight:bold; color:var(--primary-color);">TIME : ${timeStr}</div>` + segSummary;
                     lastAvailCheck.segments.push(segData);
                 }
             }
@@ -3246,7 +3372,7 @@
             document.getElementById('report-top-items-body').innerHTML = ranking.map(r => `
                 <tr>
                     <td>${r[0]}</td>
-                    <td style="text-align:center; font-weight:bold; color:#00d2ff;">${r[1]}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--primary-color);">${r[1]}</td>
                 </tr>
             `).join('');
 
@@ -3954,7 +4080,7 @@
             document.getElementById('top-items-body').innerHTML = ranking.map(r => `
                 <tr>
                     <td>${r[0]}</td>
-                    <td style="text-align:center; font-weight:bold; color:#00d2ff;">${r[1]}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--primary-color);">${r[1]}</td>
                 </tr>
             `).join('');
 
@@ -3998,6 +4124,14 @@
         const ctx = document.getElementById('profitChart').getContext('2d');
         if (myChart) myChart.destroy();
 
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#fff' : '#2d3748';
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        const primaryColor = isDark ? '#00d2ff' : '#0072ff';
+        const primaryBg = isDark ? 'rgba(0, 210, 255, 0.1)' : 'rgba(0, 114, 255, 0.1)';
+        const paxColor = isDark ? '#f1c40f' : '#d97706';
+        const paxBg = isDark ? 'rgba(241, 196, 15, 0.1)' : 'rgba(217, 119, 6, 0.1)';
+
         myChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -4014,8 +4148,8 @@
                     {
                         label: 'Nett Profit (RM)',
                         data: profitData,
-                        borderColor: '#00d2ff',
-                        backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                        borderColor: primaryColor,
+                        backgroundColor: primaryBg,
                         fill: false,
                         tension: 0.4
                     },
@@ -4030,8 +4164,8 @@
                     {
                         label: 'Total Pax',
                         data: paxData,
-                        borderColor: '#f1c40f',
-                        backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                        borderColor: paxColor,
+                        backgroundColor: paxBg,
                         fill: false,
                         tension: 0.4,
                         borderDash: [5, 5] // Dashed line to distinguish count from currency
@@ -4042,13 +4176,13 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
-                    x: { grid: { display: false }, ticks: { color: '#fff' } }
+                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } },
+                    x: { grid: { display: false }, ticks: { color: textColor } }
                 },
                 plugins: {
                     legend: { 
                         display: true,
-                        labels: { color: '#fff', boxWidth: 12, font: { size: 10 } }
+                        labels: { color: textColor, boxWidth: 12, font: { size: 10 } }
                     }
                 }
             }
@@ -4084,6 +4218,12 @@
         const ctx = document.getElementById('occupancyChart').getContext('2d');
         if (occChart) occChart.destroy();
 
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#fff' : '#2d3748';
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        const normalBarBg = isDark ? 'rgba(0, 210, 255, 0.6)' : 'rgba(0, 102, 204, 0.6)';
+        const normalBarBorder = isDark ? '#00d2ff' : '#0066cc';
+
         occChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -4091,8 +4231,8 @@
                 datasets: [{
                     label: 'Occupancy %',
                     data: dataArray,
-                    backgroundColor: dataArray.map(v => v > 80 ? 'rgba(255, 75, 27, 0.6)' : 'rgba(0, 210, 255, 0.6)'),
-                    borderColor: dataArray.map(v => v > 80 ? '#ff4b2b' : '#00d2ff'),
+                    backgroundColor: dataArray.map(v => v > 80 ? 'rgba(255, 75, 27, 0.6)' : normalBarBg),
+                    borderColor: dataArray.map(v => v > 80 ? '#ff4b2b' : normalBarBorder),
                     borderWidth: 1
                 }]
             },
@@ -4100,12 +4240,12 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { ticks: { color: '#fff', font: { size: 10 } }, grid: { display: false } },
+                    x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } },
                     y: { 
                         beginAtZero: true, 
                         max: 100, 
-                        ticks: { color: '#fff', callback: value => value + '%' }, 
-                        grid: { color: 'rgba(255,255,255,0.1)' } 
+                        ticks: { color: textColor, callback: value => value + '%' }, 
+                        grid: { color: gridColor } 
                     }
                 },
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `Occupancy: ${ctx.parsed.y}%` } } }
@@ -4116,6 +4256,15 @@
 function renderReportProfitChart(labels, profitData, salesData, discountData, paxData) {
     const ctx = document.getElementById('reportProfitChart').getContext('2d');
     if (reportMyChart) reportMyChart.destroy();
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#fff' : '#2d3748';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    const primaryColor = isDark ? '#00d2ff' : '#0072ff';
+    const primaryBg = isDark ? 'rgba(0, 210, 255, 0.1)' : 'rgba(0, 114, 255, 0.1)';
+    const paxColor = isDark ? '#f1c40f' : '#d97706';
+    const paxBg = isDark ? 'rgba(241, 196, 15, 0.1)' : 'rgba(217, 119, 6, 0.1)';
+
     reportMyChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -4132,8 +4281,8 @@ function renderReportProfitChart(labels, profitData, salesData, discountData, pa
                 {
                     label: 'Nett Profit (RM)',
                     data: profitData,
-                    borderColor: '#00d2ff',
-                    backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                    borderColor: primaryColor,
+                    backgroundColor: primaryBg,
                     fill: false,
                     tension: 0.4
                 },
@@ -4148,8 +4297,8 @@ function renderReportProfitChart(labels, profitData, salesData, discountData, pa
                 {
                     label: 'Total Pax',
                     data: paxData,
-                    borderColor: '#f1c40f',
-                    backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                    borderColor: paxColor,
+                    backgroundColor: paxBg,
                     fill: false,
                     tension: 0.4,
                     borderDash: [5, 5]
@@ -4160,10 +4309,10 @@ function renderReportProfitChart(labels, profitData, salesData, discountData, pa
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
-                x: { grid: { display: false }, ticks: { color: '#fff' } }
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor } }
             },
-            plugins: { legend: { display: true, labels: { color: '#fff', boxWidth: 12, font: { size: 10 } } } }
+            plugins: { legend: { display: true, labels: { color: textColor, boxWidth: 12, font: { size: 10 } } } }
         }
     });
 }
@@ -4171,13 +4320,20 @@ function renderReportProfitChart(labels, profitData, salesData, discountData, pa
 function renderReportOccupancyChart(labels, dataArray) {
     const ctx = document.getElementById('reportOccupancyChart').getContext('2d');
     if (reportOccChart) reportOccChart.destroy();
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#fff' : '#2d3748';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    const normalBarBg = isDark ? 'rgba(0, 210, 255, 0.6)' : 'rgba(0, 102, 204, 0.6)';
+    const normalBarBorder = isDark ? '#00d2ff' : '#0066cc';
+
     reportOccChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{ label: 'Occupancy %', data: dataArray, backgroundColor: dataArray.map(v => v > 80 ? 'rgba(255, 75, 27, 0.6)' : 'rgba(0, 210, 255, 0.6)'), borderColor: dataArray.map(v => v > 80 ? '#ff4b2b' : '#00d2ff'), borderWidth: 1 }]
+            datasets: [{ label: 'Occupancy %', data: dataArray, backgroundColor: dataArray.map(v => v > 80 ? 'rgba(255, 75, 27, 0.6)' : normalBarBg), borderColor: dataArray.map(v => v > 80 ? '#ff4b2b' : normalBarBorder), borderWidth: 1 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#fff', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: '#fff', callback: value => value + '%' }, grid: { color: 'rgba(255,255,255,0.1)' } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `Occupancy: ${ctx.parsed.y}%` } } } }
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: textColor, font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: textColor, callback: value => value + '%' }, grid: { color: gridColor } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `Occupancy: ${ctx.parsed.y}%` } } } }
     });
 }
 
@@ -4477,16 +4633,16 @@ function renderReportOccupancyChart(labels, dataArray) {
             currentBooking.mixPayments.forEach(p => {
                 list.innerHTML += `
                     <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
-                        <span style="color: white;">${p.method}</span>
-                        <span style="color: white;">RM${parseFloat(p.amount).toFixed(2)}</span>
+                        <span style="color: var(--text-color);">${p.method}</span>
+                        <span style="color: var(--text-color);">RM${parseFloat(p.amount).toFixed(2)}</span>
                     </div>
                 `;
             });
         } else {
             list.innerHTML = `
                 <div style="display: flex; justify-content: space-between; font-size: 0.95rem;">
-                    <span style="color: white;">${currentBooking.paymentMethod}</span>
-                    <span style="color: white;">RM${parseFloat(currentBooking.totalReceivedSum).toFixed(2)}</span>
+                    <span style="color: var(--text-color);">${currentBooking.paymentMethod}</span>
+                    <span style="color: var(--text-color);">RM${parseFloat(currentBooking.totalReceivedSum).toFixed(2)}</span>
                 </div>
             `;
         }
@@ -4623,9 +4779,9 @@ function renderReportOccupancyChart(labels, dataArray) {
             const durs = (record.orderItemRentalDuration || '').split(', ');
 
             let itemsTable = `
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white; margin-top:5px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: var(--text-color); margin-top:5px;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <tr style="border-bottom: 1px solid var(--table-border);">
                             <th style="text-align:left; padding: 4px;">Item</th>
                             <th style="text-align:center; padding: 4px;">Qty</th>
                             <th style="text-align:center; padding: 4px;">Duration</th>
@@ -4634,7 +4790,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                     <tbody>
             `;
             names.forEach((n, i) => {
-                itemsTable += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);"><td style="padding: 4px;">${n}</td><td style="text-align:center; padding: 4px;">${qtys[i]}</td><td style="text-align:center; padding: 4px;">${durs[i]}m</td></tr>`;
+                itemsTable += `<tr style="border-bottom: 1px solid var(--table-cart-border);"><td style="padding: 4px;">${n}</td><td style="text-align:center; padding: 4px;">${qtys[i]}</td><td style="text-align:center; padding: 4px;">${durs[i]}m</td></tr>`;
             });
             itemsTable += `</tbody></table>`;
 
@@ -4643,13 +4799,13 @@ function renderReportOccupancyChart(labels, dataArray) {
                 <input type="hidden" id="serve-order-status" value="${record.orderStatus}">
                 <input type="hidden" id="serve-order-date-val" value="${record.orderDate}">
                 <input type="hidden" id="serve-waiver-status-val" value="${record.participantDetailsStatus || 'Pending'}">
-                <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
-                <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.customerName}</div></div>
-                <div class="input-group"><label>Total Pax Breakdown</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
-                <div class="input-group"><label>Order Items</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${itemsTable}</div></div>
-                <div class="input-group"><label>Waiver Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color: ${record.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${record.participantDetailsStatus || 'Pending'}</div></div>
-                <div class="input-group"><label>Order Status</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; color: ${record.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${record.orderStatus === 'Completed' ? 'normal' : 'bold'};">${record.orderStatus}</div></div>
-                <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:rgba(255,255,255,0.05); border-radius:8px;">${record.orderRemark || '-'}</div></div>
+                <div class="input-group"><label>Order Date & Time</label><div style="padding:10px; background:var(--box-bg); border-radius:8px;">${new Date(record.orderDate).toLocaleString()}</div></div>
+                <div class="input-group"><label>Customer Name</label><div style="padding:10px; background:var(--box-bg); border-radius:8px;">${record.customerName}</div></div>
+                <div class="input-group"><label>Total Pax Breakdown</label><div style="padding:10px; background:var(--box-bg); border-radius:8px;">${formatPaxTable(record.totalPax)}</div></div>
+                <div class="input-group"><label>Order Items</label><div style="padding:10px; background:var(--box-bg); border-radius:8px;">${itemsTable}</div></div>
+                <div class="input-group"><label>Waiver Status</label><div style="padding:10px; background:var(--box-bg); border-radius:8px; color: ${record.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${record.participantDetailsStatus || 'Pending'}</div></div>
+                <div class="input-group"><label>Order Status</label><div style="padding:10px; background:var(--box-bg); border-radius:8px; color: ${record.orderStatus === 'Completed' ? 'inherit' : '#ff4b2b'}; font-weight: ${record.orderStatus === 'Completed' ? 'normal' : 'bold'};">${record.orderStatus}</div></div>
+                <div class="input-group"><label>Order Remark</label><div style="padding:10px; background:var(--box-bg); border-radius:8px;">${record.orderRemark || '-'}</div></div>
                 <div class="input-group">
                     <label>Customer Status</label>
                     <select id="serve-customer-status" ${isFinished ? 'disabled' : ''}>
@@ -4724,11 +4880,11 @@ function renderReportOccupancyChart(labels, dataArray) {
             let timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`;
             const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
             html += `<tr>
-                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); white-space: nowrap;">${name}</td>
-                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; white-space: nowrap;">${qty}</td>
-                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; white-space: nowrap;">${durationMin}m</td>
-                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; white-space: nowrap;">${endTimeStr}</td>
-                <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
+                <td style="padding:10px; border-bottom:1px solid var(--table-cart-border); white-space: nowrap;">${name}</td>
+                <td style="padding:10px; border-bottom:1px solid var(--table-cart-border); text-align:center; white-space: nowrap;">${qty}</td>
+                <td style="padding:10px; border-bottom:1px solid var(--table-cart-border); text-align:center; white-space: nowrap;">${durationMin}m</td>
+                <td style="padding:10px; border-bottom:1px solid var(--table-cart-border); text-align:center; white-space: nowrap;">${endTimeStr}</td>
+                <td style="padding:10px; border-bottom:1px solid var(--table-cart-border); text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
             </tr>`;
         });
         body.innerHTML = html;
@@ -4974,8 +5130,8 @@ function renderReportOccupancyChart(labels, dataArray) {
 
             fields.innerHTML = `
                 <input type="text" name="roleName" placeholder="Role Name" value="${data.roleName ?? ''}" class="full-width" required>
-                <label class="full-width" style="margin-top:10px; color:#00d2ff;">Accessible Tabs:</label>
-                <div class="full-width" style="display:grid; grid-template-columns:1fr 1fr; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">${checkboxes}</div>
+                <label class="full-width" style="margin-top:10px; color:var(--primary-color);">Accessible Tabs:</label>
+                <div class="full-width" style="display:grid; grid-template-columns:1fr 1fr; background:var(--box-bg); padding:10px; border-radius:8px;">${checkboxes}</div>
             `;
         } else if (type === 'items') {
             const data = id ? currentItems.find(i => i.id === id) : {};
@@ -4987,7 +5143,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 <input type="number" name="itemRentalDuration" placeholder="Duration (mins)" value="${data.itemRentalDuration ?? ''}" required>
                 <input type="number" name="itemPrice" placeholder="Price" value="${data.itemPrice ?? ''}" step="0.01" class="full-width" required>
                 <div class="full-width" style="margin-top:10px;">
-                    <label style="color:#00d2ff; font-size:0.8rem;">Update Image</label>
+                    <label style="color:var(--primary-color); font-size:0.8rem;">Update Image</label>
                     <input type="file" name="itemImage" accept="image/*">
                 </div>
             `;
@@ -5037,7 +5193,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 <div id="discount-items-container" class="full-width" style="display: ${mode !== 'No' ? 'block' : 'none'};">
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
                         <thead>
-                            <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                            <tr style="border-bottom: 1px solid var(--table-border);">
                                 <th style="text-align:left;">Item Name</th><th>Type</th><th>Value</th><th></th>
                             </tr>
                         </thead>
@@ -5093,7 +5249,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                     const amount = d.substring(lastSpace + 1);
                     totalDiscountVal += parseFloat(amount.replace('RM', '')) || 0;
                     discountHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 4px;">${name}</td>
                             <td style="padding: 4px; text-align: right; color: #ff4b2b;">${amount}</td>
                         </tr>`;
@@ -5112,7 +5268,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                     const type = e.substring(0, lastSpace);
                     const amount = e.substring(lastSpace + 1);
                     receivedHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 4px;">${type}</td>
                             <td style="padding: 4px; text-align: right; color: #25d366;">RM${amount}</td>
                         </tr>`;
@@ -5124,7 +5280,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 <input type="hidden" id="edit-discount-total-val" value="${totalDiscountVal}">
                 <div class="input-group full-width">
                     <label>Order ID (Read-only)</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.orderId ?? ''}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; opacity:0.6;">${data.orderId ?? ''}</div>
                 </div>
                 <div class="input-group full-width">
                     <label>Order Date & Time</label>
@@ -5163,7 +5319,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                         </div>
                         <div class="input-group full-width">
                             <label>Refund By (Read-only)</label>
-                            <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.refundBy || '-'}</div>
+                            <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; opacity:0.6;">${data.refundBy || '-'}</div>
                             <input type="hidden" name="refundBy" value="${data.refundBy || ''}">
                         </div>
                     </div>
@@ -5171,26 +5327,26 @@ function renderReportOccupancyChart(labels, dataArray) {
 
                 <div class="full-width">
                     <label>Total Pax Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: white;">
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: var(--text-color);">
                             <thead>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                <tr style="border-bottom: 1px solid var(--table-border);">
                                     <th style="text-align:left; padding: 4px;">Categories</th>
                                     <th style="text-align:center; padding: 4px;">Pax</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <tr style="border-bottom: 1px solid var(--table-cart-border);">
                                     <td style="padding: 4px;">Adults</td>
-                                    <td style="padding: 2px;"><input type="number" name="pax_a" value="${pA}" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+                                    <td style="padding: 2px;"><input type="number" name="pax_a" value="${pA}" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
                                 </tr>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <tr style="border-bottom: 1px solid var(--table-cart-border);">
                                     <td style="padding: 4px;">Kids</td>
-                                    <td style="padding: 2px;"><input type="number" name="pax_k" value="${pK}" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+                                    <td style="padding: 2px;"><input type="number" name="pax_k" value="${pK}" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
                                 </tr>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <tr style="border-bottom: 1px solid var(--table-cart-border);">
                                     <td style="padding: 4px;">Toddler</td>
-                                    <td style="padding: 2px;"><input type="number" name="pax_t" value="${pT}" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+                                    <td style="padding: 2px;"><input type="number" name="pax_t" value="${pT}" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -5199,10 +5355,10 @@ function renderReportOccupancyChart(labels, dataArray) {
                 
                 <div class="full-width">
                     <label>Items Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
                             <thead>
-                                <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                                <tr style="border-bottom: 1px solid var(--table-border);">
                                     <th style="padding: 5px; text-align: left;">Item</th>
                                     <th style="padding: 5px; text-align: center;">Qty</th>
                                     <th style="padding: 5px; text-align: center;">Dur</th>
@@ -5218,19 +5374,19 @@ function renderReportOccupancyChart(labels, dataArray) {
 
                 <div class="full-width">
                     <label>Discount Breakdown (Reference)</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${discountHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${discountHtml}</div>
                 </div>
                 <div class="full-width">
                     <label>Total Received Breakdown (Reference)</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${receivedHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${receivedHtml}</div>
                 </div>
 
                 <div class="full-width">
                     <label>Payment Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
                             <thead>
-                                <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                                <tr style="border-bottom: 1px solid var(--table-border);">
                                     <th style="padding: 5px; text-align: left;">Type</th>
                                     <th style="padding: 5px; text-align: right;">Amount</th>
                                     <th></th>
@@ -5244,24 +5400,24 @@ function renderReportOccupancyChart(labels, dataArray) {
 
                 <div class="input-group">
                     <label>Subtotal (Live)</label>
-                    <div id="edit-subtotal" style="padding: 10px; color: white; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${subtotalSum.toFixed(2)}</div>
+                    <div id="edit-subtotal" style="padding: 10px; color: var(--text-color); font-weight: bold; background: var(--box-bg); border-radius: 8px;">RM${subtotalSum.toFixed(2)}</div>
                 </div>
                 <div class="input-group">
                     <label>Grand Total (Live)</label>
-                    <div id="edit-grand-total" style="padding: 10px; color: #00d2ff; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
+                    <div id="edit-grand-total" style="padding: 10px; color: var(--primary-color); font-weight: bold; background: var(--box-bg); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
                 </div>
                 <div class="input-group">
                     <label>Total Paid (Live)</label>
-                    <div id="edit-total-paid" style="padding: 10px; color: #25d366; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
+                    <div id="edit-total-paid" style="padding: 10px; color: #25d366; font-weight: bold; background: var(--box-bg); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
                 </div>
 
                 <div class="input-group full-width">
                     <label>Order Taken By (Read-only)</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.orderBy ?? '-'}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; opacity:0.6;">${data.orderBy ?? '-'}</div>
                 </div>
                 <div class="input-group">
                     <label>Served By (Read-only)</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; opacity:0.6;">${data.servedBy ?? '-'}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; opacity:0.6;">${data.servedBy ?? '-'}</div>
                 </div>
                 <div class="input-group">
                     <label>Customer Status</label>
@@ -5332,14 +5488,14 @@ function renderReportOccupancyChart(labels, dataArray) {
                 const participants = data.participantDetails.split(', ');
                 participantHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                        <tr style="border-bottom: 1px solid var(--table-border);">
                             <th style="padding: 5px; text-align: left;">Name Nric/Passport</th>
                         </tr>
                     </thead>
                     <tbody>`;
                 participants.forEach(p => {
                     participantHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 5px;">${p}</td>
                         </tr>`;
                 });
@@ -5349,7 +5505,7 @@ function renderReportOccupancyChart(labels, dataArray) {
             let itemsTableHtml = `
                 <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                        <tr style="border-bottom: 1px solid var(--table-border);">
                             <th style="padding: 5px; text-align: left;">Item</th>
                             <th style="padding: 5px; text-align: center;">Qty</th>
                             <th style="padding: 5px; text-align: center;">Dur</th>
@@ -5361,7 +5517,7 @@ function renderReportOccupancyChart(labels, dataArray) {
             itemNames.forEach((name, i) => {
                 if (name) {
                     itemsTableHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 5px;">${name}</td>
                             <td style="padding: 5px; text-align: center;">${itemQtys[i] || ''}</td>
                             <td style="padding: 5px; text-align: center;">${itemDurs[i] || ''}m</td>
@@ -5378,7 +5534,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 const discounts = data.discount.split(', ');
                 discountHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                        <tr style="border-bottom: 1px solid var(--table-border);">
                             <th style="padding: 5px; text-align: left;">Discount Name</th>
                             <th style="padding: 5px; text-align: right;">Amount</th>
                         </tr>
@@ -5389,7 +5545,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                     const name = d.substring(0, lastSpace);
                     const amount = d.substring(lastSpace + 1);
                     discountHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 5px;">${name}</td>
                             <td style="padding: 5px; text-align: right; color: #ff4b2b;">${amount}</td>
                         </tr>`;
@@ -5403,7 +5559,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 const entries = data.totalReceived.split(', ');
                 receivedHtml = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                        <tr style="border-bottom: 1px solid var(--table-border);">
                             <th style="padding: 5px; text-align: left;">Received Type</th>
                             <th style="padding: 5px; text-align: right;">Amount</th>
                         </tr>
@@ -5414,7 +5570,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                     const type = e.substring(0, lastSpace);
                     const amount = e.substring(lastSpace + 1);
                     receivedHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 5px;">${type}</td>
                             <td style="padding: 5px; text-align: right; color: #25d366;">RM${amount}</td>
                         </tr>`;
@@ -5428,7 +5584,7 @@ function renderReportOccupancyChart(labels, dataArray) {
             let paymentsHtml = `
                 <table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem;">
                     <thead>
-                        <tr style="border-bottom: 1px solid rgba(0, 210, 255, 0.3);">
+                        <tr style="border-bottom: 1px solid var(--table-border);">
                             <th style="padding: 5px; text-align: left;">Payment Type</th>
                             <th style="padding: 5px; text-align: right;">Amount</th>
                         </tr>
@@ -5440,7 +5596,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 if (method && method !== 'Mix') {
                     hasPayment = true;
                     paymentsHtml += `
-                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding: 5px;">${method}</td>
                             <td style="padding: 5px; text-align: right; color: #25d366;">RM${payAmounts[i] || '0.00'}</td>
                         </tr>
@@ -5453,89 +5609,89 @@ function renderReportOccupancyChart(labels, dataArray) {
             fields.innerHTML = `
                 <div class="full-width" style="text-align: center; margin-bottom: 15px;">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.orderQrUrl)}" alt="QR Code" style="width: 150px; height: 150px; background: white; padding: 10px; border-radius: 8px; display: block; margin: 0 auto;">
-                    <small style="color: #00d2ff; word-break: break-all; margin-top: 10px; display: block;">${data.orderQrUrl ?? ''}</small>
+                    <small style="color: var(--primary-color); word-break: break-all; margin-top: 10px; display: block;">${data.orderQrUrl ?? ''}</small>
                 </div>
                 <div class="input-group">
                     <label>Order ID</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderId ?? ''}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.orderId ?? ''}</div>
                 </div>
                 <div class="input-group">
                     <label>Date</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderDate ? new Date(data.orderDate).toLocaleString() : ''}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.orderDate ? new Date(data.orderDate).toLocaleString() : ''}</div>
                 </div>
                 <div class="input-group">
                     <label>Customer Name</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerName ?? ''}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.customerName ?? ''}</div>
                 </div>
                 <div class="input-group">
                     <label>Customer Phone</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerPhone ?? ''}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.customerPhone ?? ''}</div>
                 </div>
                 <div class="input-group">
                     <label>Total Pax Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${formatPaxTable(data.totalPax)}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${formatPaxTable(data.totalPax)}</div>
                 </div>
                 <div class="full-width">
                     <label>Items Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${itemsTableHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${itemsTableHtml}</div>
                 </div>
                 <div class="input-group">
                     <label>Total Items</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.totalItems ?? '0'}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.totalItems ?? '0'}</div>
                 </div>
                 <div class="input-group">
                     <label>Status</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderStatus ?? ''}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.orderStatus ?? ''}</div>
                 </div>
                 <div class="full-width">
                     <label>Total Received Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${receivedHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${receivedHtml}</div>
                 </div>
                 <div class="full-width">
                     <label>Discount Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${discountHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${discountHtml}</div>
                 </div>
                 <div class="input-group">
                     <label>Payment Breakdown</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${paymentsHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${paymentsHtml}</div>
                 </div>
                 <div class="input-group">
                     <label>Subtotal</label>
-                    <div style="padding: 10px; color: white; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${subtotalSum.toFixed(2)}</div>
+                    <div style="padding: 10px; color: var(--text-color); font-weight: bold; background: var(--box-bg); border-radius: 8px;">RM${subtotalSum.toFixed(2)}</div>
                 </div>
                 <div class="input-group">
                     <label>Grand Total</label>
-                    <div style="padding: 10px; color: #00d2ff; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
+                    <div style="padding: 10px; color: var(--primary-color); font-weight: bold; background: var(--box-bg); border-radius: 8px;">RM${data.totalPrice ?? '0.00'}</div>
                 </div>
                 <div class="input-group">
                     <label>Total Paid</label>
-                    <div style="padding: 10px; color: #25d366; font-weight: bold; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
+                    <div style="padding: 10px; color: #25d366; font-weight: bold; background: var(--box-bg); border-radius: 8px;">RM${data.totalPaidAmount ?? '0.00'}</div>
                 </div>
                 <div class="input-group">
                     <label>Order Taken By</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.orderBy ?? '-'}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.orderBy ?? '-'}</div>
                 </div>
                 <div class="input-group">
                     <label>Waiver Status</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; color: ${data.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${data.participantDetailsStatus || 'Pending'}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; color: ${data.participantDetailsStatus === 'Agree' ? '#25d366' : '#ff4b2b'}; font-weight: bold;">${data.participantDetailsStatus || 'Pending'}</div>
                 </div>
                 <div class="full-width">
                     <label>Participant List</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${participantHtml}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${participantHtml}</div>
                 </div>
                 <div class="form-grid full-width">
                     <div class="input-group">
                         <label>Served By</label>
-                        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.servedBy ?? '-'}</div>
+                        <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.servedBy ?? '-'}</div>
                     </div>
                     <div class="input-group">
                         <label>Customer Status</label>
-                        <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.customerStatus ?? '-'}</div>
+                        <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.customerStatus ?? '-'}</div>
                     </div>
                 </div>
                 <div class="full-width">
                     <label>Remark</label>
-                    <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; min-height: 40px;">${data.orderRemark ?? '-'}</div>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; min-height: 40px;">${data.orderRemark ?? '-'}</div>
                 </div>
             `;
 
@@ -5546,19 +5702,19 @@ function renderReportOccupancyChart(labels, dataArray) {
                         <div class="form-grid">
                             <div class="input-group">
                                 <label>Refund Amount</label>
-                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">RM${data.refundAmount ?? '0.00'}</div>
+                                <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">RM${data.refundAmount ?? '0.00'}</div>
                             </div>
                             <div class="input-group">
                                 <label>Refund Method</label>
-                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.refundMethod ?? '-'}</div>
+                                <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.refundMethod ?? '-'}</div>
                             </div>
                             <div class="input-group full-width">
                                 <label>Refund Remark</label>
-                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; min-height: 40px;">${data.refundRemark ?? '-'}</div>
+                                <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; min-height: 40px;">${data.refundRemark ?? '-'}</div>
                             </div>
                             <div class="input-group full-width">
                                 <label>Refund By</label>
-                                <div style="padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">${data.refundBy ?? '-'}</div>
+                                <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${data.refundBy ?? '-'}</div>
                             </div>
                         </div>
                     </div>
@@ -5744,7 +5900,7 @@ function renderReportOccupancyChart(labels, dataArray) {
     function addEditItemRow(data = null) {
         const tbody = document.getElementById('items-edit-body');
         const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.style.borderBottom = '1px solid var(--table-cart-border)';
         
         const options = currentItems.map(i => 
             `<option value="${i.itemName}" data-price="${i.itemPrice}" data-duration="${i.itemRentalDuration}" ${data && data.name === i.itemName ? 'selected' : ''}>${i.itemName}</option>`
@@ -5752,14 +5908,14 @@ function renderReportOccupancyChart(labels, dataArray) {
 
         tr.innerHTML = `
             <td style="padding: 2px;">
-                <select name="item_name" onchange="updateEditItemRow(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                <select name="item_name" onchange="updateEditItemRow(this)" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; width:100%;">
                     <option value="">-- Select --</option>
                     ${options}
                 </select>
             </td>
-            <td style="padding: 2px;"><input type="number" name="item_qty" value="${data ? data.qty : 1}" oninput="onEditRowInput(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
-            <td style="padding: 2px;"><input type="number" name="item_dur" value="${data ? data.dur : 0}" oninput="onEditRowInput(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
-            <td style="padding: 2px;"><input type="number" name="item_price" value="${data ? data.price : 0}" step="0.01" oninput="onEditRowInput(this)" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="number" name="item_qty" value="${data ? data.qty : 1}" oninput="onEditRowInput(this)" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="number" name="item_dur" value="${data ? data.dur : 0}" oninput="onEditRowInput(this)" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:center; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="number" name="item_price" value="${data ? data.price : 0}" step="0.01" oninput="onEditRowInput(this)" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
             <td style="padding: 2px; text-align:center;"><button type="button" onclick="removeEditRow(this)" class="btn-small btn-danger" style="margin:0;">×</button></td>
         `;
         tbody.appendChild(tr);
@@ -5769,17 +5925,17 @@ function renderReportOccupancyChart(labels, dataArray) {
     function addEditPaymentRow(data = null) {
         const tbody = document.getElementById('payments-edit-body');
         const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.style.borderBottom = '1px solid var(--table-cart-border)';
         
         tr.innerHTML = `
             <td style="padding: 2px;">
-                <select name="pay_method" onchange="recalculateSalesEditTotals()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; font-size:0.75rem; width:100%;">
+                <select name="pay_method" onchange="recalculateSalesEditTotals()" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; width:100%;">
                     <option value="Cash" ${data && data.method === 'Cash' ? 'selected' : ''}>Cash</option>
                     <option value="Online Transfer" ${data && data.method === 'Online Transfer' ? 'selected' : ''}>Online Transfer</option>
                     <option value="Card" ${data && data.method === 'Card' ? 'selected' : ''}>Card</option>
                 </select>
             </td>
-            <td style="padding: 2px;"><input type="number" name="pay_amount" value="${data ? data.amount : 0}" step="0.01" oninput="recalculateSalesEditTotals()" style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:white; padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px;"><input type="number" name="pay_amount" value="${data ? data.amount : 0}" step="0.01" oninput="recalculateSalesEditTotals()" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
             <td style="padding: 2px; text-align:center;"><button type="button" onclick="removeEditRow(this)" class="btn-small btn-danger" style="margin:0;">×</button></td>
         `;
         tbody.appendChild(tr);
@@ -5839,8 +5995,44 @@ function renderReportOccupancyChart(labels, dataArray) {
 
     function closeModal() { document.getElementById('form-overlay').style.display = 'none'; }
 
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'day');
+        updateThemeToggleButton();
+        
+        // Re-render charts to pick up the new theme colors
+        if (typeof loadDashboardData === 'function' && document.getElementById('dashboard').style.display !== 'none') {
+            loadDashboardData();
+        }
+        if (typeof loadReportData === 'function' && document.getElementById('report-section') && document.getElementById('report-section').style.display !== 'none') {
+            loadReportData();
+        }
+    }
+
+    function updateThemeToggleButton() {
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (!toggleBtn) return;
+        const isDark = document.body.classList.contains('dark-mode');
+        if (isDark) {
+            toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            toggleBtn.title = "Switch to Day Mode";
+        } else {
+            toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+            toggleBtn.title = "Switch to Dark Mode";
+        }
+    }
+
     // Check for existing session on page load
     window.onload = () => {
+        // Initialize theme: default to day mode
+        const savedTheme = localStorage.getItem('theme') || 'day';
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+        updateThemeToggleButton();
+
         const savedUser = localStorage.getItem('mk_username');
         const savedPass = localStorage.getItem('mk_password');
         if (savedUser && savedPass) {
