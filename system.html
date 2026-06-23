@@ -284,6 +284,80 @@
             .checkout-left { width: 100%; height: 30%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); overflow-y: auto; }
             .checkout-right { width: 100%; height: 70%; border-right: none; overflow-y: auto; }
         }
+
+        /* Management Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: rgba(20, 30, 48, 0.95);
+            border: 1px solid #00d2ff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            min-width: 180px;
+            flex-direction: column;
+            padding: 5px 0;
+            animation: dropdownFadeIn 0.2s ease-out;
+        }
+
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+            border-bottom: none !important;
+            white-space: nowrap;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(0, 210, 255, 0.1);
+            color: #00d2ff;
+        }
+
+        .dropdown-item.active {
+            background: rgba(0, 210, 255, 0.2);
+            color: #00d2ff;
+            font-weight: bold;
+            border-bottom: none !important;
+        }
+
+        .mobile-dropdown-item {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px !important;
+            color: white !important;
+            padding: 12px !important;
+            width: 100% !important;
+            text-align: center !important;
+            font-weight: bold !important;
+            transition: 0.3s !important;
+            margin-top: 5px;
+            white-space: normal !important;
+        }
+
+        .mobile-dropdown-item:hover, .mobile-dropdown-item.active {
+            background: rgba(0, 210, 255, 0.1) !important;
+            border-color: #00d2ff !important;
+            color: #00d2ff !important;
+            border-bottom: none !important;
+        }
     </style>
 </head>
 <body>
@@ -315,14 +389,24 @@
         <div class="tabs" id="nav-tabs" style="display: flex;">
             <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
             <button class="tab-btn active" onclick="switchTab('booking')">New Booking</button>
-            <button class="tab-btn active" onclick="switchTab('staff')">Staff Management</button>
-            <button class="tab-btn" onclick="switchTab('role')">Role Management</button>
-            <button class="tab-btn" onclick="switchTab('items')">Items Inventory</button>
-            <button class="tab-btn" onclick="switchTab('sales')">Sales History</button>
-            <button class="tab-btn" onclick="switchTab('discount')">Discount</button>
+            <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
             <button class="tab-btn" onclick="switchTab('order')">Order</button>
             <button class="tab-btn" onclick="switchTab('availability')">Check Availability</button>
-            <button class="tab-btn" onclick="switchTab('report')">Report</button>
+
+            <!-- Management Dropdown -->
+            <div class="dropdown">
+                <button class="tab-btn" id="management-toggle" onclick="toggleManagementDropdown(event)">
+                    Management <i class="fas fa-caret-down" style="margin-left: 5px;"></i>
+                </button>
+                <div class="dropdown-menu" id="management-dropdown">
+                    <button class="tab-btn dropdown-item" onclick="switchTab('staff')">Staff Management</button>
+                    <button class="tab-btn dropdown-item" onclick="switchTab('role')">Role Management</button>
+                    <button class="tab-btn dropdown-item" onclick="switchTab('items')">Items Inventory</button>
+                    <button class="tab-btn dropdown-item" onclick="switchTab('discount')">Discount</button>
+                    <button class="tab-btn dropdown-item" onclick="switchTab('report')">Report</button>
+                </div>
+            </div>
+
             <button class="tab-btn" onclick="handleLogout()" style="margin-left: auto;">Logout</button>
         </div>
 
@@ -545,7 +629,7 @@
         <!-- Sales Section -->
         <div id="sales-section" class="section">
             <div class="header-actions">
-                <h3>Sales History</h3>
+                <h3>Sales Management</h3>
             </div>
             <div style="margin-top: 15px;">
                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 15px;">
@@ -1218,13 +1302,18 @@
     </div>
 </div>
 
-<!-- Timeout Overlay -->
-<div class="form-overlay" id="timeout-overlay" style="z-index: 10001; display: none;">
-    <div class="form-content" style="max-width: 320px; text-align: center; border-color: #f1c40f;">
-        <i class="fas fa-exclamation-triangle" style="font-size: 5rem; color: #f1c40f; margin-bottom: 20px;"></i>
-        <h2 style="color: white; margin-bottom: 10px;">Oops Timeout!!</h2>
-        <h3 style="color: white; margin-bottom: 15px; font-weight: normal; font-size: 1rem;">no activity in 3 minutes please refresh.</h3>
-        <button onclick="location.reload()" style="background: #00d2ff; font-weight: bold;">Refresh</button>
+<!-- Mobile Management Overlay -->
+<div class="form-overlay" id="mobile-management-overlay" style="z-index: 2000; display: none;">
+    <div class="form-content" style="max-width: 300px; text-align: center; padding: 20px;">
+        <h3 style="margin-bottom: 20px; color: #00d2ff;">Management</h3>
+        <div id="mobile-management-list" style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="tab-btn mobile-dropdown-item" onclick="switchTab('staff'); closeMobileManagement();">Staff Management</button>
+            <button class="tab-btn mobile-dropdown-item" onclick="switchTab('role'); closeMobileManagement();">Role Management</button>
+            <button class="tab-btn mobile-dropdown-item" onclick="switchTab('items'); closeMobileManagement();">Items Inventory</button>
+            <button class="tab-btn mobile-dropdown-item" onclick="switchTab('discount'); closeMobileManagement();">Discount</button>
+            <button class="tab-btn mobile-dropdown-item" onclick="switchTab('report'); closeMobileManagement();">Report</button>
+        </div>
+        <button class="btn-danger" onclick="closeMobileManagement()" style="margin-top: 20px; width: 100%;">Cancel</button>
     </div>
 </div>
 
@@ -1824,12 +1913,58 @@
         }
     }
 
+    function toggleManagementDropdown(e) {
+        if (e) e.stopPropagation();
+        if (window.innerWidth <= 600) {
+            openMobileManagement();
+        } else {
+            const menu = document.getElementById('management-dropdown');
+            const isVisible = menu.style.display === 'flex';
+            closeAllDropdowns();
+            if (!isVisible) {
+                menu.style.display = 'flex';
+            }
+        }
+    }
+
+    function closeAllDropdowns() {
+        const menu = document.getElementById('management-dropdown');
+        if (menu) menu.style.display = 'none';
+    }
+
+    function openMobileManagement() {
+        document.getElementById('mobile-management-overlay').style.display = 'flex';
+    }
+
+    function closeMobileManagement() {
+        document.getElementById('mobile-management-overlay').style.display = 'none';
+    }
+
+    // Close dropdowns on outside click
+    window.addEventListener('click', function() {
+        closeAllDropdowns();
+    });
+
     function switchTab(tab) {
+        closeAllDropdowns();
+        closeMobileManagement();
+
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
 
-        const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(`'${tab}'`));
-        if (btn) btn.classList.add('active');
+        const btns = Array.from(document.querySelectorAll('.tab-btn')).filter(b => b.getAttribute('onclick')?.includes(`'${tab}'`));
+        btns.forEach(b => b.classList.add('active'));
+
+        const isManagementTab = ['staff', 'role', 'items', 'discount', 'report'].includes(tab);
+        const managementToggle = document.getElementById('management-toggle');
+        if (managementToggle) {
+            if (isManagementTab) {
+                managementToggle.classList.add('active');
+            } else {
+                managementToggle.classList.remove('active');
+            }
+        }
+
         document.getElementById(`${tab}-section`).classList.add('active');
         
         if (tab === 'dashboard') loadDashboardData();
@@ -1868,7 +2003,7 @@
             permissions = roleRecord.canAccess ? roleRecord.canAccess.split(',').map(p => p.trim()) : [];
         } catch (e) {
             if (roleName.toLowerCase() === 'admin') {
-                permissions = ["New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability"];
+                permissions = ["New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability", "Report"];
             }
         }
 
@@ -1885,18 +2020,50 @@
             "report": "Report"
         };
 
-        const buttons = document.querySelectorAll('#nav-tabs .tab-btn');
+        // 1. Process regular tabs (excluding Management toggle and Logout)
+        const regularTabKeys = ["dashboard", "booking", "sales", "order", "availability"];
         let firstVisibleTab = null;
 
-        buttons.forEach(btn => {
-            if (btn.innerText === 'Logout') return;
-            const onclick = btn.getAttribute('onclick') || '';
-            const tabKey = onclick.match(/'([^']+)'/)?.[1];
+        regularTabKeys.forEach(tabKey => {
+            const btn = Array.from(document.querySelectorAll('#nav-tabs > .tab-btn')).find(b => b.getAttribute('onclick')?.includes(`'${tabKey}'`));
+            if (btn) {
+                const permissionName = tabMapping[tabKey];
+                const hasAccess = permissions.includes(permissionName);
+                btn.style.display = hasAccess ? 'block' : 'none';
+                if (hasAccess && !firstVisibleTab) firstVisibleTab = tabKey;
+            }
+        });
+
+        // 2. Process management sub-tabs (Staff, Role, Items, Discount, Report)
+        const managementTabKeys = ["staff", "role", "items", "discount", "report"];
+        let hasAnyManagementAccess = false;
+
+        managementTabKeys.forEach(tabKey => {
             const permissionName = tabMapping[tabKey];
             const hasAccess = permissions.includes(permissionName);
-            btn.style.display = hasAccess ? 'block' : 'none';
-            if (hasAccess && !firstVisibleTab) firstVisibleTab = tabKey;
+            
+            // Set display for PC dropdown item
+            const pcBtn = document.querySelector(`#management-dropdown button[onclick*="'${tabKey}'"]`);
+            if (pcBtn) pcBtn.style.display = hasAccess ? 'block' : 'none';
+
+            // Set display for Mobile overlay item
+            const mobileBtn = document.querySelector(`#mobile-management-list button[onclick*="'${tabKey}'"]`);
+            if (mobileBtn) mobileBtn.style.display = hasAccess ? 'block' : 'none';
+
+            if (hasAccess) {
+                hasAnyManagementAccess = true;
+                if (!firstVisibleTab) firstVisibleTab = tabKey;
+            }
         });
+
+        // 3. Show/hide the Management toggle tab and its parent wrapper dropdown
+        const managementToggle = document.getElementById('management-toggle');
+        if (managementToggle) {
+            const dropdownWrapper = managementToggle.parentElement;
+            if (dropdownWrapper) {
+                dropdownWrapper.style.display = hasAnyManagementAccess ? 'inline-block' : 'none';
+            }
+        }
 
         return firstVisibleTab;
     }
