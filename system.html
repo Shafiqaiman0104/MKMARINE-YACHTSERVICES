@@ -1548,6 +1548,14 @@
     // Disable auto-cancellation globally to prevent the "autocancelled" error
     pb.autoCancellation(false);
 
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+        deviceId = (typeof crypto.randomUUID === 'function') 
+            ? crypto.randomUUID() 
+            : Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+        localStorage.setItem('deviceId', deviceId);
+    }
+
     let currentStaff = [];
     let currentRoles = [];
     let currentItems = [];
@@ -2406,6 +2414,9 @@
                         e.record.name !== currentName) {
                         alert("Your account details have changed. Logging out...");
                         handleLogout();
+                    } else if (e.record.lastDevice && e.record.lastDevice !== deviceId) {
+                        alert("Logged in from another device. Logging out...");
+                        handleLogout();
                     }
                 }
             });
@@ -2423,6 +2434,9 @@
                 const currentName = localStorage.getItem('mk_staffname');
                 if (!record || record.name !== currentName) {
                     alert("Your account details are no longer valid. Logging out...");
+                    handleLogout();
+                } else if (record.lastDevice && record.lastDevice !== deviceId) {
+                    alert("Logged in from another device. Logging out...");
                     handleLogout();
                 }
             } catch (err) {
@@ -2449,6 +2463,11 @@
             );
 
             if (record) {
+                // Update lastDevice session ID in pocketbase
+                await pb.collection('MKMARINE_WATERSPORT_LOGIN').update(record.id, {
+                    lastDevice: deviceId
+                });
+
                 // Store credentials for persistent login
                 localStorage.setItem('mk_username', userVal);
                 localStorage.setItem('mk_password', passVal);
