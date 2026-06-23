@@ -2194,6 +2194,71 @@
         return firstVisibleTab;
     }
 
+    let currentStaffSubId = null;
+    let staffCheckInterval = null;
+
+    async function setupStaffRealtimeCheck(staffId, username, password) {
+        if (staffCheckInterval) {
+            clearInterval(staffCheckInterval);
+            staffCheckInterval = null;
+        }
+
+        if (currentStaffSubId) {
+            try {
+                await pb.collection('MKMARINE_WATERSPORT_LOGIN').unsubscribe(currentStaffSubId);
+            } catch (err) {
+                console.error("Unsubscribe error:", err);
+            }
+        }
+
+        currentStaffSubId = staffId;
+
+        // 1. Subscribe to real-time updates for this staff record
+        try {
+            await pb.collection('MKMARINE_WATERSPORT_LOGIN').subscribe(staffId, function (e) {
+                if (e.action === 'delete') {
+                    alert("Your account has been deleted by an admin. Logging out...");
+                    handleLogout();
+                } else if (e.action === 'update') {
+                    const currentUsername = localStorage.getItem('mk_username');
+                    const currentPassword = localStorage.getItem('mk_password');
+                    const currentName = localStorage.getItem('mk_staffname');
+
+                    if (e.record.username !== currentUsername || 
+                        e.record.password !== currentPassword || 
+                        e.record.name !== currentName) {
+                        alert("Your account details have changed. Logging out...");
+                        handleLogout();
+                    }
+                }
+            });
+        } catch (err) {
+            console.error("Error setting up real-time subscription:", err);
+        }
+
+        // 2. Periodic fallback check every 30 seconds to handle connection drops/missed updates
+        staffCheckInterval = setInterval(async () => {
+            if (!navigator.onLine) return;
+            try {
+                const record = await pb.collection('MKMARINE_WATERSPORT_LOGIN').getFirstListItem(
+                    `username="${username}" && password="${password}"`
+                );
+                const currentName = localStorage.getItem('mk_staffname');
+                if (!record || record.name !== currentName) {
+                    alert("Your account details are no longer valid. Logging out...");
+                    handleLogout();
+                }
+            } catch (err) {
+                if (err.status === 404) {
+                    alert("Your account is no longer valid or has been deleted. Logging out...");
+                    handleLogout();
+                } else {
+                    console.error("Error during periodic staff validation:", err);
+                }
+            }
+        }, 30000);
+    }
+
     async function handleLogin(savedUser, savedPass) {
         const userVal = savedUser || document.getElementById('username').value;
         const passVal = savedPass || document.getElementById('password').value;
@@ -2219,6 +2284,9 @@
                 document.getElementById('dashboard').style.display = 'block';
                 updateConnectionStatus();
                 switchTab(startTab || 'booking');
+
+                // Initialize real-time and periodic checks
+                setupStaffRealtimeCheck(record.id, userVal, passVal);
             }
         } catch (error) {
             resultDiv.style.display = 'block';
@@ -2227,6 +2295,14 @@
     }
 
     function handleLogout() {
+        if (staffCheckInterval) {
+            clearInterval(staffCheckInterval);
+            staffCheckInterval = null;
+        }
+        if (currentStaffSubId) {
+            pb.collection('MKMARINE_WATERSPORT_LOGIN').unsubscribe(currentStaffSubId).catch(console.error);
+            currentStaffSubId = null;
+        }
         localStorage.removeItem('mk_username');
         localStorage.removeItem('mk_password');
         localStorage.removeItem('mk_staffname');
