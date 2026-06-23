@@ -1518,6 +1518,16 @@
     </div>
 </div>
 
+<!-- Timeout Overlay -->
+<div class="form-overlay" id="timeout-overlay" style="z-index: 10000; display: none;">
+    <div class="form-content" style="max-width: 350px; text-align: center; border-color: var(--primary-color);">
+        <i class="fas fa-hourglass-half" style="font-size: 5rem; color: var(--primary-color); margin-bottom: 20px;"></i>
+        <h3 style="color: var(--modal-text); margin-bottom: 15px;">Session Paused</h3>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">You have been inactive for 3 minutes. Real-time updates have been paused.</p>
+        <button onclick="location.reload()" style="background: var(--primary-color); font-weight: bold;">Resume Session</button>
+    </div>
+</div>
+
 <!-- Mobile Management Overlay -->
 <div class="form-overlay" id="mobile-management-overlay" style="z-index: 2000; display: none;">
     <div class="form-content" style="max-width: 300px; text-align: center; padding: 20px;">
@@ -1836,8 +1846,10 @@
     let inactivityTimer;
     function resetInactivityTimer() {
         clearTimeout(inactivityTimer);
+        // Only run inactivity timer if user is logged in
+        if (!localStorage.getItem('mk_username')) return;
         inactivityTimer = setTimeout(() => {
-            document.getElementById('timeout-overlay').style.display = 'flex';
+            handleTimeout();
         }, 3 * 60 * 1000); // 3 minutes
     }
 
@@ -2284,6 +2296,81 @@
         return firstVisibleTab;
     }
 
+    let salesSubscribed = false;
+
+    async function setupSalesRealtime() {
+        if (salesSubscribed) return;
+        try {
+            await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').subscribe('*', function (e) {
+                console.log("Realtime Sales event:", e.action, e.record);
+                
+                // Update local currentSales cache
+                if (e.action === 'create') {
+                    if (!currentSales.some(s => s.id === e.record.id)) {
+                        currentSales.push(e.record);
+                    }
+                } else if (e.action === 'update') {
+                    const idx = currentSales.findIndex(s => s.id === e.record.id);
+                    if (idx !== -1) {
+                        currentSales[idx] = e.record;
+                    } else {
+                        currentSales.push(e.record);
+                    }
+                } else if (e.action === 'delete') {
+                    currentSales = currentSales.filter(s => s.id !== e.record.id);
+                }
+
+                // Determine active section and re-render accordingly
+                if (document.getElementById('sales-section') && document.getElementById('sales-section').classList.contains('active')) {
+                    renderSales();
+                }
+                if (document.getElementById('order-section') && document.getElementById('order-section').classList.contains('active')) {
+                    renderOrders();
+                }
+                if (document.getElementById('dashboard-section') && document.getElementById('dashboard-section').classList.contains('active')) {
+                    loadDashboardData();
+                }
+            });
+            salesSubscribed = true;
+            console.log("Successfully subscribed to real-time sales data.");
+        } catch (err) {
+            console.error("Error setting up sales real-time subscription:", err);
+        }
+    }
+
+    async function unsubscribeAllRealtime() {
+        if (salesSubscribed) {
+            try {
+                await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').unsubscribe('*');
+                salesSubscribed = false;
+                console.log("Unsubscribed from real-time sales data.");
+            } catch (err) {
+                console.error("Error unsubscribing from sales data:", err);
+            }
+        }
+        if (currentStaffSubId) {
+            try {
+                await pb.collection('MKMARINE_WATERSPORT_LOGIN').unsubscribe(currentStaffSubId);
+                currentStaffSubId = null;
+                console.log("Unsubscribed from staff data.");
+            } catch (err) {
+                console.error("Error unsubscribing from staff data:", err);
+            }
+        }
+        if (staffCheckInterval) {
+            clearInterval(staffCheckInterval);
+            staffCheckInterval = null;
+        }
+    }
+
+    async function handleTimeout() {
+        await unsubscribeAllRealtime();
+        const timeoutOverlay = document.getElementById('timeout-overlay');
+        if (timeoutOverlay) {
+            timeoutOverlay.style.display = 'flex';
+        }
+    }
+
     let currentStaffSubId = null;
     let staffCheckInterval = null;
 
@@ -2377,6 +2464,7 @@
 
                 // Initialize real-time and periodic checks
                 setupStaffRealtimeCheck(record.id, userVal, passVal);
+                setupSalesRealtime();
             }
         } catch (error) {
             resultDiv.style.display = 'block';
@@ -2384,15 +2472,8 @@
         }
     }
 
-    function handleLogout() {
-        if (staffCheckInterval) {
-            clearInterval(staffCheckInterval);
-            staffCheckInterval = null;
-        }
-        if (currentStaffSubId) {
-            pb.collection('MKMARINE_WATERSPORT_LOGIN').unsubscribe(currentStaffSubId).catch(console.error);
-            currentStaffSubId = null;
-        }
+    async function handleLogout() {
+        await unsubscribeAllRealtime();
         localStorage.removeItem('mk_username');
         localStorage.removeItem('mk_password');
         localStorage.removeItem('mk_staffname');
