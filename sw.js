@@ -7,8 +7,7 @@ const PRECACHE_ASSETS = [
   '/img/logoBlueNT.png',
   '/img/logoBluePrinter.png',
   '/img/logoWithNameBlue.png',
-  '/img/logoWhite.png',
-  '/img/1.png'
+  '/img/logoWhite.png'
 ];
 
 // Third-party library assets loaded via CDN to cache-first
