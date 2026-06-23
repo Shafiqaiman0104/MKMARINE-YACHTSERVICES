@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="manifest" href="/manifest.json">
     <title>SOUTH WAVE Login</title>
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -6275,6 +6276,17 @@ function renderReportOccupancyChart(labels, dataArray) {
         const savedPass = localStorage.getItem('mk_password');
         if (savedUser && savedPass) {
             handleLogin(savedUser, savedPass);
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js', { scope: '/system.html' })
+            .then(reg => {
+                console.log('Service Worker registered successfully with scope:', reg.scope);
+            })
+            .catch(err => {
+                console.error('Service Worker registration failed:', err);
+            });
         }
     };
 </script>
