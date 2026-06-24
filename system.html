@@ -1741,8 +1741,11 @@
 
         commands.push(0x1D, 0x21, 0x11); // Double width & height
         commands.push(0x1B, 0x45, 0x01); // Bold
-        commands.push(...encoder.encode("SOUTH WAVE\n\n"));
+        commands.push(...encoder.encode("SOUTH WAVE\n"));
         commands.push(0x1B, 0x45, 0x00, 0x1D, 0x21, 0x00); // Reset bold and size
+        commands.push(...encoder.encode("southwavejb.com\n"));
+        commands.push(...encoder.encode("60197088144 / 601160801477\n"));
+        commands.push(...encoder.encode("TikTok : @mkyachts\n\n"));
         
         commands.push(...encoder.encode("Order ID QR\n"));
         commands.push(...generateQrCode(data.orderId));
