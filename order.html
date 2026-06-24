@@ -197,6 +197,26 @@
             font-size: 0.9rem;
             line-height: 1.5;
         }
+
+        #thank-you-container {
+            display: none;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        #thank-you-container a {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -232,6 +252,8 @@
                 <i class="fas fa-chevron-right chevron"></i>
             </a>
         </div>
+
+        <div id="thank-you-container"></div>
     </div>
 
     <div class="footer">
@@ -264,14 +286,71 @@
                 document.getElementById('order-badge-id').innerText = `ORDER: ${orderId}`;
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('hub-container').style.display = 'block';
+
+                updateTimerStatus(record);
+                setInterval(() => updateTimerStatus(record), 1000);
             } else {
-                showError("Order Not Found", `Order ID "${orderId}" could not be verified. Please check your order details or contact staff.`);
+                showError("Order Id not found", "Order Id not found, please use the correct link provide by our staff");
             }
         } catch (e) {
             console.error("Verification error:", e);
-            showError("Verification Failed", "Unable to connect to the verification server. Please try again.");
+            showError("Order Id not found", "Order Id not found, please use the correct link provide by our staff");
         }
     };
+
+    function updateTimerStatus(record) {
+        if (!record.startTime) {
+            return;
+        }
+
+        const names = (record.orderItemName || '').split(', ');
+        const durs = (record.orderItemRentalDuration || '').split(', ');
+        const startMs = new Date(record.startTime).getTime();
+
+        let allEnded = true;
+
+        names.forEach((name, i) => {
+            const durationMin = parseInt(durs[i]) || 0;
+            const endTimeMs = startMs + (durationMin * 60000);
+            const diff = endTimeMs - Date.now();
+
+            if (diff > 0) {
+                allEnded = false;
+            }
+        });
+
+        const thankYouBox = document.getElementById('thank-you-container');
+        const badgeEl = document.getElementById('order-badge-id');
+        const waiverEl = document.getElementById('link-waiver');
+        const qrEl = document.getElementById('link-qrcode');
+        const timerEl = document.getElementById('link-timer');
+
+        if (allEnded) {
+            if (badgeEl) badgeEl.style.display = 'none';
+            if (waiverEl) waiverEl.style.display = 'none';
+            if (qrEl) qrEl.style.display = 'none';
+            if (timerEl) timerEl.style.display = 'none';
+
+            if (thankYouBox && thankYouBox.style.display !== 'block') {
+                thankYouBox.style.display = 'block';
+                thankYouBox.innerHTML = 
+                    `Thank you so much for choosing South Wave for your watersports adventure! We hope you had an amazing time on the water with us.\n\n` +
+                    `If you’d like to share your experience, it would mean the world to us:\n\n` +
+                    `⭐ Leave a Google review here: <a href="https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc" target="_blank">https://search.google.com/local/writereview?placeid=ChIJJ8jYdLEN2jERIgS8U_6cptc</a>\n\n` +
+                    `📸 Tag us on TikTok @mkyachts\n` +
+                    `we’d love to see your best moments!\n\n` +
+                    `🌐 Visit Our Website: <a href="https://southwavejb.com" target="_blank">https://southwavejb.com</a>\n\n` +
+                    `Hope to see you again soon for another adventure! 🤙\n` +
+                    `From South Wave Team`;
+            }
+        } else {
+            if (badgeEl) badgeEl.style.display = 'inline-block';
+            if (waiverEl) waiverEl.style.display = 'flex';
+            if (qrEl) qrEl.style.display = 'flex';
+            if (timerEl) timerEl.style.display = 'flex';
+            if (thankYouBox) thankYouBox.style.display = 'none';
+        }
+    }
 
     function showError(title, message) {
         const loadEl = document.getElementById('loading');
