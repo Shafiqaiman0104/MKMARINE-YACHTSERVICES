@@ -5667,8 +5667,20 @@ function renderReportOccupancyChart(labels, dataArray) {
                     </div>
                 </div>
                 <div class="full-width">
-                    <label>Total Received Breakdown (Reference)</label>
-                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${receivedHtml}</div>
+                    <label>Total Received Breakdown</label>
+                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--table-border);">
+                                    <th style="padding: 5px; text-align: left;">Method</th>
+                                    <th style="padding: 5px; text-align: right;">Amount</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="received-edit-body"></tbody>
+                        </table>
+                        <button type="button" class="btn-small" onclick="addEditReceivedRow()" style="margin-top:5px;">+ Add Received</button>
+                    </div>
                 </div>
 
                 <div class="full-width">
@@ -5733,6 +5745,19 @@ function renderReportOccupancyChart(labels, dataArray) {
             payMethods.forEach((method, i) => {
                 if (method && method !== 'Mix') addEditPaymentRow({ method, amount: payAmounts[i] });
             });
+
+            // Populate received breakdown rows
+            if (data.totalReceived) {
+                const entries = data.totalReceived.split(', ');
+                entries.forEach(e => {
+                    const lastSpace = e.lastIndexOf(' ');
+                    if (lastSpace !== -1) {
+                        const method = e.substring(0, lastSpace).trim();
+                        const amount = e.substring(lastSpace + 1).trim();
+                        addEditReceivedRow({ method, amount });
+                    }
+                });
+            }
 
             recalculateSalesEditTotals();
         } else if (type === 'orderStatusUpdate') {
@@ -6112,6 +6137,17 @@ function renderReportOccupancyChart(labels, dataArray) {
                 formData.set('totalPaidAmount', totalPaid.toFixed(2));
                 formData.set('discount', document.getElementById('edit-discount-str')?.value || '');
 
+                const recMethods = formData.getAll('received_method');
+                const recAmounts = formData.getAll('received_amount');
+                const totalReceivedParts = [];
+                recMethods.forEach((method, i) => {
+                    if (method) {
+                        const amt = parseFloat(recAmounts[i]) || 0;
+                        totalReceivedParts.push(`${method} ${amt.toFixed(2)}`);
+                    }
+                });
+                formData.set('totalReceived', totalReceivedParts.join(', '));
+
                 const pA = formData.get('pax_a') || '0';
                 const pK = formData.get('pax_k') || '0';
                 const pT = formData.get('pax_t') || '0';
@@ -6233,6 +6269,26 @@ function renderReportOccupancyChart(labels, dataArray) {
         `;
         tbody.appendChild(tr);
         if (!data) recalculateSalesEditTotals();
+    }
+
+    function addEditReceivedRow(data = null) {
+        const tbody = document.getElementById('received-edit-body');
+        if (!tbody) return;
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--table-cart-border)';
+        
+        tr.innerHTML = `
+            <td style="padding: 2px;">
+                <select name="received_method" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; width:100%;">
+                    <option value="Cash" ${data && data.method === 'Cash' ? 'selected' : ''}>Cash</option>
+                    <option value="Online Transfer" ${data && data.method === 'Online Transfer' ? 'selected' : ''}>Online Transfer</option>
+                    <option value="Card" ${data && data.method === 'Card' ? 'selected' : ''}>Card</option>
+                </select>
+            </td>
+            <td style="padding: 2px;"><input type="number" name="received_amount" value="${data ? data.amount : 0}" step="0.01" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; text-align:right; font-size:0.75rem; width:100%;"></td>
+            <td style="padding: 2px; text-align:center;"><button type="button" onclick="removeEditRow(this)" class="btn-small btn-danger" style="margin:0;">×</button></td>
+        `;
+        tbody.appendChild(tr);
     }
 
     function removeEditRow(btn) {
