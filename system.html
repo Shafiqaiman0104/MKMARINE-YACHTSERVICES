@@ -1562,6 +1562,7 @@
     let currentSales = [];
     let currentDiscounts = [];
     let appliedDiscounts = [];
+    let editAppliedDiscounts = [];
     let currentSalesStatusFilter = 'Pending';
     let currentSalesDateFilter = 'Today';
     let currentDiscountDataForSubmit = "";
@@ -5491,6 +5492,22 @@ function renderReportOccupancyChart(labels, dataArray) {
             title.innerText = 'Edit Order';
             
             if (currentItems.length === 0) currentItems = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
+            if (currentDiscounts.length === 0) currentDiscounts = await pb.collection('MKMARINE_WATERSPORT_DISCOUNT_DATA').getFullList({ sort: '-created' });
+
+            editAppliedDiscounts = [];
+            if (data.discount) {
+                const discounts = data.discount.split(', ');
+                discounts.forEach(d => {
+                    const lastSpace = d.lastIndexOf(' ');
+                    if (lastSpace !== -1) {
+                        const name = d.substring(0, lastSpace).trim();
+                        const matchedDiscount = currentDiscounts.find(cd => cd.discountName === name);
+                        if (matchedDiscount) {
+                            editAppliedDiscounts.push(matchedDiscount);
+                        }
+                    }
+                });
+            }
 
             const d = data.orderDate ? new Date(data.orderDate) : null;
             const dateVal = d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
@@ -5544,6 +5561,7 @@ function renderReportOccupancyChart(labels, dataArray) {
 
             fields.innerHTML = `
                 <input type="hidden" id="edit-discount-total-val" value="${totalDiscountVal}">
+                <input type="hidden" id="edit-discount-str" value="${data.discount ?? ''}">
                 <div class="input-group full-width">
                     <label>Order ID (Read-only)</label>
                     <div style="padding: 10px; background: var(--box-bg); border-radius: 8px; opacity:0.6;">${data.orderId ?? ''}</div>
@@ -5639,8 +5657,8 @@ function renderReportOccupancyChart(labels, dataArray) {
                 </div>
 
                 <div class="full-width">
-                    <label>Discount Breakdown (Reference)</label>
-                    <div style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${discountHtml}</div>
+                    <label>Discount Breakdown (Live)</label>
+                    <div id="edit-discount-breakdown" style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${discountHtml}</div>
                 </div>
                 <div class="full-width">
                     <label>Total Received Breakdown (Reference)</label>
@@ -5709,6 +5727,8 @@ function renderReportOccupancyChart(labels, dataArray) {
             payMethods.forEach((method, i) => {
                 if (method && method !== 'Mix') addEditPaymentRow({ method, amount: payAmounts[i] });
             });
+
+            recalculateSalesEditTotals();
         } else if (type === 'orderStatusUpdate') {
             const data = id ? currentSales.find(s => s.id === id) : {};
             title.innerText = 'Update Customer Status';
@@ -6084,6 +6104,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 formData.set('totalItems', totalItems.toString());
                 formData.set('totalPrice', totalPrice.toFixed(2));
                 formData.set('totalPaidAmount', totalPaid.toFixed(2));
+                formData.set('discount', document.getElementById('edit-discount-str')?.value || '');
 
                 const pA = formData.get('pax_a') || '0';
                 const pK = formData.get('pax_k') || '0';
@@ -6246,8 +6267,93 @@ function renderReportOccupancyChart(labels, dataArray) {
             subtotal += parseFloat(input.value) || 0;
         });
 
+        // Re-calculate discount live based on the new items selection and values
+        let totalDiscount = 0;
+        let discountBreakdown = [];
+        let discountStr = "";
+
+        const editItemsList = [];
+        document.querySelectorAll('#items-edit-body tr').forEach(row => {
+            const select = row.querySelector('select[name="item_name"]');
+            if (!select) return;
+            const itemName = select.value;
+            if (!itemName) return;
+            
+            const qty = parseFloat(row.querySelector('input[name="item_qty"]').value) || 0;
+            const dur = parseFloat(row.querySelector('input[name="item_dur"]').value) || 0;
+            const price = parseFloat(row.querySelector('input[name="item_price"]').value) || 0;
+            
+            const itemData = currentItems.find(it => it.itemName === itemName);
+            if (itemData) {
+                editItemsList.push({
+                    itemId: itemData.id,
+                    itemName: itemData.itemName,
+                    quantity: qty,
+                    duration: dur,
+                    price: price
+                });
+            }
+        });
+
+        if (typeof editAppliedDiscounts !== 'undefined' && Array.isArray(editAppliedDiscounts)) {
+            editAppliedDiscounts.forEach(d => {
+                let dAmountRecord = 0;
+                if (!d.discountAutoApplyTo || d.discountAutoApplyTo === 'No') {
+                    const val = parseFloat(d.discountValue) || 0;
+                    dAmountRecord = d.discountType === 'Percentage' ? (subtotal * val / 100) : val;
+                } else {
+                    const ids = (d.discountAutoApplyTo === 'ALL' ? currentItems.map(i=>i.id).join(', ') : d.discountAutoApplyTo).split(', ');
+                    const types = (d.discountType || '').split(', ');
+                    const values = (d.discountValue || '').split(', ');
+                    editItemsList.forEach(cItem => {
+                        const idx = ids.findIndex(id => id.trim() === cItem.itemId);
+                        if (idx !== -1) {
+                            const type = types[idx]?.trim() || 'Percentage';
+                            const val = parseFloat(values[idx]) || 0;
+                            if (type === 'Percentage') {
+                                dAmountRecord += (cItem.price * val / 100);
+                            } else {
+                                const itemData = currentItems.find(it => it.id === cItem.itemId);
+                                const baseDur = itemData ? (parseFloat(itemData.itemRentalDuration) || 1) : 1;
+                                dAmountRecord += val * cItem.quantity * (cItem.duration / baseDur);
+                            }
+                        }
+                    });
+                }
+                if (dAmountRecord > 0) {
+                    totalDiscount += dAmountRecord;
+                    discountBreakdown.push({ name: d.discountName, amount: dAmountRecord });
+                }
+            });
+        }
+
+        discountStr = discountBreakdown.map(db => `${db.name} RM${db.amount.toFixed(2)}`).join(', ');
+
         const discountEl = document.getElementById('edit-discount-total-val');
-        const totalDiscount = discountEl ? parseFloat(discountEl.value) : 0;
+        if (discountEl) discountEl.value = totalDiscount.toFixed(2);
+        
+        const discountStrEl = document.getElementById('edit-discount-str');
+        if (discountStrEl) discountStrEl.value = discountStr;
+
+        const breakdownEl = document.getElementById('edit-discount-breakdown');
+        if (breakdownEl) {
+            if (discountBreakdown.length > 0) {
+                let html = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.8rem;">
+                    <tbody>`;
+                discountBreakdown.forEach(db => {
+                    html += `
+                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
+                            <td style="padding: 4px;">${db.name}</td>
+                            <td style="padding: 4px; text-align: right; color: #ff4b2b;">RM${db.amount.toFixed(2)}</td>
+                        </tr>`;
+                });
+                html += `</tbody></table>`;
+                breakdownEl.innerHTML = html;
+            } else {
+                breakdownEl.innerHTML = 'n/a';
+            }
+        }
+
         let grandTotal = Math.max(0, subtotal - totalDiscount);
 
         let totalPaid = 0;
