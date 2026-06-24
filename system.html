@@ -5659,6 +5659,12 @@ function renderReportOccupancyChart(labels, dataArray) {
                 <div class="full-width">
                     <label>Discount Breakdown (Live)</label>
                     <div id="edit-discount-breakdown" style="padding: 10px; background: var(--box-bg); border-radius: 8px;">${discountHtml}</div>
+                    <div id="edit-discount-add-container" style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
+                        <select id="edit-add-discount-select" style="background:var(--input-bg); border:1px solid var(--input-border); color:var(--input-text); padding:4px; font-size:0.75rem; flex: 1; border-radius:4px;">
+                            <option value="">-- Add Discount --</option>
+                        </select>
+                        <button type="button" class="btn-small" onclick="addEditDiscountRow()" style="margin: 0; padding: 4px 10px;">+ Add Discount</button>
+                    </div>
                 </div>
                 <div class="full-width">
                     <label>Total Received Breakdown (Reference)</label>
@@ -6234,6 +6240,23 @@ function renderReportOccupancyChart(labels, dataArray) {
         recalculateSalesEditTotals();
     }
 
+    function addEditDiscountRow() {
+        const select = document.getElementById('edit-add-discount-select');
+        if (!select) return;
+        const discountId = select.value;
+        if (!discountId) return;
+        const d = currentDiscounts.find(cd => cd.id === discountId);
+        if (d) {
+            editAppliedDiscounts.push(d);
+            recalculateSalesEditTotals();
+        }
+    }
+
+    function removeEditDiscount(id) {
+        editAppliedDiscounts = editAppliedDiscounts.filter(d => d.id !== id);
+        recalculateSalesEditTotals();
+    }
+
     function updateEditItemRow(select) {
         const row = select.closest('tr');
         const option = select.options[select.selectedIndex];
@@ -6341,10 +6364,15 @@ function renderReportOccupancyChart(labels, dataArray) {
                 let html = `<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.8rem;">
                     <tbody>`;
                 discountBreakdown.forEach(db => {
+                    const match = editAppliedDiscounts.find(ead => ead.discountName === db.name);
+                    const delBtn = match ? `<button type="button" onclick="removeEditDiscount('${match.id}')" style="width:16px; height:16px; padding:0; margin:0; background:rgba(255,0,0,0.15); font-size:0.7rem; border-radius:50%; border:none; color:var(--text-color); cursor:pointer; font-weight:bold; line-height:1; display:inline-flex; align-items:center; justify-content:center;">×</button>` : '';
                     html += `
                         <tr style="border-bottom: 1px solid var(--table-cart-border);">
-                            <td style="padding: 4px;">${db.name}</td>
-                            <td style="padding: 4px; text-align: right; color: #ff4b2b;">RM${db.amount.toFixed(2)}</td>
+                            <td style="padding: 4px; display: flex; align-items: center; gap: 8px;">
+                                ${delBtn}
+                                <span>${db.name}</span>
+                            </td>
+                            <td style="padding: 4px; text-align: right; color: #ff4b2b; font-weight: bold;">RM${db.amount.toFixed(2)}</td>
                         </tr>`;
                 });
                 html += `</tbody></table>`;
@@ -6352,6 +6380,20 @@ function renderReportOccupancyChart(labels, dataArray) {
             } else {
                 breakdownEl.innerHTML = 'n/a';
             }
+        }
+
+        const selectEl = document.getElementById('edit-add-discount-select');
+        if (selectEl) {
+            const availableDiscounts = currentDiscounts.filter(d => 
+                d.discountStatus === 'Active' && 
+                !editAppliedDiscounts.some(ead => ead.id === d.id)
+            );
+            
+            let selectHtml = `<option value="">-- Add Discount --</option>`;
+            availableDiscounts.forEach(d => {
+                selectHtml += `<option value="${d.id}">${d.discountName}</option>`;
+            });
+            selectEl.innerHTML = selectHtml;
         }
 
         let grandTotal = Math.max(0, subtotal - totalDiscount);
