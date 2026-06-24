@@ -1793,10 +1793,8 @@
         commands.push(...encoder.encode("--------------------------------\n"));
 
         commands.push(0x1B, 0x61, 0x01); // Center QR Codes
-        commands.push(...encoder.encode("Waiver Form QR\n"));
-        commands.push(...generateQrCode(`https://southwavejb.com/waiver.html?orderId=${data.orderId}`));
-        commands.push(0x0A, ...encoder.encode("Timer QR\n"));
-        commands.push(...generateQrCode(`https://southwavejb.com/timer.html?orderId=${data.orderId}`));
+        commands.push(...encoder.encode("Order Link\n"));
+        commands.push(...generateQrCode(`https://southwavejb.com/order.html?orderId=${data.orderId}`));
         commands.push(0x0A, ...encoder.encode("--------------------------------\n"));
         commands.push(0x1B, 0x45, 0x01); // Bold footer
         commands.push(...encoder.encode("Powered By VentureRush Tech\n"));
@@ -4675,7 +4673,7 @@ function renderReportOccupancyChart(labels, dataArray) {
         }
 
         const orderId = 'SW-' + Date.now().toString().slice(-8);
-        const qrUrl = `https://southwavejb.com/qrcode.html?orderId=${orderId}`;
+        const qrUrl = `https://southwavejb.com/order.html?orderId=${orderId}`;
 
         // Combine items into single strings for one database record
         const combinedNames = cart.map(i => i.itemName).join(', ');
@@ -4965,42 +4963,36 @@ function renderReportOccupancyChart(labels, dataArray) {
         document.getElementById('order-placed-overlay').style.display = 'none';
         resetBookingForm();
     }
-
     function sendWhatsApp() {
         if (!currentBooking) return;
         
         let itemsList = currentBooking.items.map(i => 
-            `- ${i.itemName} (x${i.quantity}) ${i.duration}m: RM${i.price}`
+            `- ${i.itemName} (x${i.quantity}) ${i.duration}m: RM${parseFloat(i.price || 0).toFixed(2)}`
         ).join('\n');
 
-        const totalPriceVal = parseFloat(currentBooking.totalPrice) || 0;
-        let totalsText = `*Grand Total:* RM${totalPriceVal.toFixed(2)}\n`;
-        if (currentBooking.discount) {
-            totalsText = `*Subtotal:* RM${currentBooking.subtotal}\n` +
-                         `*Discount:* ${currentBooking.discount}\n` +
-                         `*Grand Total:* RM${totalPriceVal.toFixed(2)}\n`;
-        }
+        const subtotalVal = parseFloat(currentBooking.subtotal || 0).toFixed(2);
+        const discountDisplay = (currentBooking.discount && currentBooking.discount !== 'No') ? currentBooking.discount : "No";
+        const totalPriceVal = parseFloat(currentBooking.totalPrice || 0).toFixed(2);
         
         // If paid amount is 0, show payment method as n/a for "book first" scenarios
         const paymentDisplay = (parseFloat(currentBooking.totalPaidAmount) || 0) > 0 ? currentBooking.paymentMethod : "n/a";
-
-        let paymentText = `*Payment:* ${paymentDisplay}\n`;
-        if (currentBooking.mixPayments) {
-            paymentText = `*Payment:* Mix\n`;
-            currentBooking.mixPayments.forEach(p => {
-                paymentText += `${p.method} : RM${parseFloat(p.amount).toFixed(2)}\n`;
-            });
-        }
-
+        const paidVal = parseFloat(currentBooking.totalPaidAmount || 0).toFixed(2);
+        
         const totalReceivedSum = currentBooking.totalReceivedSum || 0;
         const changeVal = Math.max(0, totalReceivedSum - totalPriceVal).toFixed(2);
 
-        let paidText = `*Paid:* RM${currentBooking.totalPaidAmount}`;
-        
-        // Only show "Received" breakdown if it's NOT a mix payment (Mix shows breakdown above)
-        // and if received is more than paid
-        if (!currentBooking.mixPayments && (currentBooking.totalReceivedSum || 0) > parseFloat(currentBooking.totalPaidAmount)) {
-            paidText += ` (Received: RM${currentBooking.totalReceivedSum.toFixed(2)})`;
+        let receivedDisplay = "";
+        if (currentBooking.totalReceived) {
+            const entries = currentBooking.totalReceived.split(', ');
+            const amounts = entries.map(e => {
+                const lastSpace = e.lastIndexOf(' ');
+                if (lastSpace === -1) return "RM0.00";
+                const amt = parseFloat(e.substring(lastSpace + 1)) || 0;
+                return `RM${amt.toFixed(2)}`;
+            });
+            receivedDisplay = ` (Received: ${amounts.join(', ')})`;
+        } else {
+            receivedDisplay = ` (Received: RM${paidVal})`;
         }
 
         const message = `*SOUTH WAVE*\n` +
@@ -5012,21 +5004,20 @@ function renderReportOccupancyChart(labels, dataArray) {
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
-                        `${totalsText}` +
-                        `${paymentText}` +
-                        `${paidText}\n` +
+                        `*Subtotal:* RM${subtotalVal}\n` +
+                        `*Discount:* ${discountDisplay}\n` +
+                        `*Grand Total:* RM${totalPriceVal}\n` +
+                        `*Payment:* ${paymentDisplay}\n` +
+                        `*Paid:* RM${paidVal}${receivedDisplay}\n` +
                         `*Change:* RM${changeVal}\n` +
                         `---------------------------\n\n` +
-                        `1) Waiver form : https://southwavejb.com/waiver.html?orderId=${currentBooking.orderId}\n\n` +
-                        `2) Order Id QR : ${currentBooking.orderQrUrl}\n\n` +
-                        `3) Timer: https://southwavejb.com/timer.html?orderId=${currentBooking.orderId}\n\n` +
+                        `Order Link : https://southwavejb.com/order.html?orderId=${currentBooking.orderId}\n\n` +
                         `---------------------------\n\n` +
                         `Thank you for your booking!\n` +
                         `_*- Powered By VentureRush Tech*_`;
         
         window.open(`https://wa.me/${currentBooking.customerPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
-
     function openScanModal() {
         document.getElementById('scan-overlay').style.display = 'flex';
         document.getElementById('scan-initial-actions').style.display = 'block';
@@ -5287,18 +5278,35 @@ function renderReportOccupancyChart(labels, dataArray) {
         const prices = (s.orderItemPrice || '').split(', ');
 
         let itemsList = names.map((name, i) =>
-            `- ${name} (x${qtys[i] || '0'}) ${durs[i] || '0'}m: RM${prices[i] || '0.00'}`
+            `- ${name} (x${qtys[i] || '0'}) ${durs[i] || '0'}m: RM${parseFloat(prices[i] || 0).toFixed(2)}`
         ).join('\n');
 
         const paymentDisplay = (parseFloat(s.totalPaidAmount) || 0) > 0 ? s.paymentMethod : "n/a";
 
-        const subtotal = prices.reduce((sum, p) => sum + (parseFloat(p) || 0), 0).toFixed(2);
-        let totalsText = `*Grand Total:* RM${s.totalPrice}\n`;
-        if (s.discount) {
-            totalsText = `*Subtotal:* RM${subtotal}\n` +
-                         `*Discount:* ${s.discount}\n` +
-                         `*Grand Total:* RM${s.totalPrice}\n`;
+        const subtotalVal = prices.reduce((sum, p) => sum + (parseFloat(p) || 0), 0).toFixed(2);
+        const discountDisplay = (s.discount && s.discount !== 'No') ? s.discount : "No";
+        const totalPriceVal = parseFloat(s.totalPrice || 0).toFixed(2);
+        const paidVal = parseFloat(s.totalPaidAmount || 0).toFixed(2);
+
+        let totalReceivedSum = 0;
+        let receivedDisplay = "";
+        if (s.totalReceived) {
+            const entries = s.totalReceived.split(', ');
+            const amounts = entries.map(e => {
+                const lastSpace = e.lastIndexOf(' ');
+                if (lastSpace !== -1) {
+                    const amt = parseFloat(e.substring(lastSpace + 1)) || 0;
+                    totalReceivedSum += amt;
+                    return `RM${amt.toFixed(2)}`;
+                }
+                return "RM0.00";
+            });
+            receivedDisplay = ` (Received: ${amounts.join(', ')})`;
+        } else {
+            totalReceivedSum = parseFloat(s.totalPaidAmount || 0);
+            receivedDisplay = ` (Received: RM${paidVal})`;
         }
+        const changeVal = Math.max(0, totalReceivedSum - parseFloat(s.totalPrice || 0)).toFixed(2);
 
         const message = `*SOUTH WAVE*\n` +
                         `---------------------------\n` +
@@ -5309,13 +5317,14 @@ function renderReportOccupancyChart(labels, dataArray) {
                         `---------------------------\n` +
                         `*Items:*\n${itemsList}\n` +
                         `---------------------------\n` +
-                        `${totalsText}` +
+                        `*Subtotal:* RM${subtotalVal}\n` +
+                        `*Discount:* ${discountDisplay}\n` +
+                        `*Grand Total:* RM${totalPriceVal}\n` +
                         `*Payment:* ${paymentDisplay}\n` +
-                        `*Paid:* RM${s.totalPaidAmount} (${s.paidAmount})\n` +
+                        `*Paid:* RM${paidVal}${receivedDisplay}\n` +
+                        `*Change:* RM${changeVal}\n` +
                         `---------------------------\n\n` +
-                        `1) Waiver form : https://southwavejb.com/waiver.html?orderId=${s.orderId}\n\n` +
-                        `2) Order Id QR : ${s.orderQrUrl}\n\n` +
-                        `3) Timer: https://southwavejb.com/timer.html?orderId=${s.orderId}\n\n` +
+                        `Order Link : https://southwavejb.com/order.html?orderId=${s.orderId}\n\n` +
                         `---------------------------\n\n` +
                         `Thank you for your booking!\n` +
                         `_*- Powered By VentureRush Tech*_`;
@@ -6004,10 +6013,11 @@ function renderReportOccupancyChart(labels, dataArray) {
             paymentsHtml += `</tbody></table>`;
             if (!hasPayment || (parseFloat(data.totalPaidAmount) || 0) === 0) paymentsHtml = "n/a";
 
+            const orderLink = `https://southwavejb.com/order.html?orderId=${data.orderId}`;
             fields.innerHTML = `
                 <div class="full-width" style="text-align: center; margin-bottom: 15px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.orderQrUrl)}" alt="QR Code" style="width: 150px; height: 150px; background: white; padding: 10px; border-radius: 8px; display: block; margin: 0 auto;">
-                    <small style="color: var(--primary-color); word-break: break-all; margin-top: 10px; display: block;">${data.orderQrUrl ?? ''}</small>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(orderLink)}" alt="QR Code" style="width: 150px; height: 150px; background: white; padding: 10px; border-radius: 8px; display: block; margin: 0 auto;">
+                    <small style="color: var(--primary-color); word-break: break-all; margin-top: 10px; display: block;">${orderLink}</small>
                 </div>
                 <div class="input-group">
                     <label>Order ID</label>
