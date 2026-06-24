@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOUTH WAVE - Order Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #004b93;
+            --accent-color: #ff6600;
+            --bg-gradient: linear-gradient(135deg, #0e1e38 0%, #0a0f1d 100%);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #ffffff;
+            --text-muted: #a0aec0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-gradient);
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 24px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin-bottom: 5px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #ffffff;
+            font-size: 1.7rem;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .logo-container {
+            background: #ffffff;
+            padding: 12px 24px;
+            border-radius: 16px;
+            display: inline-block;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo-container img {
+            width: 120px;
+            display: block;
+        }
+
+        .order-badge {
+            display: inline-block;
+            background: rgba(255, 102, 0, 0.12);
+            border: 1px dashed var(--accent-color);
+            color: var(--accent-color);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 35px;
+        }
+
+        .btn-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .hub-btn {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .hub-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .hub-btn i:first-child {
+            font-size: 1.25rem;
+            width: 35px;
+            text-align: left;
+        }
+
+        .hub-btn .btn-text {
+            flex: 1;
+            text-align: left;
+        }
+
+        .hub-btn .chevron {
+            font-size: 0.8rem;
+            opacity: 0.4;
+            transition: transform 0.2s ease;
+        }
+
+        .hub-btn:hover .chevron {
+            transform: translateX(3px);
+            opacity: 0.8;
+        }
+
+        .btn-waiver i:first-child { color: #3b82f6; }
+        .btn-qr i:first-child { color: #eab308; }
+        .btn-timer i:first-child { color: #10b981; }
+
+        .footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer b i {
+            color: #ffffff;
+            font-style: italic;
+        }
+
+        #loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 40px 0;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s infinite linear;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state {
+            padding: 20px 0;
+        }
+
+        .error-state i {
+            font-size: 3rem;
+            color: #ef4444;
+            margin-bottom: 15px;
+        }
+
+        .error-state h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #ef4444;
+        }
+
+        .error-state p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="content-area">
+    <div class="logo-container">
+        <img src="img/logoBlue.png" alt="South Wave Logo">
+    </div>
+    <h2>SOUTH WAVE</h2>
+    <div class="subtitle">Management Hub</div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Verifying booking...</p>
+    </div>
+
+    <div id="hub-container" style="display: none;">
+        <div class="order-badge" id="order-badge-id">ORDER: -</div>
+        
+        <div class="btn-list">
+            <a id="link-waiver" href="#" target="_blank" class="hub-btn btn-waiver">
+                <i class="fas fa-file-signature"></i>
+                <span class="btn-text">Waiver Form</span>
+                <i class="fas fa-chevron-right chevron"></i>
+            </a>
+
+            <a id="link-qrcode" href="#" target="_blank" class="hub-btn btn-qr">
+                <i class="fas fa-qrcode"></i>
+                <span class="btn-text">QR Order Id</span>
+                <i class="fas fa-chevron-right chevron"></i>
+            </a>
+
+            <a id="link-timer" href="#" target="_blank" class="hub-btn btn-timer">
+                <i class="fas fa-hourglass-half"></i>
+                <span class="btn-text">Timer</span>
+                <i class="fas fa-chevron-right chevron"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        Powered By <b><i>VentureRush Tech</i></b>
+    </div>
+</div>
+
+<script>
+    const pb = new PocketBase('https://pocketbase.venturerushtech.com');
+    pb.autoCancellation(false);
+
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('orderId');
+
+    window.onload = async () => {
+        if (!orderId) {
+            showError("Missing Order ID", "Please use the exact link provided in your booking message or scan your receipt QR code.");
+            return;
+        }
+
+        try {
+            // Check if the Order ID is valid in PocketBase
+            const record = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFirstListItem(`orderId="${orderId}"`);
+            
+            if (record) {
+                document.getElementById('link-waiver').href = `https://southwavejb.com/waiver.html?orderId=${encodeURIComponent(orderId)}`;
+                document.getElementById('link-qrcode').href = `https://southwavejb.com/qrcode.html?orderId=${encodeURIComponent(orderId)}`;
+                document.getElementById('link-timer').href = `https://southwavejb.com/timer.html?orderId=${encodeURIComponent(orderId)}`;
+
+                document.getElementById('order-badge-id').innerText = `ORDER: ${orderId}`;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('hub-container').style.display = 'block';
+            } else {
+                showError("Order Not Found", `Order ID "${orderId}" could not be verified. Please check your order details or contact staff.`);
+            }
+        } catch (e) {
+            console.error("Verification error:", e);
+            showError("Verification Failed", "Unable to connect to the verification server. Please try again.");
+        }
+    };
+
+    function showError(title, message) {
+        const loadEl = document.getElementById('loading');
+        if (loadEl) loadEl.remove();
+        const hubEl = document.getElementById('hub-container');
+        if (hubEl) hubEl.remove();
+        
+        const errorHtml = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <h3>${title}</h3>
+                <p>${message}</p>
+            </div>
+            <div style="margin-top: 25px;"></div>
+        `;
+        const footer = document.querySelector('.footer');
+        footer.insertAdjacentHTML('beforebegin', errorHtml);
+    }
+</script>
+</body>
+</html>
