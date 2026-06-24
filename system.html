@@ -522,6 +522,22 @@
         .switch input:checked + .slider:before {
             transform: translateX(24px);
         }
+        /* Custom styles for cancelled and fully refunded orders (Red) */
+        .cancelled-row,
+        .cancelled-row td,
+        .cancelled-row td span,
+        .cancelled-row td small,
+        .cancelled-row td div {
+            color: #ff4b2b !important;
+        }
+        /* Custom styles for partially refunded orders (Orange) */
+        .refund-partial-row,
+        .refund-partial-row td,
+        .refund-partial-row td span,
+        .refund-partial-row td small,
+        .refund-partial-row td div {
+            color: #ff9800 !important;
+        }
     </style>
 </head>
 <body>
@@ -1547,6 +1563,23 @@
     const pb = new PocketBase('https://pocketbase.venturerushtech.com');
     // Disable auto-cancellation globally to prevent the "autocancelled" error
     pb.autoCancellation(false);
+
+    function getOrderRowClass(s) {
+        if (s.orderStatus === 'Cancelled') {
+            return 'cancelled-row';
+        }
+        if (s.orderStatus === 'Refund') {
+            const totalPaid = parseFloat(s.totalPaidAmount) || 0;
+            const refundAmount = parseFloat(s.refundAmount) || 0;
+            const diff = totalPaid - refundAmount;
+            if (diff <= 0) {
+                return 'cancelled-row';
+            } else {
+                return 'refund-partial-row';
+            }
+        }
+        return '';
+    }
 
     let deviceId = localStorage.getItem('deviceId');
     if (!deviceId) {
@@ -2714,9 +2747,10 @@
 
             const showEdit = currentUserPermissions.includes('Can Edit Sales');
             const showDelete = currentUserPermissions.includes('Can Delete Sales');
+            const rowClass = getOrderRowClass(s);
 
             return `
-            <tr>
+            <tr class="${rowClass}">
                 <td style="white-space:nowrap;">${s.orderId}</td>
                 <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
@@ -2866,8 +2900,9 @@
                     const timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
                     const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
                     
+                    const rowClass = getOrderRowClass(s);
                     return `
-                        <tr style="border-bottom: 1px solid var(--table-cart-border);">
+                        <tr class="${rowClass}" style="border-bottom: 1px solid var(--table-cart-border);">
                             <td style="padding:10px; white-space: nowrap;">${name}</td>
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${qtys[i]}</td>
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${durationMin}m</td>
@@ -2933,9 +2968,10 @@
             const qtys = (s.orderItemQuantity || '').split(', ');
             const durs = (s.orderItemRentalDuration || '').split(', ');
             const itemsHtml = names.map((n, i) => `<div style="white-space:nowrap; font-size:0.75rem;">${n} (x${qtys[i]}, ${durs[i]}m)</div>`).join('');
+            const rowClass = getOrderRowClass(s);
 
             return `
-            <tr>
+            <tr class="${rowClass}">
                 <td style="white-space:nowrap;">${s.orderId}</td>
                 <td><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                 <td>${s.customerName}<br><small>${s.customerPhone}</small></td>
@@ -3597,7 +3633,8 @@
                     return match ? match[1] : '';
                 }).filter(v => v).join('<br>');
 
-                return `<tr>
+                const rowClass = getOrderRowClass(s);
+                return `<tr class="${rowClass}">
                     <td style="white-space:nowrap;">${s.orderId}</td>
                     <td style="white-space:nowrap;"><small>${new Date(s.orderDate).toLocaleString()}</small></td>
                     <td style="white-space:nowrap;">${s.customerName} ${s.customerPhone}</td>
