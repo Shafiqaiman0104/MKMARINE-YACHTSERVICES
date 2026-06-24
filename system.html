@@ -6179,6 +6179,10 @@ function renderReportOccupancyChart(labels, dataArray) {
                     }
                 }
 
+                if (newCustomerStatus === 'Arrive' || newCustomerStatus === 'No Show') {
+                    formData.set('servedBy', localStorage.getItem('mk_staffname') || 'Unknown');
+                }
+
                 const stVal = formData.get('startTime');
                 if (stVal) {
                     formData.set('startTime', new Date(stVal).toISOString());
@@ -6243,6 +6247,11 @@ function renderReportOccupancyChart(labels, dataArray) {
                     formData.set('refundAmount', '');
                     formData.set('refundMethod', '');
                     formData.set('refundRemark', '');
+                }
+
+                const newCustomerStatus = formData.get('customerStatus');
+                if (newCustomerStatus === 'Arrive' || newCustomerStatus === 'No Show') {
+                    formData.set('servedBy', localStorage.getItem('mk_staffname') || 'Unknown');
                 }
             } else if (type === 'discount') {
                 const mode = document.getElementById('discount-auto-apply-select').value;
