@@ -430,6 +430,66 @@
       border-color: white;
     }
 
+    /* ---------- ANIMATED WAVE TRANSITION ---------- */
+    .wave-container {
+      position: absolute;
+      bottom: 100%; /* Position above About section, overlapping bottom of Home section */
+      left: 0;
+      width: 100%;
+      height: 12vh;
+      min-height: 60px;
+      max-height: 120px;
+      overflow: hidden;
+      line-height: 0;
+      z-index: 2; /* Below top nav (999) and duck when home (5), but above home background */
+      pointer-events: none;
+      background: transparent;
+    }
+
+    .waves {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Animation for SVG waves */
+    .parallax-waves > use {
+      animation: move-wave 20s cubic-bezier(.55, .5, .45, .5) infinite;
+    }
+    .parallax-waves > use:nth-child(1) {
+      animation-delay: -2s;
+      animation-duration: 7s;
+    }
+    .parallax-waves > use:nth-child(2) {
+      animation-delay: -3s;
+      animation-duration: 10s;
+    }
+    .parallax-waves > use:nth-child(3) {
+      animation-delay: -4s;
+      animation-duration: 13s;
+    }
+    .parallax-waves > use:nth-child(4) {
+      animation-delay: -5s;
+      animation-duration: 18s;
+    }
+
+    @keyframes move-wave {
+      0% {
+        transform: translate3d(-90px, 0, 0);
+      }
+      100% {
+        transform: translate3d(85px, 0, 0);
+      }
+    }
+
+    /* Adjust height on small devices */
+    @media (max-width: 768px) {
+      .wave-container {
+        height: 8vh;
+        min-height: 40px;
+      }
+    }
+
     /* ---------- ABOUT US (short text, compact cards) ---------- */
     .about-section {
       background: #ffffff;
@@ -1931,6 +1991,22 @@
 
   <!-- ABOUT US Section (updated text about South Wave & MK MARINE) -->
   <section id="about" class="about-section">
+    <!-- Animated Wave Transition -->
+    <div class="wave-container">
+      <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+        <defs>
+          <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+        </defs>
+        <g class="parallax-waves">
+          <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7)" />
+          <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+          <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+          <use xlink:href="#gentle-wave" x="48" y="7" fill="#ffffff" />
+        </g>
+      </svg>
+    </div>
+
     <div class="section-header">
       <span class="section-eyebrow">Who We Are</span>
       <h2 class="section-title">About <span class="highlight">Us</span></h2>
