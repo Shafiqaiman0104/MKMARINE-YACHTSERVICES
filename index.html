@@ -1736,6 +1736,127 @@
         padding: 0.8rem;
       }
     }
+
+    /* ===== NEW SECTION TITLE AND HEADER STYLE ===== */
+    .section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      position: relative;
+      z-index: 4;
+    }
+
+    .section-eyebrow {
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #ff751f;
+      /* accent orange */
+      margin-bottom: .6rem;
+      display: block;
+    }
+
+    .section-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #0d213d;
+      /* dark blue */
+      line-height: 1.2;
+      transition: color .4s;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      display: block;
+    }
+
+    .section-title::after {
+      display: none !important;
+    }
+
+    .section-title .highlight {
+      background: linear-gradient(135deg, #2a6eab, #ff751f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-underline {
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #2a6eab, #ff751f);
+      border-radius: 4px;
+      margin: 1rem auto 0;
+    }
+
+    /* ===== STATS ROW STYLE ===== */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin: 3rem auto;
+      max-width: 700px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2.8rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #2a6eab, #ff751f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.5;
+    }
+
+    .stat-label {
+      font-size: .85rem;
+      font-weight: 600;
+      color: #5a8ab0;
+      /* text-muted blue */
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: .3rem;
+      text-align: center;
+    }
+
+    /* ===== PARTNERSHIP CONNECTOR ===== */
+    .about-partnership .connector {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ff751f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 1.2rem;
+      box-shadow: 0 6px 20px rgba(255, 117, 31, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .stats-row {
+        gap: 1.8rem;
+      }
+
+      .stat-number {
+        font-size: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-row {
+        gap: 1.2rem;
+      }
+    }
   </style>
 </head>
 
@@ -1810,18 +1931,40 @@
 
   <!-- ABOUT US Section (updated text about South Wave & MK MARINE) -->
   <section id="about" class="about-section">
-    <h2 class="section-title">About Us</h2>
+    <div class="section-header">
+      <span class="section-eyebrow">Who We Are</span>
+      <h2 class="section-title">About <span class="highlight">Us</span></h2>
+      <div class="section-underline"></div>
+    </div>
     <div class="about-partnership">
       <img src="img/logoBlue.png" alt="South Wave Logo">
-      <span>&</span>
+      <span class="connector">&amp;</span>
       <img src="img/mkLogo.png" alt="MK Marine Logo">
     </div>
     <p class="about-text">
-      South Wave is the watersport arm of <strong>MK MARINE & YACHT SERVICE</strong>. While South Wave focuses on
+      South Wave is the watersport arm of <strong>MK MARINE &amp; YACHT SERVICE</strong>. While South Wave focuses on
       fun-filled watersport adventures, MK MARINE specializes in premium yacht charter, boat ride, repair, and
-      maintenance services — together delivering complete marine solutions at <br><strong style="color:#ff751f;"> Puteri
+      maintenance services — together delivering complete marine solutions at <strong style="color:#ff751f;">Puteri
         Harbour.</strong>
     </p>
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-number">9+</div>
+        <div class="stat-label">Activities</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">5&#9733;</div>
+        <div class="stat-label">Rating</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Safe</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">All Ages</div>
+        <div class="stat-label">Welcome</div>
+      </div>
+    </div>
     <div class="about-cards">
       <div class="about-card">
         <div class="about-icon"><i class="fas fa-tools"></i></div>
@@ -1843,7 +1986,11 @@
 
   <!-- OUR SERVICE Section with smooth scroll animation + breathing on mobile -->
   <section id="service" class="service-section">
-    <h2 class="section-title">Our Items</h2>
+    <div class="section-header">
+      <span class="section-eyebrow">What We Offer</span>
+      <h2 class="section-title">Our <span class="highlight">Items</span></h2>
+      <div class="section-underline"></div>
+    </div>
     <div class="filter-bar" id="filterBar">
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="kayak">Kayak</button>
@@ -1856,7 +2003,11 @@
 
   <!-- GALLERY Section -->
   <section id="gallery" class="gallery-section">
-    <h2 class="section-title">Gallery</h2>
+    <div class="section-header">
+      <span class="section-eyebrow">Memories Made Here</span>
+      <h2 class="section-title"><span class="highlight">Gallery</span></h2>
+      <div class="section-underline"></div>
+    </div>
     <div class="gallery-grid">
       <div class="gallery-item"><img src="img/g1.jpeg" alt="watersport 1"></div>
       <div class="gallery-item"><img src="img/g2.jpeg" alt="watersport 2"></div>
@@ -1874,7 +2025,10 @@
 
     <!-- 3D Video Gallery Section -->
     <div class="video-gallery-container">
-      <h3 class="section-title" style="font-size: 1.8rem; margin-bottom: 0;">Experience the Action</h3>
+      <div class="section-header" style="margin-bottom: 1.5rem;">
+        <span class="section-eyebrow">Live Action</span>
+        <h3 class="section-title" style="font-size: 1.9rem;">Experience the <span class="highlight">Action</span></h3>
+      </div>
       <div class="video-carousel-wrapper" id="videoCarousel">
         <div class="video-card" data-v-idx="0">
           <video src="img/v1.mp4" loop muted playsinline preload="none"></video>
@@ -1912,7 +2066,11 @@
 
   <!-- CONTACT Section with WhatsApp numbers -->
   <section id="contact" class="contact-section">
-    <h2 class="section-title">Contact</h2>
+    <div class="section-header">
+      <span class="section-eyebrow">Reach Out</span>
+      <h2 class="section-title">Get in <span class="highlight">Touch</span></h2>
+      <div class="section-underline"></div>
+    </div>
     <div class="contact-wrapper">
       <form action="https://api.web3forms.com/submit" method="POST" class="contact-form" id="contactForm">
         <input type="hidden" name="access_key" value="43b08815-cf9d-40be-b2c7-5fc435db68af">
@@ -2273,9 +2431,8 @@
         } else if (scrollY >= serviceTop - 200) {
           // Services & Below: Swim side-to-side unless parked at Gallery Title
           const duckFixedTop = vh * 0.82;
-          const titleTop = galleryTitle.offsetTop;
+          const parkingTopOnScreen = galleryTitle.getBoundingClientRect().top;
           const titleHeight = galleryTitle.offsetHeight;
-          const parkingTopOnScreen = titleTop - scrollY;
 
           // Calculate the offset needed to center the 300px container vertically with the title text
           const vCenterOffset = 150 - (titleHeight / 2);
