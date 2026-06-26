@@ -5506,7 +5506,7 @@ function renderReportOccupancyChart(labels, dataArray) {
             if (endTimeMs - Date.now() > 0) allEnded = false;
         });
 
-        if (allEnded) {
+        if (s.endTimeEarly || allEnded) {
             const overlay = document.getElementById('wa-picker-overlay');
             overlay.style.display = 'flex';
             document.getElementById('wa-remind-btn').onclick = () => {
@@ -5532,11 +5532,11 @@ function renderReportOccupancyChart(labels, dataArray) {
         names.forEach((name, i) => {
             const durationMin = parseInt(durs[i]) || 0;
             const qty = qtys[i] || '0';
-            const endTimeMs = start + (durationMin * 60000);
+            const endTimeMs = s.endTimeEarly ? new Date(s.endTimeEarly).getTime() : (start + (durationMin * 60000));
             const diff = endTimeMs - Date.now();
             
             const endTimeStr = new Date(endTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
-            let timerStr = (diff <= 0) ? "End" : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
+            let timerStr = (s.endTimeEarly || diff <= 0) ? "End" : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
             
             tableText += `${name.trim()} | ${qty.trim()} | ${durationMin}m | ${endTimeStr} | ${timerStr}\n`;
         });
