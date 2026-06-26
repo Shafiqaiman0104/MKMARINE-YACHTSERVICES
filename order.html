@@ -311,7 +311,7 @@
 
         names.forEach((name, i) => {
             const durationMin = parseInt(durs[i]) || 0;
-            const endTimeMs = startMs + (durationMin * 60000);
+            const endTimeMs = record.endTimeEarly ? new Date(record.endTimeEarly).getTime() : (startMs + (durationMin * 60000));
             const diff = endTimeMs - Date.now();
 
             if (diff > 0) {
