@@ -1026,6 +1026,7 @@
                             <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Cust Status</th>
                             <th style="white-space:nowrap;">Served By</th>
                             <th style="white-space:nowrap;">Start Time</th>
+                            <th style="white-space:nowrap;">End Early</th>
                             <th style="white-space:nowrap;">Action</th>
                         </tr>
                     </thead>
@@ -3001,7 +3002,7 @@
                 
                 let itemRows = names.map((name, i) => {
                     const durationMin = parseInt(durs[i]) || 0;
-                    const endTime = start + (durationMin * 60000);
+                    const endTime = s.endTimeEarly ? new Date(s.endTimeEarly).getTime() : (start + (durationMin * 60000));
                     const diff = endTime - Date.now();
                     const timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
                     const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
@@ -3025,9 +3026,14 @@
                                 <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
                                 <div style="font-size: 0.85rem; opacity: 0.8;">${new Date(s.orderDate).toLocaleString()}</div>
                             </div>
-                            <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
-                                <i class="fab fa-whatsapp"></i> WhatsApp
-                            </button>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn-small" onclick="window.location.href='tel:${s.customerPhone}'" style="background:#0066cc; margin:0; padding: 8px 15px;">
+                                    <i class="fas fa-phone"></i> Call
+                                </button>
+                                <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>
+                            </div>
                         </div>
                         <div class="table-container" data-scroll-id="${s.id}" style="background: var(--booking-details-bg); border-radius: 8px; border: 1px solid var(--table-cart-border); overflow-x: auto;">
                             <table style="width: 100%; border-collapse: collapse;">
@@ -3065,6 +3071,7 @@
                 <th style="white-space:nowrap;">Remark</th><th style="white-space:nowrap;">Waiver Status</th><th style="white-space:nowrap;">Order Status</th><th style="white-space:nowrap;">Cust Status</th>
                 <th style="white-space:nowrap;">Served By</th>
                 <th style="white-space:nowrap;">Start Time</th>
+                <th style="white-space:nowrap;">End Early</th>
                 <th style="white-space:nowrap;">Action</th>
             </tr>
         `;
@@ -3089,6 +3096,7 @@
                 <td>${s.customerStatus || '-'}</td>
                 <td>${s.servedBy || '-'}</td>
                 <td><small>${s.startTime ? new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '-'}</small></td>
+                <td><small>${s.endTimeEarly ? new Date(s.endTimeEarly).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() : '-'}</small></td>
                 <td style="white-space:nowrap;">
                     <button class="btn-small" onclick="openModal('orderStatusUpdate', '${s.id}')">Edit</button>
                     ${!s.startTime ? 
@@ -3096,6 +3104,7 @@
                         `
                         <button class="btn-small" onclick="openTimerModal('${s.id}')" style="background:var(--primary-color);">View Timer</button>
                         <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366;">Whatsapp</button>
+                        ${!s.endTimeEarly ? `<button class="btn-small" onclick="endOrderEarly('${s.id}')" style="background:#ff4b2b;">End Early</button>` : ''}
                         `
                     }
                 </td>
@@ -3399,7 +3408,7 @@
                 const durs = (sale.orderItemRentalDuration || '').split(', ');
                 names.forEach((n, idx) => {
                     if (itemsToCheck.some(it => it.itemName === n.trim())) {
-                        const orderEnd = orderStart + (parseInt(durs[idx]) || 0) * 60000;
+                        const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(durs[idx]) || 0) * 60000);
                         if (reqStartMs < orderEnd && orderStart < globalMaxEndMs) {
                             if (orderStart > reqStartMs && orderStart < globalMaxEndMs) timePoints.add(orderStart);
                             if (orderEnd > reqStartMs && orderEnd < globalMaxEndMs) timePoints.add(orderEnd);
@@ -3445,7 +3454,7 @@
                         const durs = (sale.orderItemRentalDuration || '').split(', ');
                         names.forEach((n, idx) => {
                             if (n.trim() === checkItem.itemName) {
-                                const orderEnd = orderStart + (parseInt(durs[idx]) || 0) * 60000;
+                                const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(durs[idx]) || 0) * 60000);
                                 if (tMid >= orderStart && tMid <= orderEnd) bookedCount += parseInt(qtys[idx]) || 0;
                             }
                         });
@@ -4923,7 +4932,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                 const names = (sale.orderItemName || '').split(', ');
                 const durs = (sale.orderItemRentalDuration || '').split(', ');
                 names.forEach((n, idx) => {
-                    const orderEnd = orderStart + (parseInt(durs[idx]) || 0) * 60000;
+                    const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(durs[idx]) || 0) * 60000);
                     if (reqStartMs < orderEnd && orderStart < maxEndMs) {
                         if (orderStart > reqStartMs && orderStart < maxEndMs) timePoints.add(orderStart);
                         if (orderEnd > reqStartMs && orderEnd < maxEndMs) timePoints.add(orderEnd);
@@ -4961,7 +4970,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                         const sQtys = (sale.orderItemQuantity || '').split(', ');
                         const sDurs = (sale.orderItemRentalDuration || '').split(', ');
                         sNames.forEach((sn, idx) => {
-                            const orderEnd = orderStart + (parseInt(sDurs[idx]) || 0) * 60000;
+                            const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(sDurs[idx]) || 0) * 60000);
                             if (sn.trim() === name && tMid >= orderStart && tMid <= orderEnd) bookedCount += parseInt(sQtys[idx]) || 0;
                         });
                     });
@@ -5264,6 +5273,20 @@ function renderReportOccupancyChart(labels, dataArray) {
         }
     }
 
+    async function endOrderEarly(id) {
+        if (!confirm("Are you sure you want to end this order early?")) return;
+        try {
+            const now = new Date().toISOString();
+            await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
+                endTimeEarly: now
+            });
+            alert("Order ended early!");
+            loadOrders();
+        } catch (err) {
+            alert("Error ending order early: " + err.message);
+        }
+    }
+
     let timerInterval = null;
     function openTimerModal(id) {
         const s = currentSales.find(x => x.id === id);
@@ -5284,7 +5307,7 @@ function renderReportOccupancyChart(labels, dataArray) {
         names.forEach((name, i) => {
             const durationMin = parseInt(durs[i]) || 0;
             const qty = qtys[i] || '0';
-            const endTime = start + (durationMin * 60000);
+            const endTime = s.endTimeEarly ? new Date(s.endTimeEarly).getTime() : (start + (durationMin * 60000));
             const diff = endTime - Date.now();
             let timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s`;
             const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
@@ -5974,6 +5997,18 @@ function renderReportOccupancyChart(labels, dataArray) {
                 `;
             }
 
+            let endTimeEarlyHtml = '';
+            if (data.endTimeEarly) {
+                const et = new Date(data.endTimeEarly);
+                const etVal = new Date(et.getTime() - et.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                endTimeEarlyHtml = `
+                    <div class="input-group full-width">
+                        <label>Edit End Time Early</label>
+                        <input type="datetime-local" name="endTimeEarly" value="${etVal}">
+                    </div>
+                `;
+            }
+
             fields.innerHTML = `
                 <div class="input-group full-width">
                     <label>Customer Status</label>
@@ -5984,6 +6019,7 @@ function renderReportOccupancyChart(labels, dataArray) {
                     </select>
                 </div>
                 ${startTimeHtml}
+                ${endTimeEarlyHtml}
             `;
         } else if (type === 'salesView') {
             const data = id ? currentSales.find(s => s.id === id) : {};
@@ -6304,6 +6340,10 @@ function renderReportOccupancyChart(labels, dataArray) {
                 const stVal = formData.get('startTime');
                 if (stVal) {
                     formData.set('startTime', new Date(stVal).toISOString());
+                }
+                const etVal = formData.get('endTimeEarly');
+                if (etVal) {
+                    formData.set('endTimeEarly', new Date(etVal).toISOString());
                 }
             }
 
