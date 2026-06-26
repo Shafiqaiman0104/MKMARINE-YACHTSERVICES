@@ -6776,8 +6776,8 @@ function renderReportOccupancyChart(labels, dataArray) {
         const minutes = myTime.getMinutes();
         const seconds = myTime.getSeconds();
 
-        // 1:21 AM to 1:23 AM Malaysia time is the maintenance window
-        const isMaintenance = (hours === 1 && minutes >= 21 && minutes < 23);
+        // 12:00 AM to 12:10 AM Malaysia time is the maintenance window
+        const isMaintenance = (hours === 0 && minutes < 10);
 
         const overlay = document.getElementById('maintenance-overlay');
         const countdownEl = document.getElementById('maintenance-countdown');
@@ -6788,8 +6788,8 @@ function renderReportOccupancyChart(labels, dataArray) {
                 document.body.style.overflow = 'hidden';
             }
             
-            // Calculate remaining seconds to 1:23 AM
-            const remainingSeconds = ((23 - minutes) * 60) - seconds;
+            // Calculate remaining seconds to 12:10 AM (600 seconds from midnight)
+            const remainingSeconds = 600 - ((minutes * 60) + seconds);
             
             if (remainingSeconds <= 0) {
                 overlay.style.display = 'none';
