@@ -90,7 +90,7 @@
                 const durs = (record.orderItemRentalDuration || '').split(', ').map(d => parseInt(d) || 0);
                 
                 allEnded = durs.every(durationMin => {
-                    const endTimeMs = startMs + (durationMin * 60000);
+                    const endTimeMs = record.endTimeEarly ? new Date(record.endTimeEarly).getTime() : (startMs + (durationMin * 60000));
                     return Date.now() > endTimeMs;
                 });
             }
