@@ -113,7 +113,7 @@
 
         names.forEach((name, i) => {
             const durationMin = parseInt(durs[i]) || 0;
-            const endTimeMs = startMs + (durationMin * 60000);
+            const endTimeMs = record.endTimeEarly ? new Date(record.endTimeEarly).getTime() : (startMs + (durationMin * 60000));
             const endStr = new Date(endTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
             const diff = endTimeMs - Date.now();
 
