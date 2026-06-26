@@ -100,6 +100,16 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        .timer-finished div,
+        .timer-finished span,
+        .timer-finished table,
+        .timer-finished tr,
+        .timer-finished td,
+        .timer-finished th,
+        .timer-finished small {
+            color: #28a745 !important;
+        }
+
         body {
             height: 100vh;
             display: flex;
@@ -3020,7 +3030,7 @@
                 }).join('');
 
                 return `
-                    <div style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color);">
+                    <div class="customer-timer-card ${s.customerTimerFinished ? 'timer-finished' : ''}" style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <div>
                                 <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
@@ -3032,6 +3042,9 @@
                                 </button>
                                 <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
                                     <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>
+                                <button class="btn-small" onclick="toggleCustomerTimerFinished('${s.id}', ${!s.customerTimerFinished})" style="background: ${s.customerTimerFinished ? '#dc3545' : '#28a745'}; margin:0; padding: 8px 15px;" title="${s.customerTimerFinished ? 'Mark Unfinished' : 'Mark Finished'}">
+                                    ${s.customerTimerFinished ? '❎' : '✅'}
                                 </button>
                             </div>
                         </div>
@@ -5284,6 +5297,21 @@ function renderReportOccupancyChart(labels, dataArray) {
             loadOrders();
         } catch (err) {
             alert("Error ending order early: " + err.message);
+        }
+    }
+
+    async function toggleCustomerTimerFinished(id, finished) {
+        try {
+            await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
+                customerTimerFinished: finished
+            });
+            const idx = currentSales.findIndex(s => s.id === id);
+            if (idx !== -1) {
+                currentSales[idx].customerTimerFinished = finished;
+            }
+            renderOrders();
+        } catch (err) {
+            alert("Error updating timer finished status: " + err.message);
         }
     }
 
