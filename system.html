@@ -538,9 +538,114 @@
         .refund-partial-row td div {
             color: #ff9800 !important;
         }
+
+        /* Maintenance Overlay Styles */
+        #maintenance-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 9999999;
+            color: #ffffff;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .maintenance-card {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: maintenanceFadeIn 0.5s ease-out;
+        }
+
+        @keyframes maintenanceFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .maintenance-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: pulse-gear 2.5s infinite linear;
+        }
+        
+        @keyframes pulse-gear {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        .maintenance-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #00d2ff;
+            letter-spacing: 1px;
+        }
+
+        .maintenance-desc {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .maintenance-timer-container {
+            background: rgba(0, 210, 255, 0.1);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 200px;
+        }
+
+        .maintenance-timer-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 5px;
+        }
+
+        .maintenance-timer {
+            font-size: 2.2rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: #00d2ff;
+        }
     </style>
 </head>
 <body>
+
+<div id="maintenance-overlay">
+    <div class="maintenance-card">
+        <div class="maintenance-icon">🛠️</div>
+        <h1 class="maintenance-title">Scheduled Maintenance</h1>
+        <p class="maintenance-desc">Our daily system updates are running. Please wait, we will be back shortly.</p>
+        <div class="maintenance-timer-container">
+            <span class="maintenance-timer-label">Time Remaining</span>
+            <span id="maintenance-countdown" class="maintenance-timer">00:00</span>
+        </div>
+    </div>
+</div>
 
 <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Day/Dark Mode">
     <i class="fas fa-moon"></i>
@@ -6659,8 +6764,58 @@ function renderReportOccupancyChart(labels, dataArray) {
         }
     }
 
+    function getMalaysiaTime() {
+        const d = new Date();
+        const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        return new Date(utc + (3600000 * 8)); // UTC+8
+    }
+
+    function checkMaintenanceStatus() {
+        const myTime = getMalaysiaTime();
+        const hours = myTime.getHours();
+        const minutes = myTime.getMinutes();
+        const seconds = myTime.getSeconds();
+
+        // 1:21 AM to 1:23 AM Malaysia time is the maintenance window
+        const isMaintenance = (hours === 1 && minutes >= 21 && minutes < 23);
+
+        const overlay = document.getElementById('maintenance-overlay');
+        const countdownEl = document.getElementById('maintenance-countdown');
+
+        if (isMaintenance) {
+            if (overlay.style.display !== 'flex') {
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+            
+            // Calculate remaining seconds to 1:23 AM
+            const remainingSeconds = ((23 - minutes) * 60) - seconds;
+            
+            if (remainingSeconds <= 0) {
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+                window.location.reload();
+                return;
+            }
+
+            const displayMin = Math.floor(remainingSeconds / 60);
+            const displaySec = remainingSeconds % 60;
+            countdownEl.innerText = `${String(displayMin).padStart(2, '0')}:${String(displaySec).padStart(2, '0')}`;
+        } else {
+            if (overlay.style.display === 'flex') {
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+                window.location.reload();
+            }
+        }
+    }
+
     // Check for existing session on page load
     window.onload = () => {
+        // Start maintenance monitoring
+        checkMaintenanceStatus();
+        setInterval(checkMaintenanceStatus, 1000);
+
         // Initialize theme: default to day mode
         const savedTheme = localStorage.getItem('theme') || 'day';
         if (savedTheme === 'dark') {
