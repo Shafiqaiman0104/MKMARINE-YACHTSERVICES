@@ -641,6 +641,64 @@
             font-family: monospace;
             color: #00d2ff;
         }
+
+        /* Premium Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            pointer-events: all;
+        }
+        .loading-content {
+            background: var(--modal-bg, #ffffff);
+            border: 1px solid var(--primary-color, #00d2ff);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            max-width: 300px;
+            text-align: center;
+            color: var(--text-color, #2d3748);
+            animation: loadingFadeIn 0.3s ease-out;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color, #0066cc);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        body.dark-mode .loading-spinner {
+            border-color: rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary-color, #00d2ff);
+        }
+        #loading-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: var(--text-color, #2d3748);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes loadingFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -660,6 +718,14 @@
 <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Day/Dark Mode">
     <i class="fas fa-moon"></i>
 </button>
+
+<!-- Global Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Processing...</p>
+    </div>
+</div>
 
 <div class="container" id="main-container">
     <h2>SOUTH WAVE</h2>
@@ -1680,6 +1746,18 @@
     // Disable auto-cancellation globally to prevent the "autocancelled" error
     pb.autoCancellation(false);
 
+    // Global loading helpers
+    function showLoading(message = 'Processing...') {
+        const textEl = document.getElementById('loading-text');
+        if (textEl) textEl.innerText = message;
+        const overlayEl = document.getElementById('loading-overlay');
+        if (overlayEl) overlayEl.style.display = 'flex';
+    }
+    function hideLoading() {
+        const overlayEl = document.getElementById('loading-overlay');
+        if (overlayEl) overlayEl.style.display = 'none';
+    }
+
     function getOrderRowClass(s) {
         if (s.orderStatus === 'Cancelled') {
             return 'cancelled-row';
@@ -2041,33 +2119,38 @@
             }
         }
 
-        // Fetch and process discounts
+        showLoading("Opening checkout...");
         try {
-            currentDiscounts = await pb.collection('MKMARINE_WATERSPORT_DISCOUNT_DATA').getFullList({
-                filter: 'discountStatus = "Active"'
-            });
-        } catch (e) { console.error("Error fetching discounts:", e); }
+            // Fetch and process discounts
+            try {
+                currentDiscounts = await pb.collection('MKMARINE_WATERSPORT_DISCOUNT_DATA').getFullList({
+                    filter: 'discountStatus = "Active"'
+                });
+            } catch (e) { console.error("Error fetching discounts:", e); }
 
-        appliedDiscounts = [];
-        const now = new Date();
-        currentDiscounts.forEach(d => {
-            if (d.discountAutoApplyTo && d.discountAutoApplyTo !== 'No') {
-                const start = d.discountStart ? new Date(d.discountStart) : null;
-                const end = d.discountEnd ? new Date(d.discountEnd) : null;
-                if ((!start || now >= start) && (!end || now <= end)) {
-                    appliedDiscounts.push(d);
+            appliedDiscounts = [];
+            const now = new Date();
+            currentDiscounts.forEach(d => {
+                if (d.discountAutoApplyTo && d.discountAutoApplyTo !== 'No') {
+                    const start = d.discountStart ? new Date(d.discountStart) : null;
+                    const end = d.discountEnd ? new Date(d.discountEnd) : null;
+                    if ((!start || now >= start) && (!end || now <= end)) {
+                        appliedDiscounts.push(d);
+                    }
                 }
-            }
-        });
+            });
 
-        checkoutMode = mode;
-        document.getElementById('checkout-overlay').style.display = 'flex';
-        receivedStr = "0";
-        mixPayments = [];
-        activeMixIndex = -1;
-        document.getElementById('co-mix-list').innerHTML = '';
-        updateCheckoutTotals();
-        setPaymentMethod('Cash', document.getElementById('pay-btn-cash'));
+            checkoutMode = mode;
+            document.getElementById('checkout-overlay').style.display = 'flex';
+            receivedStr = "0";
+            mixPayments = [];
+            activeMixIndex = -1;
+            document.getElementById('co-mix-list').innerHTML = '';
+            updateCheckoutTotals();
+            setPaymentMethod('Cash', document.getElementById('pay-btn-cash'));
+        } finally {
+            hideLoading();
+        }
     }
 
     function updateCheckoutTotals() {
@@ -2333,54 +2416,65 @@
         closeAllDropdowns();
     });
 
-    function switchTab(tab) {
+    async function switchTab(tab) {
         closeAllDropdowns();
         closeMobileManagement();
 
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        const hasDataToLoad = ['dashboard', 'staff', 'role', 'items', 'sales', 'discount', 'report', 'order', 'booking'].includes(tab);
+        if (hasDataToLoad) {
+            showLoading(`Loading ${tab.charAt(0).toUpperCase() + tab.slice(1)}...`);
+        }
 
-        const btns = Array.from(document.querySelectorAll('.tab-btn')).filter(b => b.getAttribute('onclick')?.includes(`'${tab}'`));
-        btns.forEach(b => b.classList.add('active'));
+        try {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
 
-        const isManagementTab = ['staff', 'role', 'items', 'discount', 'report'].includes(tab);
-        const managementToggle = document.getElementById('management-toggle');
-        if (managementToggle) {
-            if (isManagementTab) {
-                managementToggle.classList.add('active');
-            } else {
-                managementToggle.classList.remove('active');
+            const btns = Array.from(document.querySelectorAll('.tab-btn')).filter(b => b.getAttribute('onclick')?.includes(`'${tab}'`));
+            btns.forEach(b => b.classList.add('active'));
+
+            const isManagementTab = ['staff', 'role', 'items', 'discount', 'report'].includes(tab);
+            const managementToggle = document.getElementById('management-toggle');
+            if (managementToggle) {
+                if (isManagementTab) {
+                    managementToggle.classList.add('active');
+                } else {
+                    managementToggle.classList.remove('active');
+                }
             }
-        }
 
-        document.getElementById(`${tab}-section`).classList.add('active');
-        
-        if (tab === 'dashboard') loadDashboardData();
-        if (tab === 'staff') loadStaff();
-        else if (tab === 'role') loadRoles();
-        else if (tab === 'items') loadItems();
-        else if (tab === 'sales') {
-            filterSalesTab('Pending');
-            loadSales();
-        }
-        else if (tab === 'discount') loadDiscounts();
-        else if (tab === 'report') loadReportData();
-        else if (tab === 'order') {
-            filterOrderTab('Pending');
-            loadOrders();
-        }
-        else if (tab === 'availability') {
-            document.getElementById('avail-datetime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-            document.getElementById('avail-item-select').value = 'all';
-            document.getElementById('avail-whatsapp-btn').style.display = 'none';
-            availCart = [];
-            renderAvailCart();
-            onAvailModeChange();
-            document.getElementById('avail-duration').value = 60;
-        }
-        else if (tab === 'booking') {
-            loadBookingItems();
-            document.getElementById('book-date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById(`${tab}-section`).classList.add('active');
+            
+            if (tab === 'dashboard') await loadDashboardData();
+            else if (tab === 'staff') await loadStaff();
+            else if (tab === 'role') await loadRoles();
+            else if (tab === 'items') await loadItems();
+            else if (tab === 'sales') {
+                filterSalesTab('Pending');
+                await loadSales();
+            }
+            else if (tab === 'discount') await loadDiscounts();
+            else if (tab === 'report') await loadReportData();
+            else if (tab === 'order') {
+                filterOrderTab('Pending');
+                await loadOrders();
+            }
+            else if (tab === 'availability') {
+                document.getElementById('avail-datetime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById('avail-item-select').value = 'all';
+                document.getElementById('avail-whatsapp-btn').style.display = 'none';
+                availCart = [];
+                renderAvailCart();
+                onAvailModeChange();
+                document.getElementById('avail-duration').value = 60;
+            }
+            else if (tab === 'booking') {
+                await loadBookingItems();
+                document.getElementById('book-date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            }
+        } finally {
+            if (hasDataToLoad) {
+                hideLoading();
+            }
         }
     }
 
@@ -2610,6 +2704,7 @@
         const resultDiv = document.getElementById('result');
 
         resultDiv.style.display = 'none';
+        showLoading(savedUser ? "Auto-logging in..." : "Logging in...");
 
         try {
             const record = await pb.collection('MKMARINE_WATERSPORT_LOGIN').getFirstListItem(
@@ -2633,7 +2728,7 @@
                 document.getElementById('main-container').classList.add('dashboard-mode');
                 document.getElementById('dashboard').style.display = 'block';
                 updateConnectionStatus();
-                switchTab(startTab || 'booking');
+                await switchTab(startTab || 'booking');
 
                 // Initialize real-time and periodic checks
                 setupStaffRealtimeCheck(record.id, userVal, passVal);
@@ -2642,6 +2737,8 @@
         } catch (error) {
             resultDiv.style.display = 'block';
             resultDiv.innerText = "Invalid username / password";
+        } finally {
+            hideLoading();
         }
     }
 
@@ -3357,6 +3454,7 @@
         resultDiv.innerHTML = "Checking database...";
         resultDiv.style.display = "block";
 
+        showLoading("Checking availability...");
         try {
             const items = await pb.collection('MKMARINE_WATERSPORT_ITEMS_DATA').getFullList();
             const sales = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFullList({
@@ -3497,6 +3595,7 @@
             resultDiv.innerHTML = summaryHtml;
             document.getElementById('avail-whatsapp-btn').style.display = 'inline-block';
         } catch (err) { resultDiv.innerHTML = "Error: " + err.message; }
+        finally { hideLoading(); }
     }
 
     function openAvailWhatsApp() {
@@ -4795,75 +4894,76 @@ function renderReportOccupancyChart(labels, dataArray) {
         if (!customerName || !customerPhone) return alert("Please fill customer details");
         const bookingDate = new Date(bookingDateStr);
 
-        // Final double check against database before creating record
-        const errorSummary = await validateBookingAvailability(cart, bookingDate, null);
-        if (errorSummary) {
-            alert(`SUBMISSION FAILED - Availability changed:\n\nDATE: ${bookingDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
-            return;
-        }
-
-        const orderId = 'SW-' + Date.now().toString().slice(-8);
-        const qrUrl = `https://southwavejb.com/order.html?orderId=${orderId}`;
-
-        // Combine items into single strings for one database record
-        const combinedNames = cart.map(i => i.itemName).join(', ');
-        const combinedQtys = cart.map(i => i.quantity).join(', ');
-        const combinedDurations = cart.map(i => i.duration).join(', ');
-        const combinedPrices = cart.map(i => i.price).join(', ');
-        const grandTotal = document.getElementById('checkout-grand-total').innerText.replace('RM', '');
-        const subtotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0).toFixed(2);
-        const totalQuantity = cart.reduce((sum, i) => sum + i.quantity, 0);
-        
-        let paymentMethodFinal = document.getElementById('co-payment-method').value;
-        let totalReceivedStr = "";
-        let totalReceivedSum = 0;
-        const dueAmount = parseFloat(grandTotal) || 0;
-        let mixDataForWA = null;
-        let paidAmountBreakdown = "";
-
-        if (paymentMethodFinal === 'Mix') {
-            totalReceivedSum = mixPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-            // Store method and amount
-            totalReceivedStr = mixPayments.map(p => `${p.method} ${parseFloat(p.amount).toFixed(2)}`).join(', ');
-            paymentMethodFinal = mixPayments.map(p => p.method).join(', ');
-            mixDataForWA = [...mixPayments];
-
-            // Calculate breakdown for applied amounts (handling change deduction from Cash)
-            let change = Math.max(0, totalReceivedSum - dueAmount);
-            let tempPayments = mixPayments.map(p => ({...p, amt: parseFloat(p.amount) || 0}));
-            
-            // Change is always deducted from Cash first
-            for (let p of tempPayments) {
-                if (p.method === 'Cash' && change > 0) {
-                    let deduct = Math.min(p.amt, change);
-                    p.amt -= deduct;
-                    change -= deduct;
-                }
+        showLoading("Confirming and submitting booking...");
+        try {
+            // Final double check against database before creating record
+            const errorSummary = await validateBookingAvailability(cart, bookingDate, null);
+            if (errorSummary) {
+                alert(`SUBMISSION FAILED - Availability changed:\n\nDATE: ${bookingDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
+                return;
             }
-            // If change still remains (unlikely), deduct from others
-            if (change > 0) {
+
+            const orderId = 'SW-' + Date.now().toString().slice(-8);
+            const qrUrl = `https://southwavejb.com/order.html?orderId=${orderId}`;
+
+            // Combine items into single strings for one database record
+            const combinedNames = cart.map(i => i.itemName).join(', ');
+            const combinedQtys = cart.map(i => i.quantity).join(', ');
+            const combinedDurations = cart.map(i => i.duration).join(', ');
+            const combinedPrices = cart.map(i => i.price).join(', ');
+            const grandTotal = document.getElementById('checkout-grand-total').innerText.replace('RM', '');
+            const subtotal = cart.reduce((sum, i) => sum + parseFloat(i.price), 0).toFixed(2);
+            const totalQuantity = cart.reduce((sum, i) => sum + i.quantity, 0);
+            
+            let paymentMethodFinal = document.getElementById('co-payment-method').value;
+            let totalReceivedStr = "";
+            let totalReceivedSum = 0;
+            const dueAmount = parseFloat(grandTotal) || 0;
+            let mixDataForWA = null;
+            let paidAmountBreakdown = "";
+
+            if (paymentMethodFinal === 'Mix') {
+                totalReceivedSum = mixPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                // Store method and amount
+                totalReceivedStr = mixPayments.map(p => `${p.method} ${parseFloat(p.amount).toFixed(2)}`).join(', ');
+                paymentMethodFinal = mixPayments.map(p => p.method).join(', ');
+                mixDataForWA = [...mixPayments];
+
+                // Calculate breakdown for applied amounts (handling change deduction from Cash)
+                let change = Math.max(0, totalReceivedSum - dueAmount);
+                let tempPayments = mixPayments.map(p => ({...p, amt: parseFloat(p.amount) || 0}));
+                
+                // Change is always deducted from Cash first
                 for (let p of tempPayments) {
-                    if (change > 0) {
+                    if (p.method === 'Cash' && change > 0) {
                         let deduct = Math.min(p.amt, change);
                         p.amt -= deduct;
                         change -= deduct;
                     }
                 }
+                // If change still remains (unlikely), deduct from others
+                if (change > 0) {
+                    for (let p of tempPayments) {
+                        if (change > 0) {
+                            let deduct = Math.min(p.amt, change);
+                            p.amt -= deduct;
+                            change -= deduct;
+                        }
+                    }
+                }
+                paidAmountBreakdown = tempPayments.map(p => p.amt.toFixed(2)).join(', ');
+            } else {
+                totalReceivedSum = parseFloat(receivedStr) || 0;
+                totalReceivedStr = `${paymentMethodFinal} ${totalReceivedSum.toFixed(2)}`;
+                paidAmountBreakdown = Math.min(totalReceivedSum, dueAmount).toFixed(2);
             }
-            paidAmountBreakdown = tempPayments.map(p => p.amt.toFixed(2)).join(', ');
-        } else {
-            totalReceivedSum = parseFloat(receivedStr) || 0;
-            totalReceivedStr = `${paymentMethodFinal} ${totalReceivedSum.toFixed(2)}`;
-            paidAmountBreakdown = Math.min(totalReceivedSum, dueAmount).toFixed(2);
-        }
 
-        // The actual amount applied to the sale (capped at the total due amount)
-        const paidAmountVal = Math.min(totalReceivedSum, dueAmount).toFixed(2);
-        let remark = "";
+            // The actual amount applied to the sale (capped at the total due amount)
+            const paidAmountVal = Math.min(totalReceivedSum, dueAmount).toFixed(2);
+            let remark = "";
 
-        const orderStatus = checkoutMode === 'Checkout' ? 'Completed' : 'Pending';
+            const orderStatus = checkoutMode === 'Checkout' ? 'Completed' : 'Pending';
 
-        try {
             // Create only ONE record in the database
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').create({
                 "orderId": orderId,
@@ -4918,6 +5018,8 @@ function renderReportOccupancyChart(labels, dataArray) {
             showBookingResult(orderId, qrUrl);
         } catch (err) {
             alert("Error creating booking: " + err.message);
+        } finally {
+            hideLoading();
         }
     }
 
@@ -5181,6 +5283,7 @@ function renderReportOccupancyChart(labels, dataArray) {
 
     async function handleOrderLookup(orderId) {
         if (!orderId) return alert("Please enter or scan an Order ID");
+        showLoading("Looking up order...");
         try {
             const record = await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').getFirstListItem(`orderId="${orderId}"`);
             
@@ -5253,6 +5356,8 @@ function renderReportOccupancyChart(labels, dataArray) {
         } catch (err) {
             alert("Order not found or database error.");
             if (!html5QrCode || !html5QrCode.isScanning) openScanModal();
+        } finally {
+            hideLoading();
         }
     }
 
@@ -5275,32 +5380,39 @@ function renderReportOccupancyChart(labels, dataArray) {
         }
 
         if (!confirm("Start this order now?")) return;
+        showLoading("Starting order...");
         try {
             const now = new Date().toISOString();
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
                 startTime: now
             });
-            loadOrders();
+            await loadOrders();
         } catch (err) {
             alert("Error starting order: " + err.message);
+        } finally {
+            hideLoading();
         }
     }
 
     async function endOrderEarly(id) {
         if (!confirm("Are you sure you want to end this order early?")) return;
+        showLoading("Ending order early...");
         try {
             const now = new Date().toISOString();
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
                 endTimeEarly: now
             });
             alert("Order ended early!");
-            loadOrders();
+            await loadOrders();
         } catch (err) {
             alert("Error ending order early: " + err.message);
+        } finally {
+            hideLoading();
         }
     }
 
     async function toggleCustomerTimerFinished(id, finished) {
+        showLoading("Updating timer status...");
         try {
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
                 customerTimerFinished: finished
@@ -5312,6 +5424,8 @@ function renderReportOccupancyChart(labels, dataArray) {
             renderOrders();
         } catch (err) {
             alert("Error updating timer finished status: " + err.message);
+        } finally {
+            hideLoading();
         }
     }
 
@@ -5387,6 +5501,7 @@ function renderReportOccupancyChart(labels, dataArray) {
             return;
         }
 
+        showLoading("Updating order status...");
         try {
             await pb.collection('MKMARINE_WATERSPORT_SALES_DATA').update(id, {
                 customerStatus: customerStatus,
@@ -5394,9 +5509,11 @@ function renderReportOccupancyChart(labels, dataArray) {
             });
             alert("Order updated successfully!");
             closeScanModal();
-            loadOrders();
+            await loadOrders();
         } catch (err) {
             alert("Error updating order: " + err.message);
+        } finally {
+            hideLoading();
         }
     }
 
@@ -5581,17 +5698,19 @@ function renderReportOccupancyChart(labels, dataArray) {
     };
 
     async function openModal(type, id = null) {
-        const overlay = document.getElementById('form-overlay');
-        const fields = document.getElementById('form-fields');
-        const title = document.getElementById('modal-title');
-        const submitBtn = document.querySelector('#crud-form button[type="submit"]');
+        showLoading("Loading details...");
+        try {
+            const overlay = document.getElementById('form-overlay');
+            const fields = document.getElementById('form-fields');
+            const title = document.getElementById('modal-title');
+            const submitBtn = document.querySelector('#crud-form button[type="submit"]');
 
-        document.getElementById('entry-id').value = id || '';
-        document.getElementById('entry-type').value = type;
-        
-        fields.innerHTML = '';
-        overlay.style.display = 'flex';
-        if (submitBtn) submitBtn.style.display = 'block';
+            document.getElementById('entry-id').value = id || '';
+            document.getElementById('entry-type').value = type;
+            
+            fields.innerHTML = '';
+            overlay.style.display = 'flex';
+            if (submitBtn) submitBtn.style.display = 'block';
 
         if (type === 'staff') {
             if (currentRoles.length === 0) await loadRoles();
@@ -6301,7 +6420,10 @@ function renderReportOccupancyChart(labels, dataArray) {
                 `;
             }
         }
+    } finally {
+        hideLoading();
     }
+}
 
     async function compressImage(file) {
         return new Promise((resolve) => {
@@ -6346,6 +6468,7 @@ function renderReportOccupancyChart(labels, dataArray) {
         
         const callback = type === 'staff' ? loadStaff : (type === 'role' ? loadRoles : (type === 'items' ? loadItems : (type === 'discount' ? loadDiscounts : (type === 'orderStatusUpdate' ? loadOrders : loadSales))));
 
+        showLoading("Saving changes...");
         try {
             if (type === 'orderStatusUpdate') {
                 const record = currentSales.find(s => s.id === id);
@@ -6493,12 +6616,22 @@ function renderReportOccupancyChart(labels, dataArray) {
             closeModal();
             callback();
         } catch (err) { alert("Error saving data: " + err.message); }
+        finally {
+            hideLoading();
+        }
     }
 
     async function deleteEntry(collection, id, callback) {
         if (confirm("Are you sure?")) {
-            await pb.collection(collection).delete(id);
-            callback();
+            showLoading("Deleting entry...");
+            try {
+                await pb.collection(collection).delete(id);
+                await callback();
+            } catch (err) {
+                alert("Error deleting: " + err.message);
+            } finally {
+                hideLoading();
+            }
         }
     }
 
