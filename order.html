@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SOUTH WAVE - Order Hub</title>
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <script src="pocketbase.umd.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -268,7 +268,7 @@
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('orderId');
 
-    window.onload = async () => {
+    async function init() {
         if (!orderId) {
             showError("Missing Order ID", "Please use the exact link provided in your booking message or scan your receipt QR code.");
             return;
@@ -296,7 +296,13 @@
             console.error("Verification error:", e);
             showError("Order Id not found", "Order Id not found, please use the correct link provide by our staff");
         }
-    };
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+    } else {
+        window.addEventListener('DOMContentLoaded', init);
+    }
 
     function updateTimerStatus(record) {
         if (!record.startTime) {
