@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="manifest" href="/manifest.json">
     <title>SOUTH WAVE Login</title>
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <script src="pocketbase.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -7012,7 +7012,7 @@ function renderReportOccupancyChart(labels, dataArray) {
     }
 
     // Check for existing session on page load
-    window.onload = () => {
+    function initApp() {
         // Start maintenance monitoring
         checkMaintenanceStatus();
         setInterval(checkMaintenanceStatus, 1000);
@@ -7051,7 +7051,13 @@ function renderReportOccupancyChart(labels, dataArray) {
                 console.error('Service Worker registration failed:', err);
             });
         }
-    };
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        initApp();
+    } else {
+        window.addEventListener('DOMContentLoaded', initApp);
+    }
 </script>
 
 </body>
