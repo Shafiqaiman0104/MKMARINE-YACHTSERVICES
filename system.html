@@ -916,7 +916,12 @@
 
         <!-- Booking Section -->
         <div id="booking-section" class="section active">
-            <h3>Customer Information</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:10px;">
+                <h3 style="margin:0;">Customer Information</h3>
+                <button type="button" onclick="openWaitingListModal()" id="waiting-list-trigger-btn" style="width:auto; margin-top:0; background:none; color:var(--primary-color); border:none; padding:5px; font-size:1.4rem; cursor:pointer; transition: transform 0.2s, color 0.2s; display:flex; align-items:center;" title="Waiting List" onmouseover="this.style.color='var(--primary-hover)'; this.style.transform='scale(1.1)';" onmouseout="this.style.color='var(--primary-color)'; this.style.transform='scale(1)';" >
+                    <i class="fa-solid fa-clock"></i>
+                </button>
+            </div>
             <div class="form-grid" style="margin-top:15px;">
                 <div class="input-group">
                     <label>Booking Date</label>
@@ -1004,9 +1009,12 @@
                 <div style="margin-top:15px; text-align:right; font-size:1.1rem;">
                     Grand Total: <span id="grand-total" style="color:var(--primary-color); font-weight:bold;">RM0.00</span>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button onclick="openCheckoutModal('BookingFirst')" style="background:#666;">Booking first</button>
-                    <button onclick="openCheckoutModal('Checkout')" style="background:#25d366;">Checkout</button>
+                <div style="display: flex; gap: 10px; margin-top: 20px; align-items: center;">
+                    <button type="button" id="save-waiting-list-btn" onclick="saveToWaitingList()" class="btn-small" style="background:#ff9800; margin-top:0; display:inline-flex; align-items:center; justify-content:center; gap:6px; width:auto; white-space:nowrap; padding: 10px 15px;" title="Save to Waiting List">
+                        <i class="fa-solid fa-clock"></i> Save
+                    </button>
+                    <button onclick="openCheckoutModal('BookingFirst')" style="background:#666; margin-top:0;">Booking first</button>
+                    <button onclick="openCheckoutModal('Checkout')" style="background:#25d366; margin-top:0;">Checkout</button>
                 </div>
             </div>
 
@@ -1616,6 +1624,24 @@
             </table>
         </div>
         <button class="btn-danger" onclick="closeTimerModal()" style="margin-top:20px;">Close</button>
+    </div>
+</div>
+
+<!-- Waiting List Modal -->
+<div class="form-overlay" id="waiting-list-overlay">
+    <div class="form-content" style="max-width: 600px; width: 95%;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom: 1px solid var(--booking-details-border); padding-bottom: 10px;">
+            <h3 style="color:var(--primary-color); margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-clock"></i> Waiting List
+            </h3>
+            <button type="button" class="btn-danger btn-small" onclick="closeWaitingListModal()" style="margin-top:0; width:auto; padding: 6px 12px; font-size: 1.1rem; line-height: 1;">×</button>
+        </div>
+        <div id="waiting-list-container" style="max-height: 60vh; overflow-y: auto; margin-bottom: 20px; padding-right: 5px;">
+            <!-- Dynamic list goes here -->
+        </div>
+        <div style="text-align:right;">
+            <button type="button" class="btn-danger" onclick="closeWaitingListModal()" style="margin-top:0; width:auto; padding: 10px 20px;">Close</button>
+        </div>
     </div>
 </div>
 
@@ -5735,6 +5761,209 @@ function renderReportOccupancyChart(labels, dataArray) {
         document.getElementById('qr-result-container').style.display = 'none';
         document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' });
     }
+
+    // --- Waiting List Functions ---
+    window.saveToWaitingList = function() {
+        const dateVal = document.getElementById('book-date').value;
+        const nameVal = document.getElementById('book-name').value;
+        const phoneVal = document.getElementById('book-phone').value;
+        const adultsVal = parseInt(document.getElementById('pax-adult').value) || 0;
+        const kidsVal = parseInt(document.getElementById('pax-kids').value) || 0;
+        const toddlerVal = parseInt(document.getElementById('pax-toddler').value) || 0;
+
+        let itemId = null;
+        let itemName = null;
+        let qtyVal = 1;
+        let durationVal = 0;
+
+        if (cart && cart.length > 0) {
+            // Use the last item added to the booking list/cart
+            const lastCartItem = cart[cart.length - 1];
+            itemId = lastCartItem.itemId;
+            itemName = lastCartItem.itemName;
+            qtyVal = lastCartItem.quantity;
+            durationVal = lastCartItem.duration;
+        } else if (selectedItem) {
+            // Fall back to the currently configured item in the form
+            itemId = selectedItem.id;
+            itemName = selectedItem.itemName;
+            qtyVal = parseInt(document.getElementById('book-qty').value) || 1;
+            durationVal = parseInt(document.getElementById('book-duration').value) || 0;
+        } else {
+            alert("Please select an item or add one to the list first.");
+            return;
+        }
+
+        const entry = {
+            id: Date.now().toString(), // WAIT ID = timestamp
+            date: dateVal,
+            name: nameVal,
+            phone: phoneVal,
+            adults: adultsVal,
+            kids: kidsVal,
+            toddler: toddlerVal,
+            itemId: itemId,
+            itemName: itemName,
+            qty: qtyVal,
+            duration: durationVal
+        };
+
+        let waitingList = [];
+        try {
+            waitingList = JSON.parse(localStorage.getItem('sports_waiting_list') || '[]');
+        } catch (e) {
+            waitingList = [];
+        }
+
+        waitingList.push(entry);
+        localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
+
+        alert("Saved to Waiting List successfully!");
+    };
+
+    window.openWaitingListModal = function() {
+        document.getElementById('waiting-list-overlay').style.display = 'flex';
+        renderWaitingList();
+    };
+
+    window.closeWaitingListModal = function() {
+        document.getElementById('waiting-list-overlay').style.display = 'none';
+    };
+
+    window.renderWaitingList = function() {
+        const container = document.getElementById('waiting-list-container');
+        if (!container) return;
+
+        let waitingList = [];
+        try {
+            waitingList = JSON.parse(localStorage.getItem('sports_waiting_list') || '[]');
+        } catch (e) {
+            waitingList = [];
+        }
+
+        if (waitingList.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:30px; color:var(--text-muted); font-size:0.95rem;">
+                    No entries in the waiting list.
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = waitingList.map(entry => {
+            const dateStr = entry.date ? new Date(entry.date).toLocaleString('en-GB') : 'No Date';
+            return `
+                <div style="border:1px solid var(--item-card-border); border-radius:10px; padding:15px; margin-bottom:12px; background:var(--item-card-bg); box-shadow:0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--item-card-border); padding-bottom:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:5px;">
+                        <span><strong>WAIT ID:</strong> ${entry.id}</span>
+                        <span><strong>Date:</strong> ${dateStr}</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.85rem; color:var(--text-color);">
+                        <div><strong>Name:</strong> ${entry.name || '-'}</div>
+                        <div><strong>Phone:</strong> ${entry.phone || '-'}</div>
+                        <div><strong>Adults:</strong> ${entry.adults || 0}</div>
+                        <div><strong>Kids:</strong> ${entry.kids || 0}</div>
+                        <div><strong>Toddler:</strong> ${entry.toddler || 0}</div>
+                        <div><strong>Item:</strong> ${entry.itemName || '-'}</div>
+                        <div><strong>Qty:</strong> ${entry.qty || 1}</div>
+                        <div><strong>Duration:</strong> ${entry.duration || 0}m</div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button type="button" onclick="fetchWaitingEntry('${entry.id}')" style="background:var(--primary-color); color:white; border:none; padding:8px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:bold; margin-top:0; width:auto;">Fetch Data</button>
+                        <button type="button" onclick="deleteWaitingEntry('${entry.id}')" class="btn-danger" style="background:#ff4b2b; color:white; border:none; padding:8px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:bold; margin-top:0; width:auto;">Delete Data</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    };
+
+    window.deleteWaitingEntry = function(id) {
+        if (!confirm("Are you sure you want to delete this entry from the waiting list?")) return;
+        let waitingList = [];
+        try {
+            waitingList = JSON.parse(localStorage.getItem('sports_waiting_list') || '[]');
+        } catch (e) {
+            waitingList = [];
+        }
+
+        waitingList = waitingList.filter(e => e.id !== id);
+        localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
+        renderWaitingList();
+    };
+
+    window.fetchWaitingEntry = async function(id) {
+        let waitingList = [];
+        try {
+            waitingList = JSON.parse(localStorage.getItem('sports_waiting_list') || '[]');
+        } catch (e) {
+            waitingList = [];
+        }
+
+        const entry = waitingList.find(e => e.id === id);
+        if (!entry) {
+            alert("Waiting list entry not found.");
+            return;
+        }
+
+        // Auto-fill the form fields
+        document.getElementById('book-date').value = entry.date || '';
+        document.getElementById('book-name').value = entry.name || '';
+        document.getElementById('book-phone').value = entry.phone || '';
+        document.getElementById('pax-adult').value = entry.adults || 0;
+        document.getElementById('pax-kids').value = entry.kids || 0;
+        document.getElementById('pax-toddler').value = entry.toddler || 0;
+
+        // Auto-fill the select item to the table select items (the cart)
+        const itemData = currentItems.find(i => i.id === entry.itemId || i.itemName === entry.itemName);
+        if (itemData) {
+            // Clear current select items in the table
+            cart = [];
+
+            const basePrice = parseFloat(itemData.itemPrice) || 0;
+            const baseDuration = parseFloat(itemData.itemRentalDuration) || 60;
+            const totalVal = (basePrice * entry.qty) * (entry.duration / baseDuration);
+            const price = totalVal.toFixed(2);
+
+            cart.push({
+                itemId: itemData.id,
+                itemName: itemData.itemName,
+                quantity: entry.qty,
+                duration: entry.duration,
+                price: price
+            });
+            renderCart();
+
+            // Deselect active selections
+            selectedItem = null;
+            document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('booking-config').style.display = 'none';
+
+            // Delete the entry from waiting list
+            waitingList = waitingList.filter(e => e.id !== id);
+            localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
+
+            // Close waiting list modal
+            closeWaitingListModal();
+
+            // After fill up it will scan the item to see if that item is available or not
+            const checkDate = entry.date ? new Date(entry.date) : new Date();
+            const requestedItems = [{
+                itemName: itemData.itemName,
+                quantity: entry.qty,
+                duration: entry.duration
+            }];
+
+            const errorSummary = await validateBookingAvailability(requestedItems, checkDate, null);
+            if (errorSummary) {
+                // Trigger availability warning popup
+                alert(`ITEM NOT AVAILABLE:\n\nDATE: ${checkDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
+            } else {
+                alert("Data fetched successfully! Item is available.");
+            }
+        } else {
+            alert(`Unable to fetch item. Item "${entry.itemName}" could not be found in the system.`);
+        }
+    };
 
     function sendSalesWhatsApp(id) {
         const s = currentSales.find(item => item.id === id);
