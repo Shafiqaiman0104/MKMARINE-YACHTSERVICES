@@ -699,6 +699,28 @@
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
+
+        /* Footer styling */
+        .footer {
+            border-top: 1px solid var(--input-border);
+            padding-top: 20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 30px;
+            margin-bottom: 10px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer b i, #login-powered b i {
+            color: var(--text-color);
+            font-style: italic;
+        }
+
+        /* Hide login subtitle in dashboard mode */
+        .container.dashboard-mode #login-powered {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -729,6 +751,9 @@
 
 <div class="container" id="main-container">
     <h2>SOUTH WAVE</h2>
+    <div id="login-powered" style="font-size: 0.8rem; font-style: italic; margin-top: -15px; margin-bottom: 20px; color: var(--text-muted);">
+        Powered By <b><i>VentureRush Tech</i></b>
+    </div>
     <div id="login-form">
         <div class="input-group">
             <label>Username</label>
@@ -1440,6 +1465,10 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Footer -->
+        <div class="footer">
+            Powered By <b><i>VentureRush Tech</i></b>
         </div>
     </div>
 </div>
