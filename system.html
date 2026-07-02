@@ -3592,6 +3592,151 @@
                 }
             }
 
+            // Helper function to check availability in a specific range for an item
+            function isAvailableAtRange(itemName, tStartMs, tEndMs, requestedQty, totalQty, salesList) {
+                let events = new Set();
+                events.add(tStartMs);
+                events.add(tEndMs);
+                
+                let overlappingSales = [];
+                salesList.forEach(sale => {
+                    const orderStart = new Date(sale.orderDate).getTime();
+                    const names = (sale.orderItemName || '').split(', ');
+                    const qtys = (sale.orderItemQuantity || '').split(', ');
+                    const durs = (sale.orderItemRentalDuration || '').split(', ');
+                    names.forEach((n, idx) => {
+                        if (n.trim() === itemName) {
+                            const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(durs[idx]) || 0) * 60000);
+                            const qty = parseInt(qtys[idx]) || 0;
+                            if (orderStart < tEndMs && orderEnd > tStartMs) {
+                                overlappingSales.push({ start: orderStart, end: orderEnd, qty: qty });
+                                if (orderStart > tStartMs && orderStart < tEndMs) events.add(orderStart);
+                                if (orderEnd > tStartMs && orderEnd < tEndMs) events.add(orderEnd);
+                            }
+                        }
+                    });
+                });
+                
+                let sortedEvents = Array.from(events).sort((a, b) => a - b);
+                for (let i = 0; i < sortedEvents.length - 1; i++) {
+                    const subStart = sortedEvents[i];
+                    const subEnd = sortedEvents[i+1];
+                    const subMid = (subStart + subEnd) / 2;
+                    
+                    let booked = 0;
+                    overlappingSales.forEach(s => {
+                        if (subMid >= s.start && subMid <= s.end) {
+                            booked += s.qty;
+                        }
+                    });
+                    
+                    if (booked + requestedQty > totalQty) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Calculate Next Availability for each item
+            let nextAvailList = [];
+            itemsToCheck.forEach(checkItem => {
+                const itemName = checkItem.itemName;
+                const duration = checkItem.duration;
+                const requestedQty = checkItem.requestedQty;
+                const totalQty = checkItem.totalQty;
+                
+                if (totalQty <= 0) {
+                    nextAvailList.push({ itemName, timeStr: "No Stock", bookedCount: 0, totalQty, requestedQty });
+                    return;
+                }
+
+                let candidates = new Set();
+                candidates.add(reqStartMs);
+                
+                sales.forEach(sale => {
+                    const orderStart = new Date(sale.orderDate).getTime();
+                    const names = (sale.orderItemName || '').split(', ');
+                    const durs = (sale.orderItemRentalDuration || '').split(', ');
+                    names.forEach((n, idx) => {
+                        if (n.trim() === itemName) {
+                            const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(durs[idx]) || 0) * 60000);
+                            if (orderEnd >= reqStartMs) {
+                                candidates.add(orderEnd);
+                            }
+                        }
+                    });
+                });
+                
+                let sortedCandidates = Array.from(candidates).sort((a, b) => a - b);
+                let foundTime = null;
+                
+                for (let cand of sortedCandidates) {
+                    const candEnd = cand + duration * 60000;
+                    if (isAvailableAtRange(itemName, cand, candEnd, requestedQty, totalQty, sales)) {
+                        foundTime = cand;
+                        break;
+                    }
+                }
+                
+                let timeStr = "";
+                if (foundTime === reqStartMs) {
+                    timeStr = "now";
+                } else if (foundTime !== null) {
+                    const candDate = new Date(foundTime);
+                    const isSameDay = candDate.toDateString() === reqStart.toDateString();
+                    const timePart = candDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', '');
+                    if (isSameDay) {
+                        timeStr = timePart;
+                    } else {
+                        const datePart = candDate.toLocaleDateString('en-GB');
+                        timeStr = `${timePart} (${datePart})`;
+                    }
+                } else {
+                    timeStr = "N/A";
+                }
+                
+                // Calculate booked count specifically at the check window start (reqStartMs)
+                let bookedCount = 0;
+                sales.forEach(sale => {
+                    const orderStart = new Date(sale.orderDate).getTime();
+                    const names = (sale.orderItemName || '').split(', ');
+                    const qtys = (sale.orderItemQuantity || '').split(', ');
+                    const durs = (sale.orderItemRentalDuration || '').split(', ');
+                    names.forEach((n, idx) => {
+                        if (n.trim() === itemName) {
+                            const orderEnd = sale.endTimeEarly ? new Date(sale.endTimeEarly).getTime() : (orderStart + (parseInt(durs[idx]) || 0) * 60000);
+                            if (orderStart < reqStartMs + 1000 && orderEnd > reqStartMs) {
+                                bookedCount += parseInt(qtys[idx]) || 0;
+                            }
+                        }
+                    });
+                });
+
+                nextAvailList.push({ itemName, timeStr, bookedCount, totalQty, requestedQty });
+            });
+
+            lastAvailCheck.nextAvailabilities = nextAvailList;
+
+            // Render Next Availability HTML
+            let nextAvailHtml = `<div style="margin-top:20px; border-top:1px dashed var(--table-border); padding-top:15px;">`;
+            nextAvailHtml += `<div style="font-weight:bold; color:var(--primary-color); margin-bottom:10px;">Next availability:</div>`;
+            nextAvailList.forEach(na => {
+                let line = "";
+                if (na.timeStr === "now") {
+                    if (mode === 'all') {
+                        line = `${na.itemName} ${na.bookedCount}/${na.totalQty} = now`;
+                    } else {
+                        line = `${na.itemName} = now`;
+                    }
+                } else {
+                    line = `${na.itemName} = ${na.timeStr}`;
+                }
+                nextAvailHtml += `<div style="margin-bottom:4px;">${line}</div>`;
+            });
+            nextAvailHtml += `</div>`;
+            
+            summaryHtml += nextAvailHtml;
+
             resultDiv.innerHTML = summaryHtml;
             document.getElementById('avail-whatsapp-btn').style.display = 'inline-block';
         } catch (err) { resultDiv.innerHTML = "Error: " + err.message; }
@@ -3633,6 +3778,24 @@
             });
             summaryText += `\n`;
         });
+
+        if (lastAvailCheck.nextAvailabilities && lastAvailCheck.nextAvailabilities.length > 0) {
+            summaryText += `Next availability:\n`;
+            lastAvailCheck.nextAvailabilities.forEach(na => {
+                let line = "";
+                if (na.timeStr === "now") {
+                    if (lastAvailCheck.mode === 'all') {
+                        line = `${na.itemName} ${na.bookedCount}/${na.totalQty} = now`;
+                    } else {
+                        line = `${na.itemName} = now`;
+                    }
+                } else {
+                    line = `${na.itemName} = ${na.timeStr}`;
+                }
+                summaryText += `${line}\n`;
+            });
+            summaryText += `\n`;
+        }
 
         const message = `*SOUTH WAVE - AVAILABILITY*\n` +
                         `---------------------------\n` +
