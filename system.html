@@ -769,11 +769,16 @@
     <div id="result" class="error"></div>
 
     <div id="dashboard" style="display: none;">
-        <!-- Connection Status Bars -->
-        <div id="connection-status" style="position: absolute; top: 15px; right: 20px; display: flex; gap: 3px; align-items: flex-end; height: 20px;">
-            <div class="conn-bar" style="width: 5px; height: 7px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
-            <div class="conn-bar" style="width: 5px; height: 11px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
-            <div class="conn-bar" style="width: 5px; height: 15px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+        <!-- Connection Status & Refresh Button -->
+        <div style="position: absolute; top: 15px; right: 20px; display: flex; gap: 12px; align-items: center; z-index: 1000;">
+            <button onclick="window.location.reload()" style="background: none; border: none; color: var(--primary-color); cursor: pointer; padding: 0; font-size: 1.1rem; width: auto; margin-top: 0; display: flex; align-items: center; transition: transform 0.2s, color 0.2s;" title="Refresh Page" onmouseover="this.style.color='var(--primary-hover)'; this.style.transform='scale(1.1)';" onmouseout="this.style.color='var(--primary-color)'; this.style.transform='scale(1)';" >
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+            <div id="connection-status" style="display: flex; gap: 3px; align-items: flex-end; height: 20px;">
+                <div class="conn-bar" style="width: 5px; height: 7px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+                <div class="conn-bar" style="width: 5px; height: 11px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+                <div class="conn-bar" style="width: 5px; height: 15px; border-radius: 1px; background: #25d366; transition: 0.3s;"></div>
+            </div>
         </div>
         <div id="welcome-msg" style="margin-bottom: 15px; font-size: 1rem; color: var(--primary-color); text-align: right; font-weight: 500;"></div>
         <div class="tabs" id="nav-tabs" style="display: flex;">
