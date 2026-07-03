@@ -5771,24 +5771,29 @@ function renderReportOccupancyChart(labels, dataArray) {
         const kidsVal = parseInt(document.getElementById('pax-kids').value) || 0;
         const toddlerVal = parseInt(document.getElementById('pax-toddler').value) || 0;
 
-        let itemId = null;
-        let itemName = null;
-        let qtyVal = 1;
-        let durationVal = 0;
+        let itemsArray = [];
 
         if (cart && cart.length > 0) {
-            // Use the last item added to the booking list/cart
-            const lastCartItem = cart[cart.length - 1];
-            itemId = lastCartItem.itemId;
-            itemName = lastCartItem.itemName;
-            qtyVal = lastCartItem.quantity;
-            durationVal = lastCartItem.duration;
+            // Use all items added to the booking list/cart
+            itemsArray = cart.map(item => ({
+                itemId: item.itemId,
+                itemName: item.itemName,
+                qty: item.quantity,
+                duration: item.duration,
+                price: item.price
+            }));
         } else if (selectedItem) {
             // Fall back to the currently configured item in the form
-            itemId = selectedItem.id;
-            itemName = selectedItem.itemName;
-            qtyVal = parseInt(document.getElementById('book-qty').value) || 1;
-            durationVal = parseInt(document.getElementById('book-duration').value) || 0;
+            const qtyVal = parseInt(document.getElementById('book-qty').value) || 1;
+            const durationVal = parseInt(document.getElementById('book-duration').value) || 0;
+            const priceVal = calculateTotal();
+            itemsArray = [{
+                itemId: selectedItem.id,
+                itemName: selectedItem.itemName,
+                qty: qtyVal,
+                duration: durationVal,
+                price: priceVal
+            }];
         } else {
             alert("Please select an item or add one to the list first.");
             return;
@@ -5802,10 +5807,7 @@ function renderReportOccupancyChart(labels, dataArray) {
             adults: adultsVal,
             kids: kidsVal,
             toddler: toddlerVal,
-            itemId: itemId,
-            itemName: itemName,
-            qty: qtyVal,
-            duration: durationVal
+            items: itemsArray
         };
 
         let waitingList = [];
@@ -5852,6 +5854,43 @@ function renderReportOccupancyChart(labels, dataArray) {
 
         container.innerHTML = waitingList.map(entry => {
             const dateStr = entry.date ? new Date(entry.date).toLocaleString('en-GB') : 'No Date';
+            
+            // Build the table rows for items
+            let itemsHtml = '';
+            if (entry.items && entry.items.length > 0) {
+                itemsHtml = entry.items.map(item => `
+                    <tr style="border-bottom:1px solid var(--table-cart-border);">
+                        <td style="padding:6px; font-weight:500;">${item.itemName}</td>
+                        <td style="padding:6px; text-align:center;">${item.qty}</td>
+                        <td style="padding:6px; text-align:center;">${item.duration}m</td>
+                    </tr>
+                `).join('');
+            } else if (entry.itemName) {
+                // Fallback for old single item formats
+                itemsHtml = `
+                    <tr style="border-bottom:1px solid var(--table-cart-border);">
+                        <td style="padding:6px; font-weight:500;">${entry.itemName}</td>
+                        <td style="padding:6px; text-align:center;">${entry.qty || 1}</td>
+                        <td style="padding:6px; text-align:center;">${entry.duration || 0}m</td>
+                    </tr>
+                `;
+            }
+
+            const itemsTable = `
+                <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:0.8rem; background:rgba(0,0,0,0.02); border-radius:6px; border:1px solid var(--table-border);">
+                    <thead>
+                        <tr style="border-bottom:1.5px solid var(--table-border); background:rgba(0,0,0,0.04); text-align:left;">
+                            <th style="padding:6px; font-weight:bold; color:var(--primary-color);">Item</th>
+                            <th style="padding:6px; font-weight:bold; color:var(--primary-color); text-align:center; width:50px;">Qty</th>
+                            <th style="padding:6px; font-weight:bold; color:var(--primary-color); text-align:center; width:80px;">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+            `;
+
             return `
                 <div style="border:1px solid var(--item-card-border); border-radius:10px; padding:15px; margin-bottom:12px; background:var(--item-card-bg); box-shadow:0 2px 6px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--item-card-border); padding-bottom:8px; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:5px;">
@@ -5864,9 +5903,10 @@ function renderReportOccupancyChart(labels, dataArray) {
                         <div><strong>Adults:</strong> ${entry.adults || 0}</div>
                         <div><strong>Kids:</strong> ${entry.kids || 0}</div>
                         <div><strong>Toddler:</strong> ${entry.toddler || 0}</div>
-                        <div><strong>Item:</strong> ${entry.itemName || '-'}</div>
-                        <div><strong>Qty:</strong> ${entry.qty || 1}</div>
-                        <div><strong>Duration:</strong> ${entry.duration || 0}m</div>
+                    </div>
+                    <div style="margin-top:5px;">
+                        <strong style="font-size:0.85rem; color:var(--text-color);">Items Request:</strong>
+                        ${itemsTable}
                     </div>
                     <div style="display:flex; gap:10px; margin-top:8px;">
                         <button type="button" onclick="fetchWaitingEntry('${entry.id}')" style="background:var(--primary-color); color:white; border:none; padding:8px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:bold; margin-top:0; width:auto;">Fetch Data</button>
@@ -5913,55 +5953,70 @@ function renderReportOccupancyChart(labels, dataArray) {
         document.getElementById('pax-kids').value = entry.kids || 0;
         document.getElementById('pax-toddler').value = entry.toddler || 0;
 
-        // Auto-fill the select item to the table select items (the cart)
-        const itemData = currentItems.find(i => i.id === entry.itemId || i.itemName === entry.itemName);
-        if (itemData) {
-            // Clear current select items in the table
-            cart = [];
+        // Clear current select items in the table
+        cart = [];
 
-            const basePrice = parseFloat(itemData.itemPrice) || 0;
-            const baseDuration = parseFloat(itemData.itemRentalDuration) || 60;
-            const totalVal = (basePrice * entry.qty) * (entry.duration / baseDuration);
-            const price = totalVal.toFixed(2);
-
-            cart.push({
-                itemId: itemData.id,
-                itemName: itemData.itemName,
-                quantity: entry.qty,
-                duration: entry.duration,
-                price: price
-            });
-            renderCart();
-
-            // Deselect active selections
-            selectedItem = null;
-            document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
-            document.getElementById('booking-config').style.display = 'none';
-
-            // Delete the entry from waiting list
-            waitingList = waitingList.filter(e => e.id !== id);
-            localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
-
-            // Close waiting list modal
-            closeWaitingListModal();
-
-            // After fill up it will scan the item to see if that item is available or not
-            const checkDate = entry.date ? new Date(entry.date) : new Date();
-            const requestedItems = [{
-                itemName: itemData.itemName,
-                quantity: entry.qty,
+        // Check if entry has new array-based items, or fallback to old format
+        let itemsToLoad = [];
+        if (entry.items && entry.items.length > 0) {
+            itemsToLoad = entry.items;
+        } else if (entry.itemId) {
+            // Old format fallback
+            itemsToLoad = [{
+                itemId: entry.itemId,
+                itemName: entry.itemName,
+                qty: entry.qty,
                 duration: entry.duration
             }];
+        }
 
-            const errorSummary = await validateBookingAvailability(requestedItems, checkDate, null);
-            if (errorSummary) {
-                // Trigger availability warning popup
-                alert(`ITEM NOT AVAILABLE:\n\nDATE: ${checkDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
-            } else {
-                alert("Data fetched successfully! Item is available.");
+        // Loop through and resolve pricing & push to cart
+        for (let item of itemsToLoad) {
+            const itemData = currentItems.find(i => i.id === item.itemId || i.itemName === item.itemName);
+            if (itemData) {
+                const basePrice = parseFloat(itemData.itemPrice) || 0;
+                const baseDuration = parseFloat(itemData.itemRentalDuration) || 60;
+                const totalVal = (basePrice * item.qty) * (item.duration / baseDuration);
+                const price = totalVal.toFixed(2);
+
+                cart.push({
+                    itemId: itemData.id,
+                    itemName: itemData.itemName,
+                    quantity: item.qty,
+                    duration: item.duration,
+                    price: price
+                });
             }
+        }
+
+        renderCart();
+
+        // Deselect active selections
+        selectedItem = null;
+        document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('booking-config').style.display = 'none';
+
+        // Delete the entry from waiting list
+        waitingList = waitingList.filter(e => e.id !== id);
+        localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
+
+        // Close waiting list modal
+        closeWaitingListModal();
+
+        // Scan item availability for all fetched items
+        const checkDate = entry.date ? new Date(entry.date) : new Date();
+        const requestedItems = itemsToLoad.map(item => ({
+            itemName: item.itemName,
+            quantity: item.qty,
+            duration: item.duration
+        }));
+
+        const errorSummary = await validateBookingAvailability(requestedItems, checkDate, null);
+        if (errorSummary) {
+            // Trigger availability warning popup
+            alert(`ITEM(S) NOT AVAILABLE:\n\nDATE: ${checkDate.toLocaleDateString('en-GB')}\n\n${errorSummary}`);
         } else {
-            alert(`Unable to fetch item. Item "${entry.itemName}" could not be found in the system.`);
+            alert("Data fetched successfully! All items are available.");
         }
     };
 
