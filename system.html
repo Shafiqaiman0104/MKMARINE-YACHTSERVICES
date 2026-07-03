@@ -721,6 +721,175 @@
         .container.dashboard-mode #login-powered {
             display: none;
         }
+
+        /* Custom Monitor Switch Toggle */
+        .monitor-switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .monitor-switch-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .monitor-switch {
+            position: relative;
+            display: inline-block;
+            width: 68px;
+            height: 32px;
+        }
+
+        .monitor-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .monitor-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.15);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 34px;
+            border: 1px solid var(--input-border);
+        }
+
+        body.dark-mode .monitor-slider {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .monitor-slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 3px;
+            top: 3px;
+            background-color: #ffffff;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+
+        .monitor-switch input:checked + .monitor-slider {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .monitor-switch input:checked + .monitor-slider:before {
+            transform: translateX(38px);
+            background-color: #ffffff;
+        }
+
+        .monitor-slider-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            z-index: 1;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        .monitor-slider-icon-left {
+            left: 8px;
+            color: #ffffff;
+            opacity: 0;
+        }
+
+        .monitor-slider-icon-right {
+            right: 8px;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .monitor-switch input:checked + .monitor-slider .monitor-slider-icon-left {
+            opacity: 1;
+        }
+
+        .monitor-switch input:checked + .monitor-slider .monitor-slider-icon-right {
+            opacity: 0;
+        }
+
+        /* Monitor Mode Styles */
+        body.monitor-mode-active {
+            background: var(--bg-gradient);
+            overflow-y: auto;
+        }
+
+        body.monitor-mode-active #main-container {
+            padding: 20px;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        /* Hide unnecessary elements in monitor mode */
+        body.monitor-mode-active #nav-tabs,
+        body.monitor-mode-active #welcome-msg,
+        body.monitor-mode-active #theme-toggle,
+        body.monitor-mode-active #main-container > h2,
+        body.monitor-mode-active #main-container > #login-powered,
+        body.monitor-mode-active #dashboard > div[style*="position: absolute"],
+        body.monitor-mode-active #order-section .header-actions,
+        body.monitor-mode-active #order-controls-wrapper,
+        body.monitor-mode-active .footer,
+        body.monitor-mode-active .timer-card-actions {
+            display: none !important;
+        }
+
+        /* Vertical stacking for customer timer cards in monitor mode */
+        body.monitor-mode-active #order-timer-display {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+            width: 100% !important;
+            max-width: 900px !important;
+            margin: 15px auto 0 auto !important;
+        }
+
+        body.monitor-mode-active .customer-timer-card {
+            margin-bottom: 0 !important; /* Managed by flex gap */
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            border-width: 2px !important;
+            padding: 15px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        body.monitor-mode-active .customer-timer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        body.monitor-mode-active .customer-timer-card th {
+            font-size: 0.8rem !important;
+            padding: 8px 4px !important;
+        }
+
+        body.monitor-mode-active .customer-timer-card td {
+            font-size: 0.95rem !important;
+            padding: 10px 4px !important;
+        }
+
+        body.monitor-mode-active .timer-countdown {
+            font-size: 1.1rem !important;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -1104,7 +1273,7 @@
                 <button class="btn-small" onclick="openScanModal()" style="background:var(--primary-color); width:auto; padding: 10px 20px;">Scan Order ID</button>
             </div>
             
-            <div style="margin-top: 15px;">
+            <div id="order-controls-wrapper" style="margin-top: 15px;">
                 <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-bottom: 15px;">
                     <div style="width: 200px;">
                     <select id="order-date-select" onchange="filterOrderDate(this.value)">
@@ -1129,6 +1298,32 @@
                     <button class="tab-btn" id="order-tab-complete" onclick="filterOrderTab('Complete')">Complete Status</button>
                     <button class="tab-btn" id="order-tab-all" onclick="filterOrderTab('All')">All Status</button>
                     <button class="tab-btn" id="order-tab-timer" onclick="filterOrderTab('Timer')">All Timer</button>
+                </div>
+            </div>
+
+            <div id="order-timer-monitor-bar" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px 20px; background: var(--box-bg); border-radius: 12px; border: 1px solid var(--booking-details-border);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-weight: bold; color: var(--primary-color); font-size: 1.1rem; letter-spacing: 0.5px;">Live Timers Monitor</div>
+                    <div id="wake-lock-indicator" style="font-size: 0.8rem; color: #28a745; display: none; align-items: center; gap: 5px; background: rgba(40, 167, 69, 0.1); padding: 4px 8px; border-radius: 20px;">
+                        <i class="fas fa-lock"></i> Screen Active
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <!-- Monitor Theme Toggle -->
+                    <button id="monitor-theme-toggle" onclick="toggleTheme()" style="background: none; border: none; color: var(--text-color); cursor: pointer; padding: 6px; font-size: 1.1rem; display: flex; align-items: center; width: auto; margin: 0; transition: transform 0.2s;" title="Toggle Day/Dark Mode" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <!-- Monitor Switch Toggle -->
+                    <div class="monitor-switch-container">
+                        <span class="monitor-switch-label">Mode:</span>
+                        <label class="monitor-switch" title="Toggle Monitor Mode">
+                            <input type="checkbox" id="monitor-mode-checkbox" onchange="setMonitorMode(this.checked)">
+                            <span class="monitor-slider">
+                                <span class="monitor-slider-icon monitor-slider-icon-left"><i class="fas fa-arrow-left" title="Go Back"></i></span>
+                                <span class="monitor-slider-icon monitor-slider-icon-right"><i class="fas fa-tv" title="Enter Monitor Mode"></i></span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1862,6 +2057,50 @@
     let currentWaiverUrl = "";
     let currentTimerUrl = "";
     let currentOrderFilter = 'Pending';
+    let isMonitorMode = false;
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+        if (!('wakeLock' in navigator)) {
+            updateWakeLockStatus(false);
+            return;
+        }
+        try {
+            if (wakeLock !== null) {
+                await wakeLock.release();
+            }
+            wakeLock = await navigator.wakeLock.request('screen');
+            updateWakeLockStatus(true);
+            wakeLock.addEventListener('release', () => {
+                updateWakeLockStatus(false);
+            });
+        } catch (err) {
+            console.warn('Wake Lock request failed:', err);
+            updateWakeLockStatus(false);
+        }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock !== null) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+        updateWakeLockStatus(false);
+    }
+
+    function updateWakeLockStatus(isActive) {
+        const indicator = document.getElementById('wake-lock-indicator');
+        if (indicator) {
+            indicator.style.display = isActive ? 'flex' : 'none';
+        }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && isMonitorMode) {
+            await requestWakeLock();
+        }
+    });
+
     let currentDateFilter = 'Today';
     let orderTableTimerInterval = null;
     let myChart = null;
@@ -3064,9 +3303,29 @@
         if (orderTableTimerInterval) clearInterval(orderTableTimerInterval);
         if (f === 'Timer') {
             orderTableTimerInterval = setInterval(renderOrders, 1000);
+            const monitorBar = document.getElementById('order-timer-monitor-bar');
+            if (monitorBar) monitorBar.style.display = 'flex';
+        } else {
+            const monitorBar = document.getElementById('order-timer-monitor-bar');
+            if (monitorBar) monitorBar.style.display = 'none';
+            setMonitorMode(false); // Clean exit if they switch tabs
         }
 
         renderOrders();
+    }
+
+    async function setMonitorMode(isActive) {
+        isMonitorMode = isActive;
+        const cb = document.getElementById('monitor-mode-checkbox');
+        if (cb) cb.checked = isActive;
+
+        if (isActive) {
+            document.body.classList.add('monitor-mode-active');
+            await requestWakeLock();
+        } else {
+            document.body.classList.remove('monitor-mode-active');
+            releaseWakeLock();
+        }
     }
 
     function filterOrderDate(mode) {
@@ -3183,7 +3442,7 @@
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${qtys[i]}</td>
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${durationMin}m</td>
                             <td style="padding:10px; text-align:center; white-space: nowrap;">${endTimeStr}</td>
-                            <td style="padding:10px; text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
+                            <td class="timer-countdown" style="padding:10px; text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
                         </tr>
                     `;
                 }).join('');
@@ -3195,7 +3454,7 @@
                                 <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
                                 <div style="font-size: 0.85rem; opacity: 0.8;">${new Date(s.orderDate).toLocaleString()}</div>
                             </div>
-                            <div style="display: flex; gap: 5px;">
+                            <div class="timer-card-actions" style="display: flex; gap: 5px;">
                                 <button class="btn-small" onclick="window.location.href='tel:${s.customerPhone}'" style="background:#0066cc; margin:0; padding: 8px 15px;">
                                     <i class="fas fa-phone"></i> Call
                                 </button>
@@ -7462,14 +7721,19 @@ function renderReportOccupancyChart(labels, dataArray) {
 
     function updateThemeToggleButton() {
         const toggleBtn = document.getElementById('theme-toggle');
-        if (!toggleBtn) return;
+        const monitorBtn = document.getElementById('monitor-theme-toggle');
         const isDark = document.body.classList.contains('dark-mode');
-        if (isDark) {
-            toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-            toggleBtn.title = "Switch to Day Mode";
-        } else {
-            toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-            toggleBtn.title = "Switch to Dark Mode";
+        
+        const iconHtml = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        const titleText = isDark ? "Switch to Day Mode" : "Switch to Dark Mode";
+        
+        if (toggleBtn) {
+            toggleBtn.innerHTML = iconHtml;
+            toggleBtn.title = titleText;
+        }
+        if (monitorBtn) {
+            monitorBtn.innerHTML = iconHtml;
+            monitorBtn.title = titleText;
         }
     }
 
