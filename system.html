@@ -918,8 +918,9 @@
         <div id="booking-section" class="section active">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:10px;">
                 <h3 style="margin:0;">Customer Information</h3>
-                <button type="button" onclick="openWaitingListModal()" id="waiting-list-trigger-btn" style="width:auto; margin-top:0; background:none; color:var(--primary-color); border:none; padding:5px; font-size:1.4rem; cursor:pointer; transition: transform 0.2s, color 0.2s; display:flex; align-items:center;" title="Waiting List" onmouseover="this.style.color='var(--primary-hover)'; this.style.transform='scale(1.1)';" onmouseout="this.style.color='var(--primary-color)'; this.style.transform='scale(1)';" >
+                <button type="button" onclick="openWaitingListModal()" id="waiting-list-trigger-btn" style="position:relative; width:auto; margin-top:0; background:none; color:var(--primary-color); border:none; padding:5px; font-size:1.4rem; cursor:pointer; transition: transform 0.2s, color 0.2s; display:flex; align-items:center;" title="Waiting List" onmouseover="this.style.color='var(--primary-hover)'; this.style.transform='scale(1.1)';" onmouseout="this.style.color='var(--primary-color)'; this.style.transform='scale(1)';" >
                     <i class="fa-solid fa-clock"></i>
+                    <span id="waiting-list-badge" style="position:absolute; top:-3px; right:-3px; background:#ff3b30; color:white; font-size:0.65rem; font-weight:bold; border-radius:50%; width:16px; height:16px; display:none; align-items:center; justify-content:center; line-height:1; box-shadow:0 1px 3px rgba(0,0,0,0.2);">0</span>
                 </button>
             </div>
             <div class="form-grid" style="margin-top:15px;">
@@ -2525,6 +2526,7 @@
             else if (tab === 'booking') {
                 await loadBookingItems();
                 document.getElementById('book-date').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                updateWaitingListBadge();
             }
         } finally {
             if (hasDataToLoad) {
@@ -5819,7 +5821,9 @@ function renderReportOccupancyChart(labels, dataArray) {
 
         waitingList.push(entry);
         localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
+        updateWaitingListBadge();
 
+        resetBookingForm();
         alert("Saved to Waiting List successfully!");
     };
 
@@ -5929,6 +5933,7 @@ function renderReportOccupancyChart(labels, dataArray) {
         waitingList = waitingList.filter(e => e.id !== id);
         localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
         renderWaitingList();
+        updateWaitingListBadge();
     };
 
     window.fetchWaitingEntry = async function(id) {
@@ -5999,6 +6004,7 @@ function renderReportOccupancyChart(labels, dataArray) {
         // Delete the entry from waiting list
         waitingList = waitingList.filter(e => e.id !== id);
         localStorage.setItem('sports_waiting_list', JSON.stringify(waitingList));
+        updateWaitingListBadge();
 
         // Close waiting list modal
         closeWaitingListModal();
@@ -6019,6 +6025,27 @@ function renderReportOccupancyChart(labels, dataArray) {
             alert("Data fetched successfully! All items are available.");
         }
     };
+
+    window.updateWaitingListBadge = function() {
+        const badge = document.getElementById('waiting-list-badge');
+        if (!badge) return;
+        let waitingList = [];
+        try {
+            waitingList = JSON.parse(localStorage.getItem('sports_waiting_list') || '[]');
+        } catch (e) {
+            waitingList = [];
+        }
+
+        if (waitingList.length > 0) {
+            badge.innerText = waitingList.length;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    };
+
+    // Run badge count update once on file load
+    updateWaitingListBadge();
 
     function sendSalesWhatsApp(id) {
         const s = currentSales.find(item => item.id === id);
