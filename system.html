@@ -3975,6 +3975,7 @@
                 releaseWakeLock();
             }
             resetInactivityTimer(); // Clear or reset timer immediately when entering/leaving monitor mode
+            renderOrders();
         }
 
         function filterOrderDate(mode) {
@@ -4028,6 +4029,9 @@
                     return isWaiverAgree && isOrderCompleted && isCustArrive;
                 }
                 if (currentOrderFilter === 'Timer') {
+                    if (isMonitorMode && s.customerTimerFinished) {
+                        return false;
+                    }
                     return !!s.startTime;
                 }
                 return true; // All
