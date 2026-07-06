@@ -1256,6 +1256,15 @@
             overflow: visible !important;
         }
 
+        #content-zoom-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: inherit;
+            align-items: inherit;
+            flex: 1 0 auto;
+        }
+
         body.monitor-mode-active #order-timer-monitor-bar {
             position: sticky !important;
             top: 10px;
@@ -1273,8 +1282,8 @@
         body.monitor-mode-active #nav-tabs,
         body.monitor-mode-active #welcome-msg,
         body.monitor-mode-active #theme-toggle,
-        body.monitor-mode-active #main-container>h2,
-        body.monitor-mode-active #main-container>#login-powered,
+        body.monitor-mode-active #main-container h2,
+        body.monitor-mode-active #main-container #login-powered,
         body.monitor-mode-active #dashboard>div[style*="position: absolute"],
         body.monitor-mode-active #order-section .header-actions,
         body.monitor-mode-active #order-controls-wrapper,
@@ -1354,7 +1363,8 @@
     </div>
 
     <div class="container" id="main-container">
-        <h2>SOUTH WAVE</h2>
+        <div id="content-zoom-wrapper">
+            <h2>SOUTH WAVE</h2>
         <div id="login-powered"
             style="font-size: 0.8rem; font-style: italic; margin-top: -15px; margin-bottom: 20px; color: var(--text-muted);">
             Powered By <b><i>VentureRush Tech</i></b>
@@ -2263,6 +2273,7 @@
             <div class="footer">
                 Powered By <b><i>VentureRush Tech</i></b>
             </div>
+        </div>
         </div>
     </div>
 
@@ -8355,7 +8366,10 @@
             if (display) {
                 display.innerText = `${currentZoom}%`;
             }
-            document.body.style.zoom = `${currentZoom}%`;
+            const wrapper = document.getElementById('content-zoom-wrapper');
+            if (wrapper) {
+                wrapper.style.zoom = `${currentZoom}%`;
+            }
             localStorage.setItem('sw_app_zoom', currentZoom);
         }
 
