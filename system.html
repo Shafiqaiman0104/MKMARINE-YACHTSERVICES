@@ -1272,7 +1272,7 @@
             background: var(--container-bg) !important;
             backdrop-filter: blur(12.5px) !important;
             -webkit-backdrop-filter: blur(12.5px) !important;
-            max-width: 900px !important;
+            max-width: 1300px !important;
             margin: 0 auto 15px auto !important;
             box-shadow: 0 4px 20px var(--shadow-color) !important;
             border: 1px solid var(--booking-details-border) !important;
@@ -1298,10 +1298,12 @@
             flex-direction: column !important;
             gap: 20px !important;
             width: 100% !important;
-            max-width: 900px !important;
+            max-width: 1300px !important;
             margin: 15px auto 0 auto !important;
             position: relative;
             z-index: 2;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         #monitor-background-logo {
@@ -1330,9 +1332,14 @@
             display: block;
         }
 
+        body.monitor-mode-active .customer-timer-header-card,
         body.monitor-mode-active .customer-timer-card {
-            margin-bottom: 0 !important;
-            /* Managed by flex gap */
+            width: 100%;
+        }
+
+        body.monitor-mode-active .customer-timer-card {
+            margin-bottom: 20px !important;
+            /* Managed by margin spacing for scrollable wrapper alignment */
             display: flex;
             flex-direction: column;
             height: auto;
@@ -4120,71 +4127,139 @@
                 }
 
                 if (filtered.length === 0) {
-                    timerDisplay.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5; color:var(--text-color); position: relative; z-index: 2;">No active timers found for the selected date.</div>' + footerHtml;
+                    timerDisplay.innerHTML = `
+                        <div class="monitor-scroll-wrapper" style="min-width: 880px; width: 100%; padding-right: 20px; box-sizing: border-box;">
+                            <div style="text-align:center; padding:40px; opacity:0.5; color:var(--text-color); position: relative; z-index: 2;">No active timers found for the selected date.</div>
+                            ${footerHtml}
+                        </div>
+                    `;
                     return;
                 }
 
-                timerDisplay.innerHTML = filtered.map(s => {
-                    const start = new Date(s.startTime).getTime();
-                    const names = (s.orderItemName || '').split(', ');
-                    const qtys = (s.orderItemQuantity || '').split(', ');
-                    const durs = (s.orderItemRentalDuration || '').split(', ');
-
-                    let itemRows = names.map((name, i) => {
-                        const durationMin = parseInt(durs[i]) || 0;
-                        const endTime = s.endTimeEarly ? new Date(s.endTimeEarly).getTime() : (start + (durationMin * 60000));
-                        const diff = endTime - Date.now();
-                        const timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
-                        const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
-
-                        const rowClass = getOrderRowClass(s);
-                        return `
-                        <tr class="${rowClass}" style="border-bottom: 1px solid var(--table-cart-border);">
-                            <td style="padding:10px; white-space: nowrap;">${name}</td>
-                            <td style="padding:10px; text-align:center; white-space: nowrap;">${qtys[i]}</td>
-                            <td style="padding:10px; text-align:center; white-space: nowrap;">${durationMin}m</td>
-                            <td style="padding:10px; text-align:center; white-space: nowrap;">${endTimeStr}</td>
-                            <td class="timer-countdown" style="padding:10px; text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
-                        </tr>
+                if (isMonitorMode) {
+                    const headerCard = `
+                        <div class="customer-timer-header-card" style="background: var(--booking-details-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 15px 20px; font-weight: bold; color: var(--primary-color); margin-bottom: 15px; position: relative; z-index: 2;">
+                            <div style="display: grid; grid-template-columns: 13% 17% 20% 8% 10% 14% 18%; width: 100%; gap: 10px; text-align: left; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                                <div>Name</div>
+                                <div>Date & Time</div>
+                                <div>Item</div>
+                                <div style="text-align: center;">Qty</div>
+                                <div style="text-align: center;">Duration</div>
+                                <div style="text-align: center;">End Time</div>
+                                <div style="text-align: center;">Timer</div>
+                            </div>
+                        </div>
                     `;
+
+                    const cardsHtml = filtered.map(s => {
+                        const start = new Date(s.startTime).getTime();
+                        const names = (s.orderItemName || '').split(', ');
+                        const qtys = (s.orderItemQuantity || '').split(', ');
+                        const durs = (s.orderItemRentalDuration || '').split(', ');
+
+                        const itemRowsHtml = names.map((name, i) => {
+                            const durationMin = parseInt(durs[i]) || 0;
+                            const endTime = s.endTimeEarly ? new Date(s.endTimeEarly).getTime() : (start + (durationMin * 60000));
+                            const diff = endTime - Date.now();
+                            const timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
+                            const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
+                            const borderStyle = i > 0 ? 'border-top: 1px dashed var(--table-cart-border); padding-top: 8px; margin-top: 8px;' : '';
+
+                            return `
+                                <div style="word-break: break-word; ${borderStyle}">${name}</div>
+                                <div style="text-align: center; ${borderStyle}">${qtys[i]}</div>
+                                <div style="text-align: center; ${borderStyle}">${durs[i]}m</div>
+                                <div style="text-align: center; ${borderStyle}">${endTimeStr}</div>
+                                <div class="timer-countdown" style="text-align: center; font-family: monospace; font-weight: bold; ${borderStyle}">${timerStr}</div>
+                            `;
+                        }).join('');
+
+                        return `
+                            <div class="customer-timer-card ${s.customerTimerFinished ? 'timer-finished' : ''}" style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 15px 20px; margin-bottom: 15px; color: var(--text-color); position: relative; z-index: 2;">
+                                <div style="display: grid; grid-template-columns: 13% 17% 20% 8% 10% 14% 18%; width: 100%; gap: 10px; align-items: center; text-align: left; font-size: 0.95rem;">
+                                    <div style="grid-row: span ${names.length}; font-weight: bold; color: var(--primary-color); word-break: break-word; align-self: center;">
+                                        ${s.customerName}
+                                    </div>
+                                    <div style="grid-row: span ${names.length}; font-size: 0.85rem; opacity: 0.8; align-self: center; word-break: break-word; padding-right: 5px;">
+                                        ${new Date(s.orderDate).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric', hour12: true })}
+                                    </div>
+                                    ${itemRowsHtml}
+                                </div>
+                            </div>
+                        `;
                     }).join('');
 
-                    return `
-                    <div class="customer-timer-card ${s.customerTimerFinished ? 'timer-finished' : ''}" style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color); position: relative; z-index: 2;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <div>
-                                <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
-                                <div style="font-size: 0.85rem; opacity: 0.8;">${new Date(s.orderDate).toLocaleString()}</div>
+                    timerDisplay.innerHTML = `
+                        <div class="monitor-scroll-wrapper" style="min-width: 880px; width: 100%; padding-right: 20px; box-sizing: border-box;">
+                            ${headerCard}
+                            ${cardsHtml}
+                            ${footerHtml}
+                        </div>
+                    `;
+                } else {
+                    timerDisplay.innerHTML = filtered.map(s => {
+                        const start = new Date(s.startTime).getTime();
+                        const names = (s.orderItemName || '').split(', ');
+                        const qtys = (s.orderItemQuantity || '').split(', ');
+                        const durs = (s.orderItemRentalDuration || '').split(', ');
+
+                        let itemRows = names.map((name, i) => {
+                            const durationMin = parseInt(durs[i]) || 0;
+                            const endTime = s.endTimeEarly ? new Date(s.endTimeEarly).getTime() : (start + (durationMin * 60000));
+                            const diff = endTime - Date.now();
+                            const timerStr = (diff <= 0) ? `<span style="color:#ff4b2b; font-weight:bold;">End</span>` : `${Math.floor(diff / 60000)}m ${Math.floor((diff % 60000) / 1000)}s left`;
+                            const endTimeStr = new Date(endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+
+                            const rowClass = getOrderRowClass(s);
+                            return `
+                            <tr class="${rowClass}" style="border-bottom: 1px solid var(--table-cart-border);">
+                                <td style="padding:10px; white-space: nowrap;">${name}</td>
+                                <td style="padding:10px; text-align:center; white-space: nowrap;">${qtys[i]}</td>
+                                <td style="padding:10px; text-align:center; white-space: nowrap;">${durationMin}m</td>
+                                <td style="padding:10px; text-align:center; white-space: nowrap;">${endTimeStr}</td>
+                                <td class="timer-countdown" style="padding:10px; text-align:center; font-family:monospace; white-space: nowrap;">${timerStr}</td>
+                            </tr>
+                        `;
+                        }).join('');
+
+                        return `
+                        <div class="customer-timer-card ${s.customerTimerFinished ? 'timer-finished' : ''}" style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color); position: relative; z-index: 2;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <div>
+                                    <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
+                                    <div style="font-size: 0.85rem; opacity: 0.8;">${new Date(s.orderDate).toLocaleString()}</div>
+                                </div>
+                                <div class="timer-card-actions" style="display: flex; gap: 5px;">
+                                    <button class="btn-small" onclick="window.location.href='tel:${s.customerPhone}'" style="background:#0066cc; margin:0; padding: 8px 15px;">
+                                        <i class="fas fa-phone"></i> Call
+                                    </button>
+                                    <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
+                                        <i class="fab fa-whatsapp"></i> WhatsApp
+                                    </button>
+                                    <button class="btn-small" onclick="toggleCustomerTimerFinished('${s.id}', ${!s.customerTimerFinished})" style="background: ${s.customerTimerFinished ? '#dc3545' : '#28a745'}; margin:0; padding: 8px 15px;" title="${s.customerTimerFinished ? 'Mark Unfinished' : 'Mark Finished'}">
+                                        ${s.customerTimerFinished ? '❎' : '✅'}
+                                    </button>
+                                </div>
                             </div>
-                            <div class="timer-card-actions" style="display: flex; gap: 5px;">
-                                <button class="btn-small" onclick="window.location.href='tel:${s.customerPhone}'" style="background:#0066cc; margin:0; padding: 8px 15px;">
-                                    <i class="fas fa-phone"></i> Call
-                                </button>
-                                <button class="btn-small" onclick="sendOrderTimerWhatsApp('${s.id}')" style="background:#25d366; margin:0; padding: 8px 15px;">
-                                    <i class="fab fa-whatsapp"></i> WhatsApp
-                                </button>
-                                <button class="btn-small" onclick="toggleCustomerTimerFinished('${s.id}', ${!s.customerTimerFinished})" style="background: ${s.customerTimerFinished ? '#dc3545' : '#28a745'}; margin:0; padding: 8px 15px;" title="${s.customerTimerFinished ? 'Mark Unfinished' : 'Mark Finished'}">
-                                    ${s.customerTimerFinished ? '❎' : '✅'}
-                                </button>
+                            <div class="table-container" data-scroll-id="${s.id}" style="background: var(--booking-details-bg); border-radius: 8px; border: 1px solid var(--table-cart-border); overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--table-border);">
+                                            <th style="text-align:left; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Item</th>
+                                            <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Qty</th>
+                                            <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Duration</th>
+                                            <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">End Time</th>
+                                            <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Timer</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${itemRows}</tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="table-container" data-scroll-id="${s.id}" style="background: var(--booking-details-bg); border-radius: 8px; border: 1px solid var(--table-cart-border); overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <thead>
-                                    <tr style="border-bottom: 2px solid var(--table-border);">
-                                        <th style="text-align:left; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Item</th>
-                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Qty</th>
-                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Duration</th>
-                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">End Time</th>
-                                        <th style="text-align:center; padding:10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Timer</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${itemRows}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-                }).join('') + footerHtml;
+                    `;
+                    }).join('') + footerHtml;
+                }
 
                 timerDisplay.querySelectorAll('[data-scroll-id]').forEach(el => {
                     const sid = el.getAttribute('data-scroll-id');
