@@ -3479,11 +3479,47 @@
                 permissions = roleRecord.canAccess ? roleRecord.canAccess.split(',').map(p => p.trim()) : [];
             } catch (e) {
                 if (roleName.toLowerCase() === 'admin') {
-                    permissions = ["Dashboard", "New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability", "Report", "Can Edit Sales", "Can Delete Sales"];
+                    permissions = ["Dashboard", "New Booking", "Staff Management", "Role Management", "Items Inventory", "Sales", "Discount", "Order", "Check Availability", "Report", "Can Edit Sales", "Can Delete Sales", "Sales Can Filter All Date", "Order Can Filter All Date"];
                 }
             }
 
+            if (roleName.toLowerCase() === 'admin') {
+                if (!permissions.includes("Sales Can Filter All Date")) permissions.push("Sales Can Filter All Date");
+                if (!permissions.includes("Order Can Filter All Date")) permissions.push("Order Can Filter All Date");
+            }
+
             currentUserPermissions = permissions;
+
+            // Date filter locking enforcement
+            const salesDateSelect = document.getElementById('sales-date-select');
+            if (salesDateSelect) {
+                const optAll = salesDateSelect.querySelector('option[value="All"]');
+                const optCustom = salesDateSelect.querySelector('option[value="Custom"]');
+                if (!permissions.includes('Sales Can Filter All Date')) {
+                    if (optAll) optAll.disabled = true;
+                    if (optCustom) optCustom.disabled = true;
+                    salesDateSelect.value = 'Today';
+                    filterSalesDate('Today');
+                } else {
+                    if (optAll) optAll.disabled = false;
+                    if (optCustom) optCustom.disabled = false;
+                }
+            }
+
+            const orderDateSelect = document.getElementById('order-date-select');
+            if (orderDateSelect) {
+                const optAll = orderDateSelect.querySelector('option[value="All"]');
+                const optCustom = orderDateSelect.querySelector('option[value="Custom"]');
+                if (!permissions.includes('Order Can Filter All Date')) {
+                    if (optAll) optAll.disabled = true;
+                    if (optCustom) optCustom.disabled = true;
+                    orderDateSelect.value = 'Today';
+                    filterOrderDate('Today');
+                } else {
+                    if (optAll) optAll.disabled = false;
+                    if (optCustom) optCustom.disabled = false;
+                }
+            }
 
             const tabMapping = {
                 "dashboard": "Dashboard",
@@ -3876,6 +3912,11 @@
         }
 
         function filterSalesDate(mode) {
+            if (mode !== 'Today' && (!currentUserPermissions || !currentUserPermissions.includes('Sales Can Filter All Date'))) {
+                mode = 'Today';
+                const salesDateSelect = document.getElementById('sales-date-select');
+                if (salesDateSelect) salesDateSelect.value = 'Today';
+            }
             currentSalesDateFilter = mode;
             const customInputs = document.getElementById('sales-custom-date-inputs');
             customInputs.style.display = (mode === 'Custom') ? 'flex' : 'none';
@@ -4026,6 +4067,11 @@
         }
 
         function filterOrderDate(mode) {
+            if (mode !== 'Today' && (!currentUserPermissions || !currentUserPermissions.includes('Order Can Filter All Date'))) {
+                mode = 'Today';
+                const orderDateSelect = document.getElementById('order-date-select');
+                if (orderDateSelect) orderDateSelect.value = 'Today';
+            }
             currentDateFilter = mode;
             const customInputs = document.getElementById('order-custom-date-inputs');
             customInputs.style.display = (mode === 'Custom') ? 'flex' : 'none';
@@ -7236,8 +7282,23 @@
                     subContainer.style.display = 'none';
                     const editCb = document.getElementById('perm-edit-sales');
                     const delCb = document.getElementById('perm-delete-sales');
+                    const filterCb = document.getElementById('perm-filter-all-date-sales');
                     if (editCb) editCb.checked = false;
                     if (delCb) delCb.checked = false;
+                    if (filterCb) filterCb.checked = false;
+                }
+            }
+        };
+
+        window.toggleOrderSubPerms = function (checked) {
+            const subContainer = document.getElementById('order-sub-perms');
+            if (subContainer) {
+                if (checked) {
+                    subContainer.style.display = 'flex';
+                } else {
+                    subContainer.style.display = 'none';
+                    const filterCb = document.getElementById('perm-filter-all-date-order');
+                    if (filterCb) filterCb.checked = false;
                 }
             }
         };
@@ -7286,7 +7347,7 @@
                             <input type="checkbox" name="perm_check" id="perm-sales" value="Sales" ${currentPerms.includes('Sales') ? 'checked' : ''} style="width:auto;" onchange="toggleSalesSubPerms(this.checked)">
                             <label for="perm-sales" style="margin:0; font-weight:bold;">Sales</label>
                         </div>
-                        <div id="sales-sub-perms" style="display:flex; gap:20px; margin-left:25px; margin-top:8px; transition: all 0.3s ease; ${currentPerms.includes('Sales') ? '' : 'display:none;'}">
+                        <div id="sales-sub-perms" style="display:flex; flex-wrap:wrap; gap:20px; margin-left:25px; margin-top:8px; transition: all 0.3s ease; ${currentPerms.includes('Sales') ? '' : 'display:none;'}">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <input type="checkbox" name="perm_check" id="perm-edit-sales" value="Can Edit Sales" ${currentPerms.includes('Can Edit Sales') ? 'checked' : ''} style="width:auto;">
                                 <label for="perm-edit-sales" style="margin:0; font-size:0.85rem;">Can Edit Sales</label>
@@ -7294,6 +7355,25 @@
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <input type="checkbox" name="perm_check" id="perm-delete-sales" value="Can Delete Sales" ${currentPerms.includes('Can Delete Sales') ? 'checked' : ''} style="width:auto;">
                                 <label for="perm-delete-sales" style="margin:0; font-size:0.85rem;">Can Delete Sales</label>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" name="perm_check" id="perm-filter-all-date-sales" value="Sales Can Filter All Date" ${currentPerms.includes('Sales Can Filter All Date') ? 'checked' : ''} style="width:auto;">
+                                <label for="perm-filter-all-date-sales" style="margin:0; font-size:0.85rem;">Can Filter All Date</label>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                        } else if (p === 'Order') {
+                            return `
+                    <div style="grid-column: span 2; display:flex; flex-direction:column; background:var(--box-bg); padding:8px; border-radius:6px; border: 1px solid var(--input-border); margin: 5px 0;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" name="perm_check" id="perm-order" value="Order" ${currentPerms.includes('Order') ? 'checked' : ''} style="width:auto;" onchange="toggleOrderSubPerms(this.checked)">
+                            <label for="perm-order" style="margin:0; font-weight:bold;">Order</label>
+                        </div>
+                        <div id="order-sub-perms" style="display:flex; flex-wrap:wrap; gap:20px; margin-left:25px; margin-top:8px; transition: all 0.3s ease; ${currentPerms.includes('Order') ? '' : 'display:none;'}">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" name="perm_check" id="perm-filter-all-date-order" value="Order Can Filter All Date" ${currentPerms.includes('Order Can Filter All Date') ? 'checked' : ''} style="width:auto;">
+                                <label for="perm-filter-all-date-order" style="margin:0; font-size:0.85rem;">Can Filter All Date</label>
                             </div>
                         </div>
                     </div>
