@@ -1300,6 +1300,34 @@
             width: 100% !important;
             max-width: 900px !important;
             margin: 15px auto 0 auto !important;
+            position: relative;
+            z-index: 2;
+        }
+
+        #monitor-background-logo {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            pointer-events: none;
+            width: 350px;
+            height: 350px;
+            background-image: url('img/logoBlue.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.12;
+            transition: background-image 0.3s ease;
+        }
+
+        body.dark-mode #monitor-background-logo {
+            background-image: url('img/logoWhite.png');
+        }
+
+        body.monitor-mode-active #monitor-background-logo {
+            display: block;
         }
 
         body.monitor-mode-active .customer-timer-card {
@@ -1364,6 +1392,7 @@
 
     <div class="container" id="main-container">
         <div id="content-zoom-wrapper">
+            <div id="monitor-background-logo"></div>
             <h2>SOUTH WAVE</h2>
         <div id="login-powered"
             style="font-size: 0.8rem; font-style: italic; margin-top: -15px; margin-bottom: 20px; color: var(--text-muted);">
@@ -4081,8 +4110,17 @@
                 orderTable.style.display = 'none';
                 timerDisplay.style.display = 'block';
 
+                let footerHtml = '';
+                if (isMonitorMode) {
+                    footerHtml = `
+                        <div class="monitor-footer" style="border-top: 1px solid var(--input-border); padding-top: 20px; font-size: 0.75rem; color: var(--text-muted); margin-top: 30px; margin-bottom: 10px; text-align: center; width: 100%; position: relative; z-index: 2;">
+                            Powered By <b><i>VentureRush Tech</i></b>
+                        </div>
+                    `;
+                }
+
                 if (filtered.length === 0) {
-                    timerDisplay.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5; color:var(--text-color);">No active timers found for the selected date.</div>';
+                    timerDisplay.innerHTML = '<div style="text-align:center; padding:40px; opacity:0.5; color:var(--text-color); position: relative; z-index: 2;">No active timers found for the selected date.</div>' + footerHtml;
                     return;
                 }
 
@@ -4112,7 +4150,7 @@
                     }).join('');
 
                     return `
-                    <div class="customer-timer-card ${s.customerTimerFinished ? 'timer-finished' : ''}" style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color);">
+                    <div class="customer-timer-card ${s.customerTimerFinished ? 'timer-finished' : ''}" style="background: var(--item-card-bg); border: 1px solid var(--booking-details-border); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: var(--text-color); position: relative; z-index: 2;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <div>
                                 <div style="color: var(--primary-color); font-weight: bold; font-size: 1.1rem;">${s.customerName}</div>
@@ -4146,7 +4184,7 @@
                         </div>
                     </div>
                 `;
-                }).join('');
+                }).join('') + footerHtml;
 
                 timerDisplay.querySelectorAll('[data-scroll-id]').forEach(el => {
                     const sid = el.getAttribute('data-scroll-id');
